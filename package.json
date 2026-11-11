@@ -1,0 +1,1 @@
+{"name":"sto-nino-devotional","version":"0.1.0","private":true,"type":"module","description":"Free devotional sanctuary web app","dependencies":{"@supabase/supabase-js":"^2.49.0"}}
