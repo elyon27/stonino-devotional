@@ -31,7 +31,7 @@ function applyAppearance(mode){
   $('themeBtn').textContent=selected==='dark'?'☀ Light':'☾ Dark';
   $('themeBtn').setAttribute('aria-label',selected==='dark'?'Switch to light mode':'Switch to dark mode');
   $('themeBtn').setAttribute('aria-pressed',String(selected==='dark'));
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',selected==='dark'?'#18120f':'#231914');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content','#8B1E2D');
   store.set('appearance',selected);
 }
 $('appearance').addEventListener('change',e=>applyAppearance(e.target.value));
