@@ -109,3 +109,5 @@ html[data-theme="dark"] .flowers-intro{background:radial-gradient(ellipse at cen
 #offeringQRPanel { text-align: center; margin: 1rem 0; }
 #offeringQR { display: block; margin: 0 auto .75rem; max-width: 100%; height: auto; padding: .5rem; background: white; border-radius: .6rem; }
 #offeringDialog [hidden], #resumeOffering[hidden] { display: none; }
+
+.identity img{display:block;height:auto;flex-shrink:0}
