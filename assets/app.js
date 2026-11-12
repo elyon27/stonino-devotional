@@ -161,8 +161,7 @@ function updateCandleClock(){
     }
   }
 }
-function uid(){return globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`}$('candleForm').onsubmit=async e=>{e.preventDefault();if(state.candles.length>=24)return toast('You can keep up to 24 active candles.');state.candles.unshift({id:uid(),note:$('candleFor').value.trim(),type:$('candleType').value,created_at:new Date().toISOString()});store.set('candles',state.candles);renderCandles();e.target.reset();toast('Candle lit. May this moment lead you to prayer.');await syncCloud('candles')};
-$('novenaCandleForm').onsubmit=async e=>{e.preventDefault();if(state.novenaCandles.length>=24)return toast('You can keep up to 24 active novena candles.');state.novenaCandles.unshift({id:uid(),note:$('novenaCandleFor').value.trim(),type:$('novenaCandleType').value,novena_day:state.day,created_at:new Date().toISOString()});store.set('novenaCandles',state.novenaCandles);renderNovenaCandles();e.target.reset();toast('Novena candle offered for Day '+(state.day+1)+'.');await syncCloud('novenaCandles')};
+function uid(){return globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`}
 // Floral offerings have their own collection, independent of candle timers.
 function renderNovenaFlowers(){
   const list=Array.isArray(state.novenaFlowers)?state.novenaFlowers:[];
@@ -174,15 +173,6 @@ function renderNovenaFlowers(){
     <time datetime="${html(f.created_at)}">${html(new Date(f.created_at).toLocaleDateString())}</time>
   </article>`).join('');
 }
-$('novenaFlowerForm').onsubmit=async e=>{
-  e.preventDefault();
-  if(state.novenaFlowers.length>=36)return toast('You can keep up to 36 flower offerings.');
-  state.novenaFlowers.unshift({id:uid(),note:$('novenaFlowerFor').value.trim(),novena_day:state.day,created_at:new Date().toISOString()});
-  store.set('novenaFlowers',state.novenaFlowers);
-  renderNovenaFlowers();e.target.reset();
-  toast('A bouquet of roses was offered for Novena Day '+(state.day+1)+'.');
-  await syncCloud('novenaFlowers');
-};
 function renderIntentions(){$('intentionEmpty').hidden=!!state.intentions.length;$('intentionList').innerHTML=state.intentions.map(x=>`<article class="journal-entry"><h4>${html(x.title)}</h4><time>${html(new Date(x.created_at).toLocaleDateString())}</time><p>${html(x.body)}</p><button type="button" data-delete="${html(x.id)}">Delete intention</button></article>`).join('')}$('intentionForm').onsubmit=async e=>{e.preventDefault();const title=$('intentionName').value.trim(),body=$('intentionBody').value.trim();if(!title||!body)return;state.intentions.unshift({id:uid(),title,body,created_at:new Date().toISOString()});store.set('intentions',state.intentions);renderIntentions();e.target.reset();toast('Private intention saved');await syncCloud('intentions')};$('intentionList').addEventListener('click',async e=>{const b=e.target.closest('[data-delete]');if(!b||!confirm('Delete this prayer intention permanently?'))return;state.intentions=state.intentions.filter(x=>x.id!==b.dataset.delete);store.set('intentions',state.intentions);renderIntentions();await syncCloud('intentions');toast('Intention deleted')});
 function renderMeditation(){const m=meditations[state.meditation];$('scriptureCount').textContent=`Meditation ${state.meditation+1} of ${meditations.length}`;$('scriptureRef').textContent=m[0]+' ↗';$('scriptureTheme').textContent=m[1];$('scriptureReflection').textContent=m[2]}$('prevMeditation').onclick=()=>{state.meditation=(state.meditation+meditations.length-1)%meditations.length;renderMeditation()};$('nextMeditation').onclick=()=>{state.meditation=(state.meditation+1)%meditations.length;renderMeditation()};
 function exportData(){const payload={exported_at:new Date().toISOString(),format:'stonino-v1',candles:state.candles,novenaCandles:state.novenaCandles,novenaFlowers:state.novenaFlowers,intentions:state.intentions,completed:state.completed};const a=document.createElement('a');const u=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.href=u;a.download='sto-nino-private-data.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),5000)}$('exportData').onclick=exportData;$('clearData').onclick=async()=>{if(!confirm('Delete ALL guest candles, novena candles, intentions, and novena progress from this browser?'))return;state.candles=[];state.novenaCandles=[];state.novenaFlowers=[];state.intentions=[];state.completed=[];['candles','novenaCandles','novenaFlowers','intentions','completed','selectedDay'].forEach(k=>localStorage.removeItem(prefix+k));state.day=0;renderCandles();renderNovenaCandles();renderNovenaFlowers();renderIntentions();renderNovena();if(state.user)await syncCloud('all');toast('Local devotional data deleted')};
@@ -207,4 +197,139 @@ async function loadCloud(){if(!state.user||!state.supabase)return;try{const {dat
 async function syncCloud(){if(!state.user||!state.supabase)return;try{const {error}=await state.supabase.from('stonino_profiles').upsert({user_id:state.user.id,candles:state.candles,novena_candles:state.novenaCandles,novena_flowers:state.novenaFlowers,intentions:state.intentions,completed:state.completed,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error)throw error}catch(e){console.warn(e);toast('Saved locally. Cloud sync needs attention.')}}
 async function accountAction(mode){if(!state.supabase){toast('Set up Supabase first. Guest access is already available.');return}const email=$('email').value.trim(),password=$('password').value;if(!email||!password){toast('Enter your email and password');return}try{const r=mode==='signUp'?await state.supabase.auth.signUp({email,password}):await state.supabase.auth.signInWithPassword({email,password});if(r.error)throw r.error;if(r.data?.user&&r.data?.session){state.user=r.data.user;await loadCloud()}accountView();toast(mode==='signUp'?'Account request submitted. Confirm email if required.':'Signed in');if(state.user)$('accountDialog').close()}catch(e){toast(e.message||'Unable to authenticate')}}$('signIn').onclick=()=>accountAction('signIn');$('signUp').onclick=()=>accountAction('signUp');$('resetPassword').onclick=async()=>{const email=$('email').value.trim();if(!email||!state.supabase)return toast('Configure cloud access and enter your email');try{const {error}=await state.supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;toast('If the address is registered, a reset email will be sent.')}catch(e){toast(e.message)}};$('signOut').onclick=async()=>{await state.supabase?.auth.signOut();state.user=null;accountView();toast('Signed out')};$('deleteAccount').onclick=async()=>{if(!state.user||!state.supabase)return;if(!confirm('Permanently delete your cloud account and ALL its devotional data? This cannot be undone.'))return;try{const {data}=await state.supabase.auth.getSession();const token=data?.session?.access_token;if(!token)throw Error('Please sign in again');const response=await fetch(config.deleteAccountEndpoint||'/.netlify/functions/delete-account',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({confirm:true})});if(!response.ok){let msg='Account deletion failed';try{msg=(await response.json()).error||msg}catch{}throw Error(msg)}await state.supabase.auth.signOut();state.user=null;state.candles=[];state.novenaCandles=[];state.novenaFlowers=[];state.intentions=[];state.completed=[];['candles','novenaCandles','novenaFlowers','intentions','completed'].forEach(k=>localStorage.removeItem(prefix+k));renderCandles();renderNovenaCandles();renderNovenaFlowers();renderIntentions();renderNovena();accountView();$('accountDialog').close();toast('Your account and its data have been deleted')}catch(e){toast(e.message||'Account deletion failed')}};
 language();setFont(state.font);renderNovena();displayPrayer('morning');renderCandles();renderNovenaCandles();renderNovenaFlowers();renderIntentions();renderMeditation();accountView();if(location.hash&&$(location.hash.slice(1))?.classList.contains('page'))nav(location.hash.slice(1));initCloud();setInterval(updateCandleClock,1000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateCandleClock()});
+(() => {
+  const pendingKey = prefix + 'pendingOffering';
+  const dialog = $('offeringDialog');
+  const status = $('offeringStatus');
+  const showQR = $('startOfferingPayment');
+  const checkButton = $('checkOfferingPayment');
+  const resume = $('resumeOffering');
+  const qrPanel = $('offeringQRPanel');
+  const kinds = {
+    candle: { form: 'candleForm', field: 'candleFor', type: 'candleType',
+      collection: 'candles', label: 'Virtual candle', cap: 24, render: renderCandles },
+    'novena-candle': { form: 'novenaCandleForm', field: 'novenaCandleFor', type: 'novenaCandleType',
+      collection: 'novenaCandles', label: 'Novena candle', cap: 24, render: renderNovenaCandles },
+    'novena-flowers': { form: 'novenaFlowerForm', field: 'novenaFlowerFor',
+      collection: 'novenaFlowers', label: 'Novena flower bouquet', cap: 36, render: renderNovenaFlowers }
+  };
+  let draft;
+  let busy = false;
+  let timer;
+
+  function pending() {
+    try { return JSON.parse(localStorage.getItem(pendingKey)); }
+    catch { return null; }
+  }
+
+  function open(order) {
+    draft = order;
+    $('offeringSummary').textContent = kinds[order.kind].label +
+      (order.day === undefined ? '' : ' · Day ' + (order.day + 1)) + ' · ₱1';
+    qrPanel.hidden = true;
+    showQR.hidden = false;
+    checkButton.hidden = !order.id;
+    status.textContent = order.id ? 'Resume your checkout or check whether payment went through.' :
+      'Your offering will appear after payment is confirmed.';
+    if (!dialog.open) dialog.showModal();
+  }
+
+  async function request(order, method) {
+    const response = await fetch('/.netlify/functions/offering-payment?id=' + order.id + '&kind=' + order.kind,
+      { method, cache: 'no-store', signal: AbortSignal.timeout(35000) });
+    if (response.status === 503) throw new Error('QR checkout is unavailable. Please try again later.');
+    if (response.status === 404 && method === 'GET') return { status: 'not-created' };
+    if (!response.ok) throw new Error('Payment could not be checked. Please try again.');
+    return response.json();
+  }
+
+  async function verify(order) {
+    const result = await request(order, 'GET');
+    if (result.status === 'pending' || result.status === 'not-created') {
+      if (result.qrExpired) {
+        qrPanel.hidden = true;
+        status.textContent = 'The QR has expired. Checking for any payment already in progress…';
+        return;
+      }
+      status.textContent = result.status === 'pending' ? 'Waiting for payment confirmation…' :
+        'Select Show payment QR to continue.';
+      return;
+    }
+    clearInterval(timer);
+    if (result.status === 'paid') {
+      const { collection, render } = kinds[order.kind];
+      const saved = store.get(collection, []);
+      const item = { id: order.id, note: order.note, type: order.type,
+        novena_day: order.day, created_at: result.paidAt };
+      const items = [...new Map([item, ...state[collection], ...saved].map(x => [x.id, x])).values()];
+      localStorage.setItem(prefix + collection, JSON.stringify(items));
+      state[collection] = items;
+      render();
+      $(kinds[order.kind].form).reset();
+      toast('Payment confirmed. Your offering has been placed.');
+      void syncCloud(collection);
+    } else if (result.status === 'expired') {
+      toast('The QR expired. Select your offering again for a new code.');
+    } else {
+      throw new Error('Payment status is unavailable.');
+    }
+    if (pending()?.id === order.id) localStorage.removeItem(pendingKey);
+    resume.hidden = !pending();
+    if (dialog.open) dialog.close();
+  }
+
+  async function run(task) {
+    if (busy || !dialog.open) return;
+    busy = showQR.disabled = checkButton.disabled = true;
+    try { await task(); }
+    catch (error) { status.textContent = error.message || 'Try checking payment again.'; }
+    finally { busy = showQR.disabled = checkButton.disabled = false; }
+  }
+
+  for (const [kind, settings] of Object.entries(kinds)) {
+    $(settings.form).onsubmit = event => {
+      event.preventDefault();
+      const existing = pending();
+      if (existing) return open(existing);
+      if (settings.type) settings.render();
+      if (state[settings.collection].length >= settings.cap) {
+        return toast('Your offering display has reached its limit of ' + settings.cap + '.');
+      }
+      open({ kind, note: $(settings.field).value.trim(),
+        ...(settings.type && { type: $(settings.type).value }),
+        ...(kind !== 'candle' && { day: state.day }) });
+    };
+  }
+
+  showQR.onclick = () => run(async () => {
+    draft = pending() || { ...draft, id: crypto.randomUUID() };
+    const order = draft;
+    localStorage.setItem(pendingKey, JSON.stringify(order));
+    resume.hidden = false;
+    checkButton.hidden = false;
+    status.textContent = 'Preparing your ₱1 QR code…';
+    const result = await request(order, 'POST');
+    if (!dialog.open || draft !== order) return;
+    if (!result.qr || Date.now() >= result.expires) return verify(order);
+    $('offeringQR').src = result.qr;
+    $('downloadOfferingQR').href = result.qr;
+    $('downloadOfferingQR').download = result.qr.startsWith('data:image/jpeg') ?
+      'sto-nino-payment-qr.jpg' : 'sto-nino-payment-qr.png';
+    qrPanel.hidden = false;
+    showQR.hidden = true;
+    status.textContent = result.test ? 'Test checkout. Use the provider’s test tools.' :
+      'Pay ₱1 in GCash. Leave this window open to see confirmation.';
+    clearInterval(timer);
+    timer = setInterval(() => run(() => verify(order)), 5000);
+  });
+  checkButton.onclick = () => run(() => verify(draft));
+  $('closeOffering').onclick = () => dialog.close();
+  dialog.addEventListener('close', () => clearInterval(timer));
+  resume.onclick = () => { const order = pending(); if (order) open(order); };
+  resume.hidden = !pending();
+  window.addEventListener('storage', event => {
+    if (event.key === pendingKey) resume.hidden = !pending();
+  });
 })();
+})();
+

@@ -24,6 +24,14 @@ Open `index.html` in a browser. The site works without server or account for its
 3. The published URL serves `/privacy.html` and `/account-deletion.html` for Google Play app listing requirements. Replace placeholder privacy details if operation changes.
 4. Do not claim this is an official Basilica or Archdiocese app.
 
+## GCash QR Ph checkout
+
+Virtual candles, novena candles and bouquets each cost ₱1. PayMongo generates a single-use QR Ph code that visitors can scan with GCash. Prayers, Scripture and the journal are free. Netlify Blobs stores the order and payment confirmation. The payment request omits prayer intentions.
+
+Set `PAYMONGO_SECRET_KEY` and `PAYMONGO_PUBLIC_KEY` in Netlify’s environment variables for the **Functions** scope. Use matching keys from a PayMongo merchant account with online QR Ph enabled. Use test keys in a separate deploy context and live keys in production. Deploy after setting the variables. Keep the secret key out of GitHub and browser assets.
+
+Use Netlify Dev for local checkout testing. For production verification, check the deploy attached to the intended commit and verify that a ₱1 GCash payment adds exactly one offering. Configure a rate limit on the offering-payment function when available.
+
 ## Optional Supabase setup
 1. Reuse an existing Supabase project. Execute `supabase-schema.sql` in Supabase SQL Editor.
 2. Configure URL and public **anon/publishable** key in `assets/config.js`. Never paste the service-role key here.
