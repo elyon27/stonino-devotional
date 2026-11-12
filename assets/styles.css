@@ -111,3 +111,10 @@ html[data-theme="dark"] .flowers-intro{background:radial-gradient(ellipse at cen
 #offeringDialog [hidden], #resumeOffering[hidden] { display: none; }
 
 .identity img{display:block;height:auto;flex-shrink:0}
+
+.day-grid button{aspect-ratio:auto;min-width:0;min-height:54px;padding:6px 2px;line-height:1.2}
+.day-grid time{display:block;font-size:.76rem;font-weight:normal;margin-top:3px}
+.day-grid button:disabled{background:#e6e4e1;color:#5d5b58;border-color:#c5c2bd;cursor:not-allowed}
+html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3bf;border-color:#64605b}
+#novena button:disabled{cursor:not-allowed}
+#novena button.btn:disabled{opacity:.55}

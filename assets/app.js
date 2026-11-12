@@ -86,13 +86,80 @@ async function openScripturePassage(ref){
     scriptureDialogBody.append(message,retry);
   }
 }
-$('dayScripture').addEventListener('click',()=>openScripturePassage(novena[state.day].ref));
+$('dayScripture').addEventListener('click',()=>{if(isNovenaDayOpen(state.day))openScripturePassage(novena[state.day].ref)});
 $('scriptureRef').addEventListener('click',()=>openScripturePassage(meditations[state.meditation][0]));
 function closeScripturePassage(){scriptureRequestId++;scriptureDialog.close()}
 $('closeScriptureDialog').addEventListener('click',closeScripturePassage);
 $('closeScriptureBottom').addEventListener('click',closeScripturePassage);
 scriptureDialog.addEventListener('close',()=>{scriptureRequestId++});
-function renderNovena(){$('dayTitle').textContent=`Day ${state.day+1} — ${novena[state.day].theme}`;$('dayProgress').textContent=`${state.completed.length} of 9 completed`;$('dayScripture').textContent=`Scripture: ${novena[state.day].ref} ↗`;$('dayReflection').textContent=novena[state.day].reflection;$('dayPrayer').textContent=novena[state.day].prayer;$('completeDay').textContent=state.completed.includes(state.day)?'✓ Day completed':'Mark day complete';$('dayGrid').innerHTML=novena.map((x,i)=>`<button type="button" data-day="${i}" class="${i===state.day?'selected ':''}${state.completed.includes(i)?'completed':''}" title="Day ${i+1}: ${html(x.theme)}" aria-label="Day ${i+1}: ${html(x.theme)}" aria-pressed="${i===state.day}">${i+1}</button>`).join('');store.set('selectedDay',state.day)}$('dayGrid').addEventListener('click',e=>{const b=e.target.closest('[data-day]');if(b){state.day=Number(b.dataset.day);renderNovena()}});$('prevDay').onclick=()=>{state.day=Math.max(0,state.day-1);renderNovena()};$('nextDay').onclick=()=>{state.day=Math.min(8,state.day+1);renderNovena()};$('completeDay').onclick=()=>{if(!state.completed.includes(state.day)){state.completed.push(state.day);store.set('completed',state.completed);toast('Novena day completed');syncCloud('progress')}renderNovena()};function displayPrayer(key){$('extraPrayer').textContent=prayers[key];document.querySelectorAll('[data-prayer]').forEach(e=>e.classList.toggle('selected',e.dataset.prayer===key))}document.querySelectorAll('[data-prayer]').forEach(e=>e.onclick=()=>displayPrayer(e.dataset.prayer));
+// Midnight in Cebu (UTC+08:00), regardless of the visitor's time zone.
+const novenaSchedule = novena.map((_, index) => {
+  const date = 7 + index;
+  const isoDate = '2027-01-' + String(date).padStart(2, '0');
+  return { date, isoDate, opensAt: Date.parse(isoDate + 'T00:00:00+08:00') };
+});
+let nextNovenaUnlock = Infinity;
+
+function isNovenaDayOpen(day, now = Date.now()) {
+  return now >= (novenaSchedule[day]?.opensAt ?? Infinity);
+}
+
+function renderNovena() {
+  const now = Date.now();
+  const nextDay = novenaSchedule.find(day => day.opensAt > now);
+  nextNovenaUnlock = nextDay?.opensAt ?? Infinity;
+  if (!isNovenaDayOpen(state.day, now)) state.day = 0;
+  const available = isNovenaDayOpen(state.day, now);
+  const day = novena[state.day];
+  const date = novenaSchedule[state.day].date;
+
+  $('dayTitle').textContent = available ? `Day ${state.day + 1} — January ${date}, 2027 · ${day.theme}` : '2027 Novena Schedule';
+  $('dayProgress').textContent = `${state.completed.filter(index => isNovenaDayOpen(index, now)).length} of 9 completed`;
+  $('novenaScheduleStatus').hidden = available;
+  $('novenaDayContent').hidden = !available;
+  $('dayScripture').textContent = `Scripture: ${day.ref} ↗`;
+  $('dayReflection').textContent = day.reflection;
+  $('dayPrayer').textContent = day.prayer;
+  $('completeDay').textContent = state.completed.includes(state.day) ? '✓ Day completed' : 'Mark day complete';
+  $('completeDay').disabled = !available;
+  $('prevDay').disabled = !isNovenaDayOpen(state.day - 1, now);
+  $('nextDay').disabled = !available || !isNovenaDayOpen(state.day + 1, now);
+  for (const form of ['novenaCandleForm', 'novenaFlowerForm']) {
+    $(form).querySelector('button[type="submit"]').disabled = !available;
+  }
+  $('dayGrid').innerHTML = novenaSchedule.map(({date, isoDate}, index) => {
+    const open = isNovenaDayOpen(index, now);
+    const selected = open && index === state.day;
+    const completed = open && state.completed.includes(index);
+    return `<button type="button" data-day="${index}" class="${selected ? 'selected ' : ''}${completed ? 'completed' : ''}" aria-pressed="${selected}" ${open ? '' : 'disabled'}><span>Day ${index + 1}</span><time datetime="${isoDate}">Jan ${date}</time></button>`;
+  }).join('');
+  if (available) store.set('selectedDay', state.day);
+}
+
+function selectNovenaDay(day) {
+  if (!isNovenaDayOpen(day)) return;
+  state.day = day;
+  renderNovena();
+}
+
+$('dayGrid').addEventListener('click', event => {
+  const button = event.target.closest('[data-day]');
+  if (button) selectNovenaDay(Number(button.dataset.day));
+});
+$('prevDay').onclick = () => selectNovenaDay(state.day - 1);
+$('nextDay').onclick = () => selectNovenaDay(state.day + 1);
+$('completeDay').onclick = () => {
+  if (!isNovenaDayOpen(state.day)) return;
+  if (!state.completed.includes(state.day)) {
+    state.completed.push(state.day);
+    store.set('completed', state.completed);
+    toast('Novena day completed');
+    syncCloud('progress');
+  }
+  renderNovena();
+};
+
+function displayPrayer(key){$('extraPrayer').textContent=prayers[key];document.querySelectorAll('[data-prayer]').forEach(e=>e.classList.toggle('selected',e.dataset.prayer===key))}document.querySelectorAll('[data-prayer]').forEach(e=>e.onclick=()=>displayPrayer(e.dataset.prayer));
 // One immutable timestamp per offering is the source of truth. The GIF supplies
 // only flame flicker; the wax level is derived from wall-clock time (not frame rate).
 const CANDLE_LIFETIME_MS=24*60*60*1000;
@@ -196,7 +263,14 @@ async function initCloud(){
 async function loadCloud(){if(!state.user||!state.supabase)return;try{const {data,error}=await state.supabase.from('stonino_profiles').select('candles,novena_candles,novena_flowers,intentions,completed').eq('user_id',state.user.id).maybeSingle();if(error)throw error;if(data){/* Preserve local guest data on sign-in by merging, not silently overwriting. */const merge=(a,b)=>[...new Map([...b,...a].map(x=>[x.id,x])).values()];state.candles=merge(state.candles,Array.isArray(data.candles)?data.candles:[]);state.novenaCandles=merge(state.novenaCandles,Array.isArray(data.novena_candles)?data.novena_candles:[]);state.novenaFlowers=merge(state.novenaFlowers,Array.isArray(data.novena_flowers)?data.novena_flowers:[]);state.intentions=merge(state.intentions,Array.isArray(data.intentions)?data.intentions:[]);state.completed=[...new Set([...state.completed,...(Array.isArray(data.completed)?data.completed:[])].map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<9))];store.set('candles',state.candles);store.set('novenaCandles',state.novenaCandles);store.set('novenaFlowers',state.novenaFlowers);store.set('intentions',state.intentions);store.set('completed',state.completed);renderCandles();renderNovenaCandles();renderNovenaFlowers();renderIntentions();renderNovena()}await syncCloud('all')}catch(e){console.warn(e);toast('Cloud sync unavailable; data remains in this browser')}}
 async function syncCloud(){if(!state.user||!state.supabase)return;try{const {error}=await state.supabase.from('stonino_profiles').upsert({user_id:state.user.id,candles:state.candles,novena_candles:state.novenaCandles,novena_flowers:state.novenaFlowers,intentions:state.intentions,completed:state.completed,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error)throw error}catch(e){console.warn(e);toast('Saved locally. Cloud sync needs attention.')}}
 async function accountAction(mode){if(!state.supabase){toast('Set up Supabase first. Guest access is already available.');return}const email=$('email').value.trim(),password=$('password').value;if(!email||!password){toast('Enter your email and password');return}try{const r=mode==='signUp'?await state.supabase.auth.signUp({email,password}):await state.supabase.auth.signInWithPassword({email,password});if(r.error)throw r.error;if(r.data?.user&&r.data?.session){state.user=r.data.user;await loadCloud()}accountView();toast(mode==='signUp'?'Account request submitted. Confirm email if required.':'Signed in');if(state.user)$('accountDialog').close()}catch(e){toast(e.message||'Unable to authenticate')}}$('signIn').onclick=()=>accountAction('signIn');$('signUp').onclick=()=>accountAction('signUp');$('resetPassword').onclick=async()=>{const email=$('email').value.trim();if(!email||!state.supabase)return toast('Configure cloud access and enter your email');try{const {error}=await state.supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;toast('If the address is registered, a reset email will be sent.')}catch(e){toast(e.message)}};$('signOut').onclick=async()=>{await state.supabase?.auth.signOut();state.user=null;accountView();toast('Signed out')};$('deleteAccount').onclick=async()=>{if(!state.user||!state.supabase)return;if(!confirm('Permanently delete your cloud account and ALL its devotional data? This cannot be undone.'))return;try{const {data}=await state.supabase.auth.getSession();const token=data?.session?.access_token;if(!token)throw Error('Please sign in again');const response=await fetch(config.deleteAccountEndpoint||'/.netlify/functions/delete-account',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({confirm:true})});if(!response.ok){let msg='Account deletion failed';try{msg=(await response.json()).error||msg}catch{}throw Error(msg)}await state.supabase.auth.signOut();state.user=null;state.candles=[];state.novenaCandles=[];state.novenaFlowers=[];state.intentions=[];state.completed=[];['candles','novenaCandles','novenaFlowers','intentions','completed'].forEach(k=>localStorage.removeItem(prefix+k));renderCandles();renderNovenaCandles();renderNovenaFlowers();renderIntentions();renderNovena();accountView();$('accountDialog').close();toast('Your account and its data have been deleted')}catch(e){toast(e.message||'Account deletion failed')}};
-language();setFont(state.font);renderNovena();displayPrayer('morning');renderCandles();renderNovenaCandles();renderNovenaFlowers();renderIntentions();renderMeditation();accountView();if(location.hash&&$(location.hash.slice(1))?.classList.contains('page'))nav(location.hash.slice(1));initCloud();setInterval(updateCandleClock,1000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateCandleClock()});
+language();setFont(state.font);renderNovena();displayPrayer('morning');renderCandles();renderNovenaCandles();renderNovenaFlowers();renderIntentions();renderMeditation();accountView();if(location.hash&&$(location.hash.slice(1))?.classList.contains('page'))nav(location.hash.slice(1));initCloud();function refreshDevotionalClock() {
+  updateCandleClock();
+  if (Date.now() >= nextNovenaUnlock) renderNovena();
+}
+setInterval(refreshDevotionalClock, 1000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshDevotionalClock();
+});
 (() => {
   const pendingKey = prefix + 'pendingGCashOffering';
   const dialog = $('offeringDialog');
@@ -293,6 +367,7 @@ language();setFont(state.font);renderNovena();displayPrayer('morning');renderCan
       event.preventDefault();
       const existing = pending();
       if (existing) return open(existing);
+      if (kind !== 'candle' && !isNovenaDayOpen(state.day)) return;
       if (settings.type) settings.render();
       if (state[settings.collection].length >= settings.cap) {
         return toast('Your offering display has reached its limit of ' + settings.cap + '.');
