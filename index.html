@@ -5,6 +5,9 @@
   <meta name="theme-color" content="#231914"><meta name="description" content="A Catholic devotional sanctuary honoring Señor Santo Niño de Cebu.">
   <title>Sto. Niño | Cebu Heritage Chapel</title>
   <link rel="stylesheet" href="assets/styles.css?v=2.9.0"><link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/install-icon-192.png">
+  <script defer src="assets/install.js"></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to main content</a>
@@ -26,7 +29,7 @@
 <section class="page active" id="sanctuary" aria-labelledby="homeTitle">
   <div class="hero">
     <div class="arch"><div class="arch-inner"><span class="tiny-cross">✝</span><div class="halo"></div><img class="holy-icon" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Original_Image_of_the_Santo_Ni%C3%B1o_de_Cebu-1.jpg/960px-Original_Image_of_the_Santo_Ni%C3%B1o_de_Cebu-1.jpg" alt="Photograph of the original venerated Santo Niño de Cebu statue at the Basilica" referrerpolicy="no-referrer"><div class="pedestal"><span>VIVA PIT SEÑOR!</span></div></div></div>
-    <div class="hero-text"><p class="eyebrow" data-i18n="welcome">WELCOME TO THE CHAPEL</p><h1 id="homeTitle">Señor Santo Niño<br><em>of Cebu</em></h1><p data-i18n="heroSub">Enter a quiet space of prayer before Jesus Christ, the Holy Child. Bring your gratitude, your burdens, and your hopes.</p><button class="btn gold" data-nav="novena" data-i18n="beginPrayer">Begin Devotion</button><p class="verse">“Let the little children come to me.” <span>— Matthew 19:14 (excerpt)</span></p></div>
+    <div class="hero-text"><p class="eyebrow" data-i18n="welcome">WELCOME TO THE CHAPEL</p><h1 id="homeTitle">Señor Santo Niño<br><em>of Cebu</em></h1><p data-i18n="heroSub">Enter a quiet space of prayer before Jesus Christ, the Holy Child. Bring your gratitude, your burdens, and your hopes.</p><button class="btn gold" data-nav="novena" data-i18n="beginPrayer">Begin Devotion</button><button class="btn outline" id="installApp" type="button" hidden>Install App</button><p class="verse">“Let the little children come to me.” <span>— Matthew 19:14 (excerpt)</span></p></div>
   </div>
   <div class="home-grid"><button class="quick-card" data-nav="novena"><span class="quick-icon">✧</span><strong data-i18n="navNovena">Novena & Prayers</strong><small data-i18n="quickNovena">Pray one day at a time</small></button><button class="quick-card" data-nav="candles"><span class="quick-icon">♨</span><strong data-i18n="navCandles">Light a Candle</strong><small data-i18n="quickCandle">Offer a symbolic flame</small></button><button class="quick-card" data-nav="intentions"><span class="quick-icon">♡</span><strong data-i18n="navIntentions">My Intentions</strong><small data-i18n="quickJournal">Keep a private prayer journal</small></button><button class="quick-card" data-nav="scripture"><span class="quick-icon">✝</span><strong data-i18n="navScripture">Scripture</strong><small data-i18n="quickScripture">Read and reflect</small></button></div>
   <div class="notice"><strong>A note on devotion:</strong> This digital chapel supports personal prayer. It does not replace Mass, the Sacraments, or parish life. The sanctuary photograph shows the original venerated Santo Niño de Cebu image. Photograph by Cofradiabsn (derived from a 2014 photograph), via Wikimedia Commons, licensed under CC BY 4.0. <a href="https://commons.wikimedia.org/wiki/File:Original_Image_of_the_Santo_Ni%C3%B1o_de_Cebu-1.jpg" target="_blank" rel="noopener noreferrer">Photo source and attribution</a>. <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">License</a>. The image loads from Wikimedia Commons and requires an internet connection.</div>
@@ -78,6 +81,13 @@
 <footer class="footer">For prayer and reflection • Prayer and Scripture are free • <a href="privacy.html">Privacy</a> • <a href="account-deletion.html">Delete Account</a> • <a href="https://www.crownmind.net" target="_blank" rel="noopener noreferrer">CrownMind Institute</a></footer>
 <nav class="bottom-nav" aria-label="Mobile navigation"><button data-nav="sanctuary">⌂<small>Home</small></button><button data-nav="novena">✧<small>Novena</small></button><button data-nav="candles">♨<small>Candles</small></button><button data-nav="intentions">♡<small>Prayers</small></button><button data-nav="settings">⚙<small>More</small></button></nav>
 </div>
+<dialog id="installHelp" class="scripture-dialog" aria-labelledby="installTitle">
+  <div class="dialog-head">
+    <h2 id="installTitle">Add Sto. Niño to your home screen</h2>
+    <form method="dialog"><button class="close" aria-label="Close install instructions">×</button></form>
+  </div>
+  <p id="installInstructions"></p>
+</dialog>
 <dialog id="scriptureDialog" class="scripture-dialog" aria-labelledby="scriptureDialogTitle">
   <div class="dialog-head"><h2 id="scriptureDialogTitle">Scripture Passage</h2><button type="button" id="closeScriptureDialog" class="close" aria-label="Close Scripture passage">×</button></div>
   <p class="scripture-translation">King James Version (KJV) · Public domain</p>
