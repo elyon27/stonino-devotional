@@ -309,7 +309,7 @@ language();setFont(state.font);renderNovena();displayPrayer('morning');renderCan
     draft = pending() || { ...draft, id: crypto.randomUUID() };
     localStorage.setItem(pendingKey, JSON.stringify(draft));
     resume.hidden = false;
-    $('offeringQR').src = 'assets/gcash-receive-qr.png';
+    $('offeringQR').src = qrPanel.querySelector('a[download]').href;
     $('gcashReference').value = '';
     qrPanel.hidden = false;
     showQR.hidden = true;
