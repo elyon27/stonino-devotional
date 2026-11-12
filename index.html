@@ -89,17 +89,22 @@
   <p id="offeringSummary"></p>
   <p id="offeringStatus" role="status" aria-live="polite"></p>
   <div id="offeringQRPanel" hidden>
-    <img id="offeringQR" width="220" height="220" alt="QR Ph payment code for ₱1">
-    <p class="hint">Scan the code in GCash. On this phone, save the QR image and upload it from the GCash QR scanner.</p>
-    <a id="downloadOfferingQR" download="sto-nino-payment-qr.png">Save QR image</a>
+    <img id="offeringQR" width="260" height="260" alt="Scan this GCash receive-money QR">
+    <p class="hint">Scan the QR in GCash, or save and upload the image in the GCash QR scanner. Enter ₱1.00 if the amount is blank. Check the recipient and amount before sending.</p>
+    <a href="assets/gcash-receive-qr.png" download="sto-nino-gcash-qr.png">Save QR image</a>
+    <form id="gcashReferenceForm">
+      <label for="gcashReference">GCash transaction reference</label>
+      <input id="gcashReference" required maxlength="40" autocomplete="off" autocapitalize="characters" pattern="[A-Za-z0-9\-]{8,40}">
+      <button class="btn gold full" type="submit">Submit payment reference</button>
+    </form>
   </div>
   <div class="button-row">
-    <button class="btn gold" type="button" id="startOfferingPayment">Show payment QR</button>
+    <button class="btn gold" type="button" id="startOfferingPayment">Show GCash QR</button>
     <button class="btn outline" type="button" id="checkOfferingPayment" hidden>Check payment</button>
   </div>
 </dialog>
 <dialog id="accountDialog"><div class="dialog-head"><h2>My Account</h2><button id="closeDialog" class="close" aria-label="Close account window">×</button></div><p id="accountInfo">You are browsing as a guest. Your intentions and candles are saved only in this browser.</p><div id="accountLoggedOut"><label for="email">Email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Password (6 characters minimum)"><div class="button-row"><button class="btn gold" id="signIn">Sign in</button><button class="btn outline" id="signUp">Create account</button></div><button class="linklike" id="resetPassword">Send password-reset email</button><p class="hint">Cloud account features require administrator Supabase setup. Guest access does not require an account.</p></div><div id="accountLoggedIn" hidden><p id="userEmail"></p><div class="button-row"><button class="btn outline" id="signOut">Sign out</button><button class="btn danger" id="deleteAccount">Delete account and cloud data</button></div><p class="hint">Cloud deletion is permanent. Export your data first if you wish to keep a copy.</p></div></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="assets/config.js"></script><script src="assets/app.js?v=2.9.0"></script>
+<script src="assets/config.js"></script><script src="assets/app.js?v=3.0.0"></script>
 </body></html>
 

@@ -198,7 +198,7 @@ async function syncCloud(){if(!state.user||!state.supabase)return;try{const {err
 async function accountAction(mode){if(!state.supabase){toast('Set up Supabase first. Guest access is already available.');return}const email=$('email').value.trim(),password=$('password').value;if(!email||!password){toast('Enter your email and password');return}try{const r=mode==='signUp'?await state.supabase.auth.signUp({email,password}):await state.supabase.auth.signInWithPassword({email,password});if(r.error)throw r.error;if(r.data?.user&&r.data?.session){state.user=r.data.user;await loadCloud()}accountView();toast(mode==='signUp'?'Account request submitted. Confirm email if required.':'Signed in');if(state.user)$('accountDialog').close()}catch(e){toast(e.message||'Unable to authenticate')}}$('signIn').onclick=()=>accountAction('signIn');$('signUp').onclick=()=>accountAction('signUp');$('resetPassword').onclick=async()=>{const email=$('email').value.trim();if(!email||!state.supabase)return toast('Configure cloud access and enter your email');try{const {error}=await state.supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;toast('If the address is registered, a reset email will be sent.')}catch(e){toast(e.message)}};$('signOut').onclick=async()=>{await state.supabase?.auth.signOut();state.user=null;accountView();toast('Signed out')};$('deleteAccount').onclick=async()=>{if(!state.user||!state.supabase)return;if(!confirm('Permanently delete your cloud account and ALL its devotional data? This cannot be undone.'))return;try{const {data}=await state.supabase.auth.getSession();const token=data?.session?.access_token;if(!token)throw Error('Please sign in again');const response=await fetch(config.deleteAccountEndpoint||'/.netlify/functions/delete-account',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({confirm:true})});if(!response.ok){let msg='Account deletion failed';try{msg=(await response.json()).error||msg}catch{}throw Error(msg)}await state.supabase.auth.signOut();state.user=null;state.candles=[];state.novenaCandles=[];state.novenaFlowers=[];state.intentions=[];state.completed=[];['candles','novenaCandles','novenaFlowers','intentions','completed'].forEach(k=>localStorage.removeItem(prefix+k));renderCandles();renderNovenaCandles();renderNovenaFlowers();renderIntentions();renderNovena();accountView();$('accountDialog').close();toast('Your account and its data have been deleted')}catch(e){toast(e.message||'Account deletion failed')}};
 language();setFont(state.font);renderNovena();displayPrayer('morning');renderCandles();renderNovenaCandles();renderNovenaFlowers();renderIntentions();renderMeditation();accountView();if(location.hash&&$(location.hash.slice(1))?.classList.contains('page'))nav(location.hash.slice(1));initCloud();setInterval(updateCandleClock,1000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateCandleClock()});
 (() => {
-  const pendingKey = prefix + 'pendingOffering';
+  const pendingKey = prefix + 'pendingGCashOffering';
   const dialog = $('offeringDialog');
   const status = $('offeringStatus');
   const showQR = $('startOfferingPayment');
@@ -215,7 +215,6 @@ language();setFont(state.font);renderNovena();displayPrayer('morning');renderCan
   };
   let draft;
   let busy = false;
-  let timer;
 
   function pending() {
     try { return JSON.parse(localStorage.getItem(pendingKey)); }
@@ -227,35 +226,39 @@ language();setFont(state.font);renderNovena();displayPrayer('morning');renderCan
     $('offeringSummary').textContent = kinds[order.kind].label +
       (order.day === undefined ? '' : ' · Day ' + (order.day + 1)) + ' · ₱1';
     qrPanel.hidden = true;
-    showQR.hidden = false;
-    checkButton.hidden = !order.id;
-    status.textContent = order.id ? 'Resume your checkout or check whether payment went through.' :
-      'Your offering will appear after payment is confirmed.';
+    showQR.hidden = Boolean(order.reference);
+    checkButton.hidden = !order.reference;
+    status.textContent = order.reference ? 'Your GCash payment is awaiting review. Return here to check its status.' :
+      'Your offering will appear after your GCash payment is verified.';
     if (!dialog.open) dialog.showModal();
   }
 
+  const endpoint = '/.netlify/functions/offering-payment';
+
   async function request(order, method) {
-    const response = await fetch('/.netlify/functions/offering-payment?id=' + order.id + '&kind=' + order.kind,
-      { method, cache: 'no-store', signal: AbortSignal.timeout(35000) });
-    if (response.status === 503) throw new Error('QR checkout is unavailable. Please try again later.');
+    const details = { id: order.id, kind: order.kind, reference: order.reference };
+    const response = await fetch(endpoint, {
+      method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(12000),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...details, action: method === 'GET' ? 'status' : 'submit' })
+    });
+    const result = await response.json();
     if (response.status === 404 && method === 'GET') return { status: 'not-created' };
-    if (!response.ok) throw new Error('Payment could not be checked. Please try again.');
-    return response.json();
+    if (!response.ok) throw new Error(result.error || 'Checkout is unavailable. Keep your GCash reference and try again.');
+    return result;
   }
 
   async function verify(order) {
     const result = await request(order, 'GET');
-    if (result.status === 'pending' || result.status === 'not-created') {
-      if (result.qrExpired) {
-        qrPanel.hidden = true;
-        status.textContent = 'The QR has expired. Checking for any payment already in progress…';
-        return;
-      }
-      status.textContent = result.status === 'pending' ? 'Waiting for payment confirmation…' :
-        'Select Show payment QR to continue.';
+    if (result.status === 'pending') {
+      status.textContent = 'Awaiting manual review. You can close this window and check again later.';
       return;
     }
-    clearInterval(timer);
+    if (result.status === 'not-created') {
+      await request(order, 'POST');
+      status.textContent = 'Reference submitted. Your payment is awaiting manual review.';
+      return;
+    }
     if (result.status === 'paid') {
       const { collection, render } = kinds[order.kind];
       const saved = store.get(collection, []);
@@ -268,8 +271,7 @@ language();setFont(state.font);renderNovena();displayPrayer('morning');renderCan
       $(kinds[order.kind].form).reset();
       toast('Payment confirmed. Your offering has been placed.');
       void syncCloud(collection);
-    } else if (result.status === 'expired') {
-      toast('The QR expired. Select your offering again for a new code.');
+
     } else {
       throw new Error('Payment status is unavailable.');
     }
@@ -302,29 +304,37 @@ language();setFont(state.font);renderNovena();displayPrayer('morning');renderCan
   }
 
   showQR.onclick = () => run(async () => {
+    const response = await fetch(endpoint + '?ready=1', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+    if (!response.ok) throw new Error('GCash checkout is unavailable. Please try again later.');
     draft = pending() || { ...draft, id: crypto.randomUUID() };
-    const order = draft;
-    localStorage.setItem(pendingKey, JSON.stringify(order));
+    localStorage.setItem(pendingKey, JSON.stringify(draft));
     resume.hidden = false;
-    checkButton.hidden = false;
-    status.textContent = 'Preparing your ₱1 QR code…';
-    const result = await request(order, 'POST');
-    if (!dialog.open || draft !== order) return;
-    if (!result.qr || Date.now() >= result.expires) return verify(order);
-    $('offeringQR').src = result.qr;
-    $('downloadOfferingQR').href = result.qr;
-    $('downloadOfferingQR').download = result.qr.startsWith('data:image/jpeg') ?
-      'sto-nino-payment-qr.jpg' : 'sto-nino-payment-qr.png';
+    $('offeringQR').src = 'assets/gcash-receive-qr.png';
+    $('gcashReference').value = '';
     qrPanel.hidden = false;
     showQR.hidden = true;
-    status.textContent = result.test ? 'Test checkout. Use the provider’s test tools.' :
-      'Pay ₱1 in GCash. Leave this window open to see confirmation.';
-    clearInterval(timer);
-    timer = setInterval(() => run(() => verify(order)), 5000);
+    status.textContent = 'Send ₱1 through GCash, then enter the reference from your receipt.';
   });
+  $('gcashReferenceForm').onsubmit = event => {
+    event.preventDefault();
+    void run(async () => {
+      const order = { ...draft, reference: $('gcashReference').value.trim().toUpperCase() };
+      // Save before posting so a reload or a lost response can recover the same request.
+      localStorage.setItem(pendingKey, JSON.stringify(order));
+      draft = order;
+      try {
+        await request(order, 'POST');
+      } catch (error) {
+        checkButton.hidden = false;
+        throw error;
+      }
+      qrPanel.hidden = true;
+      checkButton.hidden = false;
+      status.textContent = 'Reference submitted. Your payment is awaiting manual review.';
+    });
+  };
   checkButton.onclick = () => run(() => verify(draft));
   $('closeOffering').onclick = () => dialog.close();
-  dialog.addEventListener('close', () => clearInterval(timer));
   resume.onclick = () => { const order = pending(); if (order) open(order); };
   resume.hidden = !pending();
   window.addEventListener('storage', event => {

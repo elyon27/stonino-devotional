@@ -24,13 +24,13 @@ Open `index.html` in a browser. The site works without server or account for its
 3. The published URL serves `/privacy.html` and `/account-deletion.html` for Google Play app listing requirements. Replace placeholder privacy details if operation changes.
 4. Do not claim this is an official Basilica or Archdiocese app.
 
-## GCash QR Ph checkout
+## Direct GCash checkout
 
-Virtual candles, novena candles and bouquets each cost ₱1. PayMongo generates a single-use QR Ph code that visitors can scan with GCash. Prayers, Scripture and the journal are free. Netlify Blobs stores the order and payment confirmation. The payment request omits prayer intentions.
+Virtual candles, novena candles and bouquets each cost ₱1. The checkout displays the operator’s GCash Receive Money QR. A visitor sends ₱1 and submits the GCash transaction reference. Prayers, Scripture and the journal are free.
 
-Set `PAYMONGO_SECRET_KEY` and `PAYMONGO_PUBLIC_KEY` in Netlify’s environment variables for the **Functions** scope. Use matching keys from a PayMongo merchant account with online QR Ph enabled. Use test keys in a separate deploy context and live keys in production. Deploy after setting the variables. Keep the secret key out of GitHub and browser assets.
+Set `GCASH_REVIEW_TOKEN` as a secret environment variable in Netlify for the **Production / Functions** scope, then redeploy. Use a unique random token of at least 32 characters, such as a password manager’s 40-character generated password. Keep it in your password manager and out of GitHub. The QR stays hidden in checkout until this setting is present.
 
-Use Netlify Dev for local checkout testing. For production verification, check the deploy attached to the intended commit and verify that a ₱1 GCash payment adds exactly one offering. Configure a rate limit on the offering-payment function when available.
+Use `/gcash-review.html` to look up a reference from your own GCash history. Verify the received amount and wallet in GCash, then approve the matching request. Visitors use **Check payment** to place their offering after approval. The server accepts one request per reference. Netlify Blobs stores the reference digest, request identifier, offering type and review status. Prayer notes stay in the devotional app.
 
 ## Optional Supabase setup
 1. Reuse an existing Supabase project. Execute `supabase-schema.sql` in Supabase SQL Editor.
