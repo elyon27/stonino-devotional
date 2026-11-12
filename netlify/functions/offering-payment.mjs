@@ -3,6 +3,8 @@ import { getStore } from '@netlify/blobs';
 
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/;
 const referencePattern = /^[A-Z0-9-]{8,40}$/;
+const offeringAmountCentavos = 500;
+const legacyAmountCentavos = 100;
 const kinds = new Set(['candle', 'novena-candle', 'novena-flowers']);
 const digest = value => createHash('sha256').update(value).digest();
 const reply = (status, body) => Response.json(body, {
@@ -33,7 +35,7 @@ export default async function handler(request) {
     const store = getStore({ name: 'gcash-offering-reviews', consistency: 'strong' });
     const key = digest(ref).toString('hex');
     if (!admin && input.action !== 'status') {
-      const claim = { id, kind, submittedAt: new Date().toISOString() };
+      const claim = { id, kind, amountCentavos: offeringAmountCentavos, submittedAt: new Date().toISOString() };
       const result = await store.setJSON(key, claim, { onlyIfNew: true });
       if (!result.modified) {
         const existing = await store.get(key, { type: 'json' });
@@ -54,7 +56,8 @@ export default async function handler(request) {
       return reply(200, { status: 'paid', paidAt });
     }
     const status = order.paidAt ? { status: 'paid', paidAt: order.paidAt } : { status: 'pending' };
-    return reply(200, admin ? { ...status, id: order.id, kind: order.kind, submittedAt: order.submittedAt } : status);
+    return reply(200, admin ? { ...status, id: order.id, kind: order.kind, submittedAt: order.submittedAt,
+      amountCentavos: order.amountCentavos ?? legacyAmountCentavos } : status);
   } catch (error) {
     console.error('GCash offering storage:', error.name);
     return reply(502, { error: 'Checkout is temporarily unavailable. Keep your GCash reference and try again.' });

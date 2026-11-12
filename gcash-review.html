@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex">
   <title>GCash offering review · Sto. Niño Devotional</title>
   <link rel="stylesheet" href="assets/styles.css?v=2.9.1">
-  <script src="assets/gcash-review.js" defer></script>
+  <script src="assets/gcash-review.js?v=2" defer></script>
 
   <link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/chapel-icon-192.png">
@@ -22,14 +22,14 @@
 <main class="panel" style="max-width:36rem;margin:2rem auto">
   <a href="/">Return to the chapel</a>
   <h1>GCash payment review</h1>
-  <p>Look up the reference from your GCash transaction history. Verify that ₱1 was credited to your wallet before approving.</p>
+  <p>Look up the reference from your GCash transaction history. Verify that the amount shown for the request was credited to your GCash wallet before approving.</p>
   <form id="reviewForm">
     <label for="reviewToken">Review token</label>
     <input id="reviewToken" type="password" autocomplete="off" required>
     <label for="reviewReference">GCash transaction reference</label>
     <input id="reviewReference" autocomplete="off" maxlength="40" required>
     <button class="btn outline" id="lookupReview" type="submit">Look up payment</button>
-    <button class="btn gold" id="approveReview" type="button" hidden>Approve verified ₱1 payment</button>
+    <button class="btn gold" id="approveReview" type="button" hidden>Approve verified payment</button>
   </form>
   <p id="reviewStatus" role="status" aria-live="polite"></p>
 </main>

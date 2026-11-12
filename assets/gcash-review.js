@@ -41,8 +41,10 @@ form.onsubmit = event => {
     const result = await request('POST', { reference: value });
     review = { reference: value, expectedId: result.id };
     const kind = labels[result.kind];
-    status.textContent = kind + ' · ' + (result.status === 'paid' ? 'Already approved' :
+    const amount = '₱' + (result.amountCentavos / 100).toFixed(2);
+    status.textContent = kind + ' · ' + amount + ' · ' + (result.status === 'paid' ? 'Already approved' :
       'Awaiting approval · Submitted ' + new Date(result.submittedAt).toLocaleString());
+    approve.textContent = 'Approve verified ' + amount + ' payment';
     approve.hidden = result.status !== 'pending';
   });
 };

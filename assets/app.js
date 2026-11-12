@@ -201,10 +201,10 @@ language();setFont(state.font);renderNovena();displayPrayer('morning');renderCan
   const pendingKey = prefix + 'pendingGCashOffering';
   const dialog = $('offeringDialog');
   const status = $('offeringStatus');
-  const showQR = $('startOfferingPayment');
+  const showPayment = $('startOfferingPayment');
   const checkButton = $('checkOfferingPayment');
   const resume = $('resumeOffering');
-  const qrPanel = $('offeringQRPanel');
+  const paymentPanel = $('offeringPaymentPanel');
   const kinds = {
     candle: { form: 'candleForm', field: 'candleFor', type: 'candleType',
       collection: 'candles', label: 'Virtual candle', cap: 24, render: renderCandles },
@@ -224,9 +224,9 @@ language();setFont(state.font);renderNovena();displayPrayer('morning');renderCan
   function open(order) {
     draft = order;
     $('offeringSummary').textContent = kinds[order.kind].label +
-      (order.day === undefined ? '' : ' · Day ' + (order.day + 1)) + ' · ₱1';
-    qrPanel.hidden = true;
-    showQR.hidden = Boolean(order.reference);
+      (order.day === undefined ? '' : ' · Day ' + (order.day + 1)) + (order.reference ? '' : ' · ₱5');
+    paymentPanel.hidden = true;
+    showPayment.hidden = Boolean(order.reference);
     checkButton.hidden = !order.reference;
     status.textContent = order.reference ? 'Your GCash payment is awaiting review. Return here to check its status.' :
       'Your offering will appear after your GCash payment is verified.';
@@ -282,10 +282,10 @@ language();setFont(state.font);renderNovena();displayPrayer('morning');renderCan
 
   async function run(task) {
     if (busy || !dialog.open) return;
-    busy = showQR.disabled = checkButton.disabled = true;
+    busy = showPayment.disabled = checkButton.disabled = true;
     try { await task(); }
     catch (error) { status.textContent = error.message || 'Try checking payment again.'; }
-    finally { busy = showQR.disabled = checkButton.disabled = false; }
+    finally { busy = showPayment.disabled = checkButton.disabled = false; }
   }
 
   for (const [kind, settings] of Object.entries(kinds)) {
@@ -303,18 +303,28 @@ language();setFont(state.font);renderNovena();displayPrayer('morning');renderCan
     };
   }
 
-  showQR.onclick = () => run(async () => {
+  showPayment.onclick = () => run(async () => {
     const response = await fetch(endpoint + '?ready=1', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
     if (!response.ok) throw new Error('GCash checkout is unavailable. Please try again later.');
     draft = pending() || { ...draft, id: crypto.randomUUID() };
     localStorage.setItem(pendingKey, JSON.stringify(draft));
     resume.hidden = false;
-    $('offeringQR').src = qrPanel.querySelector('a[download]').href;
     $('gcashReference').value = '';
-    qrPanel.hidden = false;
-    showQR.hidden = true;
-    status.textContent = 'Send ₱1 through GCash, then enter the reference from your receipt.';
+    paymentPanel.hidden = false;
+    showPayment.hidden = true;
+    status.textContent = 'Send ₱5 through GCash Express Send, then enter your transaction reference.';
   });
+  $('copyGCashRecipient').onclick = async () => {
+    const recipient = $('gcashRecipient');
+    try {
+      await navigator.clipboard.writeText(recipient.value);
+      status.textContent = 'Number copied. Open GCash and choose Express Send.';
+    } catch {
+      recipient.focus();
+      recipient.select();
+      status.textContent = 'Copy the selected number, then open GCash and choose Express Send.';
+    }
+  };
   $('gcashReferenceForm').onsubmit = event => {
     event.preventDefault();
     void run(async () => {
@@ -328,7 +338,7 @@ language();setFont(state.font);renderNovena();displayPrayer('morning');renderCan
         checkButton.hidden = false;
         throw error;
       }
-      qrPanel.hidden = true;
+      paymentPanel.hidden = true;
       checkButton.hidden = false;
       status.textContent = 'Reference submitted. Your payment is awaiting manual review.';
     });

@@ -26,11 +26,11 @@ Open `index.html` in a browser. The site works without server or account for its
 
 ## Direct GCash checkout
 
-Virtual candles, novena candles and bouquets each cost ₱1. The checkout displays the operator’s GCash Receive Money QR. A visitor sends ₱1 and submits the GCash transaction reference. Prayers, Scripture and the journal are free.
+Virtual candles, novena candles and bouquets each cost ₱5. The checkout displays the receiving number for GCash Express Send. A visitor sends ₱5 directly in GCash and submits the transaction reference for manual review. Prayers, Scripture and the journal are free.
 
-Set `GCASH_REVIEW_TOKEN` as a secret environment variable in Netlify for the **Production / Functions** scope, then redeploy. Use a unique random token of at least 32 characters, such as a password manager’s 40-character generated password. Keep it in your password manager and out of GitHub. The QR stays hidden in checkout until this setting is present.
+Set `GCASH_REVIEW_TOKEN` as a secret environment variable in Netlify for the **Production / Functions** scope, then redeploy. Use a unique random token of at least 32 characters, such as a password manager’s 40-character generated password. Keep it in your password manager and out of GitHub. The payment instructions stay hidden in checkout until this setting is present.
 
-Use `/gcash-review.html` to look up a reference from your own GCash history. Verify the received amount and wallet in GCash, then approve the matching request. Visitors use **Check payment** to place their offering after approval. The server accepts one request per reference. Netlify Blobs stores the reference digest, request identifier, offering type and review status. Prayer notes stay in the devotional app.
+Use `/gcash-review.html` to look up a reference from your own GCash history. Verify the expected amount shown for the request and the receiving wallet in GCash, then approve the matching request. Visitors use **Check payment** to place their offering after approval. The server accepts one request per reference. Netlify Blobs stores the reference digest, request identifier, offering type and review status. Prayer notes stay in the devotional app.
 
 ## Optional Supabase setup
 1. Reuse an existing Supabase project. Execute `supabase-schema.sql` in Supabase SQL Editor.
