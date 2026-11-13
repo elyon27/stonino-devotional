@@ -257,9 +257,11 @@ $('backToSignIn').onclick = () => {
   setRegistrationMode(false);
 };
 $('authBtn').onclick = () => {
-  setRegistrationMode(!state.user && localStorage.getItem(registrationPreference) === 'yes');
+  const openRegistration = !state.user && localStorage.getItem(registrationPreference) === 'yes';
+  setRegistrationMode(openRegistration);
+  $('accountDisplayName').value = $('devotionalUserName').textContent;
   $('accountDialog').showModal();
-  if (registering) $('displayName').focus();
+  if (openRegistration) $('displayName').focus();
 };$('closeDialog').onclick=()=>$('accountDialog').close();$('accountDialog').addEventListener('click',e=>{if(e.target===$('accountDialog'))$('accountDialog').close()});
 function accountView(){$('accountLoggedOut').hidden=!!state.user;$('accountLoggedIn').hidden=!state.user;$('accountInfo').textContent=state.user?'Your devotional data can be synchronized to your private cloud account.':'You are browsing as a guest. Your intentions and candles are saved only in this browser.';$('userEmail').textContent=state.user?.email||'';
   const name = state.user?.user_metadata?.stonino_display_name;
@@ -267,6 +269,37 @@ function accountView(){$('accountLoggedOut').hidden=!!state.user;$('accountLogge
   headerName.textContent = typeof name === 'string' ? name.trim().slice(0, 80) : '';
   headerName.hidden = !headerName.textContent;
 }
+$('accountNameForm').onsubmit = async (event) => {
+  event.preventDefault();
+  if (!state.user || !state.supabase) return;
+  const input = $('accountDisplayName');
+  const name = input.value.trim();
+  if (!name || name.length > 80) {
+    toast('Enter your name using up to 80 characters.');
+    input.focus();
+    return;
+  }
+
+  const userId = state.user.id;
+  const button = event.currentTarget.querySelector('button[type="submit"]');
+  if (button.disabled) return;
+  button.disabled = true;
+  try {
+    const { data, error } = await state.supabase.auth.updateUser({
+      data: { stonino_display_name: name }
+    });
+    if (error) throw error;
+    if (state.user?.id !== userId) return;
+    state.user = data.user;
+    input.value = name;
+    accountView();
+    toast('Name saved.');
+  } catch (error) {
+    toast(error.message || 'Unable to save your name.');
+  } finally {
+    button.disabled = false;
+  }
+};
 async function initCloud(){
   // IMPORTANT: Guest novena and flower offerings must never wait for an online CDN.
   if(!config.supabaseUrl||!config.supabaseAnonKey)return;
