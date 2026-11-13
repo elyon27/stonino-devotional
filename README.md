@@ -12,7 +12,7 @@
 - English, Cebuano and Filipino **navigation**; English prayers and reflections in this draft.
 - Adjustable text size and reduced-motion support.
 - Guest mode with browser storage; export and deletion.
-- Optional Supabase email/password accounts and private sync, with deletion scoped to Sto. Niño devotional data.
+- Optional Supabase email/password accounts and private sync, with Sto. Niño profile deletion.
 - Public `privacy.html` and `account-deletion.html`.
 
 ## Quick start
@@ -36,11 +36,11 @@ Use `/gcash-review.html` to look up a reference from your own GCash history. Ver
 1. Reuse an existing Supabase project. Execute `supabase-schema.sql` in Supabase SQL Editor.
 2. Configure URL and public **anon/publishable** key in `assets/config.js`. Never paste the service-role key here.
 3. In Supabase Auth configure Email provider, email-confirmation templates, Site URL and redirect allowlist to your Netlify domain.
-4. Add Netlify environment variables `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` only if supporting older app versions that call the **server-side** Sto. Niño data deletion function. Keep the service-role secret out of GitHub and front-end code.
+4. Add Netlify environment variables `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` only for older clients that call the **server-side** profile deletion function. Keep the service-role secret out of GitHub and front-end code.
 5. Make sure Supabase Auth email delivery and Netlify functions work before enabling public signups. A public CAPTCHA/rate-limit strategy and monitoring are recommended.
-6. Test sign-up, sign-in, guest-data merge, syncing, sign-out, password-reset email and Sto. Niño data deletion with test accounts before Google Play submission.
+6. Test sign-up, sign-in, guest-data merge, syncing, sign-out, password-reset email and account deletion with test accounts before Google Play submission.
 
-**Important prototype limitation:** Guest data is local and device-specific. Cloud sync writes the user's whole journal as private JSON in a single row; it is suited to an initial small-scale trial, not high-volume collaborative use. Deletion cannot be performed from a static host without deploying the included server function. On initial sign-in, local guest data merges with cloud data. Avoid shared devices for sensitive intentions. Public prayer sharing is intentionally excluded.
+**Important prototype limitation:** Guest data is local and device-specific. Cloud sync writes the user's whole journal as private JSON in a single row; it is suited to an initial small-scale trial, not high-volume collaborative use. Profile deletion uses Supabase row-level security. On initial sign-in, local guest data merges with cloud data. Avoid shared devices for sensitive intentions. Public prayer sharing is intentionally excluded.
 
 ## Faithful presentation and permissions
 All included prayers and reflections are newly written for this draft. A local parish or competent Catholic reviewer should review theology and translations before release. The chapel's image is an original **stylized** symbol rather than the historical Santo Niño image. If replacing it with official Basilica photography or copying the official novena, seek permission and use correct attribution. An online devotional act does not substitute for sacramental participation.

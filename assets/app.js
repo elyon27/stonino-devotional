@@ -243,8 +243,30 @@ function renderNovenaFlowers(){
 function renderIntentions(){$('intentionEmpty').hidden=!!state.intentions.length;$('intentionList').innerHTML=state.intentions.map(x=>`<article class="journal-entry"><h4>${html(x.title)}</h4><time>${html(new Date(x.created_at).toLocaleDateString())}</time><p>${html(x.body)}</p><button type="button" data-delete="${html(x.id)}">Delete intention</button></article>`).join('')}$('intentionForm').onsubmit=async e=>{e.preventDefault();const title=$('intentionName').value.trim(),body=$('intentionBody').value.trim();if(!title||!body)return;state.intentions.unshift({id:uid(),title,body,created_at:new Date().toISOString()});store.set('intentions',state.intentions);renderIntentions();e.target.reset();toast('Private intention saved');await syncCloud('intentions')};$('intentionList').addEventListener('click',async e=>{const b=e.target.closest('[data-delete]');if(!b||!confirm('Delete this prayer intention permanently?'))return;state.intentions=state.intentions.filter(x=>x.id!==b.dataset.delete);store.set('intentions',state.intentions);renderIntentions();await syncCloud('intentions');toast('Intention deleted')});
 function renderMeditation(){const m=meditations[state.meditation];$('scriptureCount').textContent=`Meditation ${state.meditation+1} of ${meditations.length}`;$('scriptureRef').textContent=m[0]+' ↗';$('scriptureTheme').textContent=m[1];$('scriptureReflection').textContent=m[2]}$('prevMeditation').onclick=()=>{state.meditation=(state.meditation+meditations.length-1)%meditations.length;renderMeditation()};$('nextMeditation').onclick=()=>{state.meditation=(state.meditation+1)%meditations.length;renderMeditation()};
 function exportData(){const payload={exported_at:new Date().toISOString(),format:'stonino-v1',candles:state.candles,novenaCandles:state.novenaCandles,novenaFlowers:state.novenaFlowers,intentions:state.intentions,completed:state.completed};const a=document.createElement('a');const u=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.href=u;a.download='sto-nino-private-data.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),5000)}$('exportData').onclick=exportData;$('clearData').onclick=async()=>{if(!confirm('Delete ALL guest candles, novena candles, intentions, and novena progress from this browser?'))return;state.candles=[];state.novenaCandles=[];state.novenaFlowers=[];state.intentions=[];state.completed=[];['candles','novenaCandles','novenaFlowers','intentions','completed','selectedDay'].forEach(k=>localStorage.removeItem(prefix+k));state.day=0;renderCandles();renderNovenaCandles();renderNovenaFlowers();renderIntentions();renderNovena();if(state.user)await syncCloud('all');toast('Local devotional data deleted')};
-$('authBtn').onclick=()=>$('accountDialog').showModal();$('closeDialog').onclick=()=>$('accountDialog').close();$('accountDialog').addEventListener('click',e=>{if(e.target===$('accountDialog'))$('accountDialog').close()});
-function accountView(){$('accountLoggedOut').hidden=!!state.user;$('accountLoggedIn').hidden=!state.user;$('accountInfo').textContent=state.user?'Your devotional data can be synchronized to your private cloud account.':'You are browsing as a guest. Your intentions and candles are saved only in this browser.';$('userEmail').textContent=state.user?.email||''}
+let registering = false;
+const registrationPreference = prefix + 'openRegistration';
+function setRegistrationMode(enabled) {
+  registering = enabled;
+  $('registrationName').hidden = !enabled;
+  $('backToSignIn').hidden = !enabled;
+  $('signIn').hidden = enabled;
+  $('resetPassword').hidden = enabled;
+  $('password').autocomplete = enabled ? 'new-password' : 'current-password';
+}
+$('backToSignIn').onclick = () => {
+  localStorage.removeItem(registrationPreference);
+  setRegistrationMode(false);
+};
+$('authBtn').onclick = () => {
+  setRegistrationMode(!state.user && localStorage.getItem(registrationPreference) === 'yes');
+  $('accountDialog').showModal();
+};$('closeDialog').onclick=()=>$('accountDialog').close();$('accountDialog').addEventListener('click',e=>{if(e.target===$('accountDialog'))$('accountDialog').close()});
+function accountView(){$('accountLoggedOut').hidden=!!state.user;$('accountLoggedIn').hidden=!state.user;$('accountInfo').textContent=state.user?'Your devotional data can be synchronized to your private cloud account.':'You are browsing as a guest. Your intentions and candles are saved only in this browser.';$('userEmail').textContent=state.user?.email||'';
+  const name = state.user?.user_metadata?.stonino_display_name;
+  const headerName = $('devotionalUserName');
+  headerName.textContent = typeof name === 'string' ? name.trim().slice(0, 80) : '';
+  headerName.hidden = !headerName.textContent;
+}
 async function initCloud(){
   // IMPORTANT: Guest novena and flower offerings must never wait for an online CDN.
   if(!config.supabaseUrl||!config.supabaseAnonKey)return;
@@ -264,9 +286,15 @@ let deletingDevotionalData = false;
 const activeDevotionalSaves = new Set();
 async function loadCloud(){if(!state.user||!state.supabase)return;try{const {data,error}=await state.supabase.from('stonino_profiles').select('candles,novena_candles,novena_flowers,intentions,completed').eq('user_id',state.user.id).maybeSingle();if(deletingDevotionalData)return;if(error)throw error;if(data){/* Preserve local guest data on sign-in by merging, not silently overwriting. */const merge=(a,b)=>[...new Map([...b,...a].map(x=>[x.id,x])).values()];state.candles=merge(state.candles,Array.isArray(data.candles)?data.candles:[]);state.novenaCandles=merge(state.novenaCandles,Array.isArray(data.novena_candles)?data.novena_candles:[]);state.novenaFlowers=merge(state.novenaFlowers,Array.isArray(data.novena_flowers)?data.novena_flowers:[]);state.intentions=merge(state.intentions,Array.isArray(data.intentions)?data.intentions:[]);state.completed=[...new Set([...state.completed,...(Array.isArray(data.completed)?data.completed:[])].map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<9))];store.set('candles',state.candles);store.set('novenaCandles',state.novenaCandles);store.set('novenaFlowers',state.novenaFlowers);store.set('intentions',state.intentions);store.set('completed',state.completed);renderCandles();renderNovenaCandles();renderNovenaFlowers();renderIntentions();renderNovena()}await syncCloud('all')}catch(e){console.warn(e);toast('Cloud sync unavailable; data remains in this browser')}}
 async function syncCloud(){if(!state.user||!state.supabase||deletingDevotionalData)return;const save=Promise.resolve(state.supabase.from('stonino_profiles').upsert({user_id:state.user.id,candles:state.candles,novena_candles:state.novenaCandles,novena_flowers:state.novenaFlowers,intentions:state.intentions,completed:state.completed,updated_at:new Date().toISOString()},{onConflict:'user_id'}));activeDevotionalSaves.add(save);try{const {error}=await save;if(error)throw error}catch(e){console.warn(e);toast('Saved locally. Cloud sync needs attention.')}finally{activeDevotionalSaves.delete(save)}}
-async function accountAction(mode){if(!state.supabase){toast('Set up Supabase first. Guest access is already available.');return}const email=$('email').value.trim(),password=$('password').value;if(!email||!password){toast('Enter your email and password');return}try{const r=mode==='signUp'?await state.supabase.auth.signUp({email,password}):await state.supabase.auth.signInWithPassword({email,password});if(r.error)throw r.error;if(r.data?.user&&r.data?.session){state.user=r.data.user;await loadCloud()}accountView();toast(mode==='signUp'?'Account request submitted. Confirm email if required.':'Signed in');if(state.user)$('accountDialog').close()}catch(e){toast(e.message||'Unable to authenticate')}}$('signIn').onclick=()=>accountAction('signIn');$('signUp').onclick=()=>accountAction('signUp');$('resetPassword').onclick=async()=>{const email=$('email').value.trim();if(!email||!state.supabase)return toast('Configure cloud access and enter your email');try{const {error}=await state.supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;toast('If the address is registered, a reset email will be sent.')}catch(e){toast(e.message)}};$('signOut').onclick=async()=>{await state.supabase?.auth.signOut();state.user=null;accountView();toast('Signed out')};$('deleteAccount').onclick = async () => {
+async function accountAction(mode){if(!state.supabase){toast('Set up Supabase first. Guest access is already available.');return}const email=$('email').value.trim(),password=$('password').value;if(!email||!password){toast('Enter your email and password');return}const name = $('displayName').value.trim();
+if (mode === 'signUp' && (!name || name.length > 80)) {
+  toast('Enter your name using up to 80 characters.');
+  $('displayName').focus();
+  return;
+}
+try{const r=mode==='signUp'?await state.supabase.auth.signUp({email,password,options:{data:{stonino_display_name:name}}}):await state.supabase.auth.signInWithPassword({email,password});if(r.error)throw r.error;localStorage.removeItem(registrationPreference);if(r.data?.user&&r.data?.session){state.user=r.data.user;await loadCloud()}accountView();toast(mode==='signUp'?'Account request submitted. Confirm email if required.':'Signed in');if(state.user)$('accountDialog').close()}catch(e){toast(e.message||'Unable to authenticate')}}$('signIn').onclick=()=>accountAction('signIn');$('signUp').onclick=()=>{if(registering)return accountAction('signUp');setRegistrationMode(true);$('displayName').focus()};$('resetPassword').onclick=async()=>{const email=$('email').value.trim();if(!email||!state.supabase)return toast('Configure cloud access and enter your email');try{const {error}=await state.supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;toast('If the address is registered, a reset email will be sent.')}catch(e){toast(e.message)}};$('signOut').onclick=async()=>{await state.supabase?.auth.signOut();state.user=null;accountView();toast('Signed out')};$('deleteAccount').onclick = async () => {
   if (!state.user || !state.supabase || deletingDevotionalData) return;
-  if (!confirm('Permanently delete your Sto. Niño devotional data from the cloud and this browser? Your shared CrownMind sign-in will stay active.')) return;
+  if (!confirm('Delete your Sto. Niño Devotional profile and devotional data, and sign out of this app? Your CrownMind login and access to other apps will be preserved.')) return;
 
   const userId = state.user.id;
   const button = $('deleteAccount');
@@ -286,10 +314,19 @@ async function accountAction(mode){if(!state.supabase){toast('Set up Supabase fi
     renderNovenaFlowers();
     renderIntentions();
     renderNovena();
+    localStorage.setItem(registrationPreference, 'yes');
+    const { error: signOutError } = await state.supabase.auth.signOut({ scope: 'local' });
+    if (signOutError) {
+      toast('Your Sto. Niño profile was deleted. Use Sign out to clear this browser session.');
+      return;
+    }
+    state.user = null;
+    for (const field of ['displayName', 'email', 'password']) $(field).value = '';
+    accountView();
     $('accountDialog').close();
-    toast('Your Sto. Niño devotional data was deleted.');
+    toast('Your Sto. Niño profile was deleted and you were signed out.');
   } catch (error) {
-    toast(error.message || 'Sto. Niño data deletion failed.');
+    toast(error.message || 'Account deletion failed.');
   } finally {
     deletingDevotionalData = button.disabled = false;
   }
