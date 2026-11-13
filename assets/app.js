@@ -247,6 +247,8 @@ let registering = false;
 const registrationPreference = prefix + 'openRegistration';
 function setRegistrationMode(enabled) {
   registering = enabled;
+  $('accountTitle').textContent = enabled ? 'Create account' : 'My Account';
+  $('displayName').required = enabled;
   $('registrationName').hidden = !enabled;
   $('backToSignIn').hidden = !enabled;
   $('signIn').hidden = enabled;
@@ -260,6 +262,7 @@ $('backToSignIn').onclick = () => {
 $('authBtn').onclick = () => {
   setRegistrationMode(!state.user && localStorage.getItem(registrationPreference) === 'yes');
   $('accountDialog').showModal();
+  if (registering) $('displayName').focus();
 };$('closeDialog').onclick=()=>$('accountDialog').close();$('accountDialog').addEventListener('click',e=>{if(e.target===$('accountDialog'))$('accountDialog').close()});
 function accountView(){$('accountLoggedOut').hidden=!!state.user;$('accountLoggedIn').hidden=!state.user;$('accountInfo').textContent=state.user?'Your devotional data can be synchronized to your private cloud account.':'You are browsing as a guest. Your intentions and candles are saved only in this browser.';$('userEmail').textContent=state.user?.email||'';
   const name = state.user?.user_metadata?.stonino_display_name;

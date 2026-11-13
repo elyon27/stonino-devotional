@@ -124,7 +124,7 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   #sanctuary .arch { height: clamp(280px, 58vh, 450px); }
 }
 
-.devotional-user-name { flex: 1 1 100%; color: var(--ivory); overflow-wrap: anywhere; font-weight: bold; }
+.devotional-user-name { flex: 0 0 100%; min-width: 0; text-align: center; color: var(--ivory); overflow-wrap: anywhere; font-weight: bold; }
 [hidden]#devotionalUserName, #accountLoggedOut [hidden] { display: none; }
 
 .topbar { flex-wrap: wrap; }
