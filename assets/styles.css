@@ -108,7 +108,7 @@ html[data-theme="dark"] .flowers-intro{background:radial-gradient(ellipse at cen
 .meditation-reference-heading .scripture-reference{font-family:inherit;font-size:inherit;margin:0 0 4px;}
 #offeringQRPanel { text-align: center; margin: 1rem 0; }
 #offeringQR { display: block; margin: 0 auto .75rem; max-width: 100%; height: auto; padding: .5rem; background: white; border-radius: .6rem; }
-#offeringDialog [hidden], #resumeOffering[hidden] { display: none; }
+#offeringDialog [hidden] { display: none; }
 
 .identity img{display:block;height:auto;flex-shrink:0}
 

@@ -277,7 +277,6 @@ document.addEventListener('visibilitychange', () => {
   const status = $('offeringStatus');
   const showPayment = $('startOfferingPayment');
   const checkButton = $('checkOfferingPayment');
-  const resume = $('resumeOffering');
   const paymentPanel = $('offeringPaymentPanel');
   const kinds = {
     candle: { form: 'candleForm', field: 'candleFor', type: 'candleType',
@@ -350,7 +349,6 @@ document.addEventListener('visibilitychange', () => {
       throw new Error('Payment status is unavailable.');
     }
     if (pending()?.id === order.id) localStorage.removeItem(pendingKey);
-    resume.hidden = !pending();
     if (dialog.open) dialog.close();
   }
 
@@ -383,7 +381,6 @@ document.addEventListener('visibilitychange', () => {
     if (!response.ok) throw new Error('GCash checkout is unavailable. Please try again later.');
     draft = pending() || { ...draft, id: crypto.randomUUID() };
     localStorage.setItem(pendingKey, JSON.stringify(draft));
-    resume.hidden = false;
     $('gcashReference').value = '';
     paymentPanel.hidden = false;
     showPayment.hidden = true;
@@ -420,11 +417,6 @@ document.addEventListener('visibilitychange', () => {
   };
   checkButton.onclick = () => run(() => verify(draft));
   $('closeOffering').onclick = () => dialog.close();
-  resume.onclick = () => { const order = pending(); if (order) open(order); };
-  resume.hidden = !pending();
-  window.addEventListener('storage', event => {
-    if (event.key === pendingKey) resume.hidden = !pending();
-  });
 })();
 })();
 
