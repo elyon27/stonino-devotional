@@ -13,9 +13,11 @@
   };
 
   const showHelp = () => {
-    instructions.textContent = isAppleMobile
+    const message = isAppleMobile
       ? 'Open this page in Safari. Tap Share, then Add to Home Screen. If shown, turn on Open as Web App, then tap Add.'
       : 'Open this page in Chrome or your regular browser. In the browser menu, choose Install app or Add to Home screen, then confirm.';
+    instructions.textContent = document.documentElement.lang === "ceb"
+      ? window.stoninoCebuano.messages[message] : message;
     if (!help.open) help.showModal();
   };
 

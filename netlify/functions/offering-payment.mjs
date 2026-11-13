@@ -11,19 +11,45 @@ const reply = (status, body) => Response.json(body, {
   status, headers: { 'Cache-Control': 'no-store' }
 });
 
+// Pause new checkout requests while keeping existing reviews available.
+const checkoutEnabled = false;
+
 export default async function handler(request) {
   if (request.headers.get('sec-fetch-site') === 'cross-site') return reply(403, {});
   const token = process.env.GCASH_REVIEW_TOKEN ?? '';
   if (token.length < 32) return reply(503, { error: 'GCash checkout is unavailable.' });
   const url = new URL(request.url);
-  if (request.method === 'GET' && url.searchParams.has('ready')) return reply(200, { ready: true });
-  if (!['POST', 'PUT'].includes(request.method)) return reply(405, {});
+  const ready = request.method === 'GET' && url.searchParams.has('ready');
+  if (!ready && !['POST', 'PUT'].includes(request.method)) return reply(405, {});
   const admin = url.searchParams.has('review');
+  if (!checkoutEnabled && ready) return reply(503, { error: 'GCash checkout is paused.' });
   if (admin && !timingSafeEqual(digest('Bearer ' + token), digest(request.headers.get('authorization') ?? ''))) {
     return reply(401, {});
   }
+  let userId;
+  if (!admin) {
+    const bearer = request.headers.get('authorization');
+    if (!bearer?.startsWith('Bearer ')) return reply(401, { error: 'Please sign in again.' });
+    const project = process.env.SUPABASE_URL || 'https://ooxuleheoijrolfxqlju.supabase.co';
+    const apiKey = process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_4RBWDj3boR-Fi5aRaGrhyQ_fQ_0ui_W';
+    try {
+      const response = await fetch(new URL('/auth/v1/user', project), {
+        headers: { Authorization: bearer, apikey: apiKey }, signal: AbortSignal.timeout(6000)
+      });
+      if (!response.ok) return reply(401, { error: 'Please sign in again.' });
+      const user = await response.json();
+      if (!user.id || user.is_anonymous) return reply(401, { error: 'Please sign in again.' });
+      userId = user.id;
+    } catch {
+      return reply(503, { error: 'Account service is unavailable. Please retry.' });
+    }
+  }
+  if (ready) return reply(200, { ready: true });
   if (!admin && request.method === 'PUT') return reply(405, {});
   const input = await request.json().catch(() => ({}));
+  if (!checkoutEnabled && !admin && input.action !== 'status') {
+    return reply(503, { error: 'GCash checkout is paused.' });
+  }
   const ref = typeof input?.reference === 'string' ? input.reference.trim().toUpperCase() : '';
   const id = input?.id;
   const kind = input?.kind;
@@ -35,11 +61,11 @@ export default async function handler(request) {
     const store = getStore({ name: 'gcash-offering-reviews', consistency: 'strong' });
     const key = digest(ref).toString('hex');
     if (!admin && input.action !== 'status') {
-      const claim = { id, kind, amountCentavos: offeringAmountCentavos, submittedAt: new Date().toISOString() };
+      const claim = { id, kind, userId, amountCentavos: offeringAmountCentavos, submittedAt: new Date().toISOString() };
       const result = await store.setJSON(key, claim, { onlyIfNew: true });
       if (!result.modified) {
         const existing = await store.get(key, { type: 'json' });
-        if (existing?.id !== id || existing.kind !== kind) {
+        if (existing?.id !== id || existing.kind !== kind || (existing.userId && existing.userId !== userId)) {
           return reply(409, { error: 'This reference has already been submitted.' });
         }
       }
@@ -47,7 +73,7 @@ export default async function handler(request) {
     }
     const entry = await store.getWithMetadata(key, { type: 'json' });
     const order = entry?.data;
-    if (!order || (!admin && (order.id !== id || order.kind !== kind))) return reply(404, {});
+    if (!order || (!admin && (order.id !== id || order.kind !== kind || (order.userId && order.userId !== userId)))) return reply(404, {});
     if (request.method === 'PUT' && !order.paidAt) {
       if (input?.expectedId !== order.id) return reply(409, { error: 'Look up the reference before approving.' });
       const paidAt = new Date().toISOString();

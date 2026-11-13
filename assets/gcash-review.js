@@ -8,6 +8,8 @@ const approve = document.getElementById('approveReview');
 const status = document.getElementById('reviewStatus');
 const labels = { candle: 'Virtual candle', flowers: 'Flower bouquet', 'novena-candle': 'Novena candle', 'novena-flowers': 'Novena bouquet' };
 let review;
+const isCebuano = () => document.documentElement.lang === 'ceb';
+const tr = text => isCebuano() ? window.stoninoCebuano.messages[text] || text : text;
 
 async function request(method, body) {
   const response = await fetch('/.netlify/functions/offering-payment?review=1', {
@@ -25,7 +27,7 @@ async function run(task) {
   lookup.disabled = approve.disabled = true;
   token.readOnly = reference.readOnly = true;
   try { await task(); }
-  catch (error) { status.textContent = error.message; }
+  catch (error) { status.textContent = isCebuano() ? window.stoninoCebuano.messages[error.message] || tr('Review is temporarily unavailable.') : error.message; }
   finally {
     lookup.disabled = approve.disabled = false;
     token.readOnly = reference.readOnly = false;
@@ -40,11 +42,11 @@ form.onsubmit = event => {
     const value = reference.value.trim().toUpperCase();
     const result = await request('POST', { reference: value });
     review = { reference: value, expectedId: result.id };
-    const kind = labels[result.kind];
+    const kind = tr(labels[result.kind]);
     const amount = '₱' + (result.amountCentavos / 100).toFixed(2);
-    status.textContent = kind + ' · ' + amount + ' · ' + (result.status === 'paid' ? 'Already approved' :
-      'Awaiting approval · Submitted ' + new Date(result.submittedAt).toLocaleString());
-    approve.textContent = 'Approve verified ' + amount + ' payment';
+    status.textContent = kind + ' · ' + amount + ' · ' + (result.status === 'paid' ? tr('Already approved') :
+      tr('Awaiting approval · Submitted ') + new Date(result.submittedAt).toLocaleString(isCebuano() ? 'ceb-PH' : undefined));
+    approve.textContent = isCebuano() ? `Aprobahi ang nakumpirmang bayad nga ${amount}` : 'Approve verified ' + amount + ' payment';
     approve.hidden = result.status !== 'pending';
   });
 };
@@ -53,6 +55,6 @@ approve.onclick = () => run(async () => {
   if (!review || reference.value.trim().toUpperCase() !== review.reference) return;
   await request('PUT', review);
   approve.hidden = true;
-  status.textContent = 'Payment approved. The offering will appear when the visitor checks its status.';
+  status.textContent = tr('Payment approved. The offering will appear when the visitor checks its status.');
 });
 form.addEventListener('input', () => { approve.hidden = true; review = null; });

@@ -1,0 +1,38 @@
+window.stoninoOfferingPrayers = {
+  'Personal prayer': [
+    ['Peace of heart', 'Holy Child Jesus, quiet my worries and help me rest in your peace today.', 'Kalinaw sa kasingkasing', 'Balaang Bata nga Hesus, pahiloma ang akong mga kabalaka ug tabangi ako nga makapahulay sa imong kalinaw karon.'],
+    ['Healing', 'Lord Jesus, bring healing where I am hurting and give me patience as I recover.', 'Pag-ayo', 'Ginoong Hesus, ayoha ang akong mga samad ug hatagi ako og pailob samtang nagpaayo ako.'],
+    ['Guidance', 'Holy Child Jesus, give me wisdom to see what is right and courage to take the next step.', 'Paggiya', 'Balaang Bata nga Hesus, hatagi ako og kaalam sa pag-ila sa matarong ug kaisog sa paghimo sa sunod nga lakang.'],
+    ['Strength in difficulty', 'Lord Jesus, stay close when I feel weak. Give me strength to face what today brings.', 'Kalig-on sa kalisod', 'Ginoong Hesus, duol kanako kon maluya ako. Hatagi ako og kusog sa pag-atubang sa mga hagit karong adlawa.'],
+    ['Forgiveness', 'Holy Child Jesus, help me admit my faults, ask forgiveness, and make amends with humility.', 'Pagpasaylo', 'Balaang Bata nga Hesus, tabangi ako sa pag-angkon sa akong mga sayop, pagpangayo og pasaylo, ug pagtul-id niini uban sa pagkamapainubsanon.'],
+    ['Trust in God', 'Lord Jesus, help me place what I cannot change in your hands and do what I can with love.', 'Pagsalig sa Diyos', 'Ginoong Hesus, tabangi ako nga itugyan kanimo ang dili nako mausab ug buhaton uban sa gugma ang akong mahimo.'],
+    ['Growing in faith', 'Holy Child Jesus, deepen my faith and teach me to make time for prayer and acts of kindness.', 'Pagtubo sa pagtuo', 'Balaang Bata nga Hesus, palawma ang akong pagtuo ug tudloi ako sa paggahin og panahon alang sa pag-ampo ug mga buhat sa kaayo.']
+  ],
+  Family: [
+    ['Unity at home', 'Holy Child Jesus, help our family listen to one another and remain united in love.', 'Panaghiusa sa panimalay', 'Balaang Bata nga Hesus, tabangi ang among pamilya nga maminaw sa usag usa ug magpabiling nagkahiusa sa gugma.'],
+    ['Children and young people', 'Lord Jesus, protect the children in our family and guide them as they grow in wisdom and kindness.', 'Mga bata ug batan-on', 'Ginoong Hesus, panalipdi ang mga bata sa among pamilya ug giyahi sila sa pagtubo sa kaalam ug kaayo.'],
+    ['Parents and caregivers', 'Holy Child Jesus, renew the strength of those who care for our family and give them patience and rest.', 'Mga ginikanan ug tig-atiman', 'Balaang Bata nga Hesus, bag-oha ang kusog sa mga nag-atiman sa among pamilya ug hatagi sila og pailob ug pahulay.'],
+    ['Reconciliation', 'Lord Jesus, soften our hearts where there has been hurt and help us take the first step toward peace.', 'Pagpasig-uli', 'Ginoong Hesus, pahumoka ang among mga kasingkasing nga nasakitan ug tabangi kami sa unang lakang ngadto sa kalinaw.'],
+    ['Sick family members', 'Holy Child Jesus, comfort our loved ones who are ill and sustain those who care for them.', 'Mga masakiton sa pamilya', 'Balaang Bata nga Hesus, hupaya ang among mga minahal nga masakiton ug lig-ona ang nag-atiman kanila.'],
+    ['Family far from home', 'Lord Jesus, watch over our loved ones who live far away and keep us close in prayer and affection.', 'Pamilya nga layo sa panimalay', 'Ginoong Hesus, bantayi ang among mga minahal nga nagpuyo sa layo ug hupti kaming suod pinaagi sa pag-ampo ug gugma.'],
+    ['Daily needs', 'Holy Child Jesus, provide for our family’s daily needs and teach us to share what we have.', 'Mga panginahanglan matag adlaw', 'Balaang Bata nga Hesus, tagai kami sa mga panginahanglan sa pamilya matag adlaw ug tudloi kami sa pagpaambit sa among nabatonan.']
+  ],
+  Thanksgiving: [
+    ['Gift of life', 'Holy Child Jesus, thank you for the gift of life and for another day to love and serve.', 'Gasa sa kinabuhi', 'Balaang Bata nga Hesus, salamat sa gasa sa kinabuhi ug sa laing adlaw nga makapahigugma ug makaalagad ako.'],
+    ['Answered prayer', 'Lord Jesus, thank you for hearing my prayer. Help me remember your goodness with a grateful heart.', 'Pag-ampo nga gitubag', 'Ginoong Hesus, salamat sa pagpaminaw sa akong pag-ampo. Tabangi ako nga hinumdoman ang imong kaayo uban sa mapasalamatong kasingkasing.'],
+    ['People who helped me', 'Holy Child Jesus, thank you for those who stood by me. Bless them for the kindness they have shown.', 'Mga tawo nga mitabang kanako', 'Balaang Bata nga Hesus, salamat sa mga tawo nga miuban kanako. Panalangini sila tungod sa ilang kaayo.'],
+    ['Daily provision', 'Lord Jesus, thank you for food, shelter, and the work that sustains us. Make me generous with what I receive.', 'Mga gasa matag adlaw', 'Ginoong Hesus, salamat sa pagkaon, kapuy-an, ug trabaho nga nagsustento kanamo. Himoa akong manggihatagon sa akong nadawat.'],
+    ['Help through hardship', 'Holy Child Jesus, thank you for carrying me through difficult days and for the hope that kept me going.', 'Tabang sa panahon sa kalisod', 'Balaang Bata nga Hesus, salamat sa pagtabang kanako sa lisod nga mga adlaw ug sa paglaom nga nagpalig-on kanako.'],
+    ['Ordinary blessings', 'Lord Jesus, thank you for quiet joys and simple blessings. Teach me to notice them each day.', 'Yano nga mga panalangin', 'Ginoong Hesus, salamat sa hilom nga mga kalipay ug yano nga mga panalangin. Tudloi ako sa pag-ila niini matag adlaw.'],
+    ['Mercy and new beginnings', 'Holy Child Jesus, thank you for your mercy and for every chance to begin again.', 'Kalooy ug bag-ong sinugdanan', 'Balaang Bata nga Hesus, salamat sa imong kalooy ug sa matag higayon nga makasugod ako pag-usab.']
+  ],
+  'For the departed': [
+    ['Eternal rest', 'Lord Jesus, grant eternal rest to the departed, and let perpetual light shine upon them.', 'Dayong pahulay', 'Ginoong Hesus, hatagi ang mga namatay og dayong pahulay ug pasidlaka kanila ang kahayag nga walay kataposan.'],
+    ['Departed family and friends', 'Holy Child Jesus, remember our departed family and friends and welcome them into your peace.', 'Namatay nga pamilya ug mga higala', 'Balaang Bata nga Hesus, hinumdomi ang among namatay nga pamilya ug mga higala ug dawata sila sa imong kalinaw.'],
+    ['Those who died recently', 'Lord Jesus, receive those who have recently died and comfort the people who mourn them.', 'Mga bag-o lang namatay', 'Ginoong Hesus, dawata ang mga bag-o lang namatay ug hupaya ang mga nagsubo alang kanila.'],
+    ['Those with no one to pray for them', 'Holy Child Jesus, remember the departed who have no one to pray for them. Grant them your mercy and peace.', 'Mga walay mag-ampo alang kanila', 'Balaang Bata nga Hesus, hinumdomi ang mga namatay nga walay mag-ampo alang kanila. Hatagi sila sa imong kalooy ug kalinaw.'],
+    ['Those who died suddenly', 'Lord Jesus, have mercy on those who died suddenly and give strength to their grieving loved ones.', 'Mga kalit nga namatay', 'Ginoong Hesus, kaloy-i ang mga kalit nga namatay ug lig-ona ang ilang mga minahal nga nagsubo.'],
+    ['Anniversary of a death', 'Holy Child Jesus, as we remember this day, receive our prayer for the one we miss and renew our hope in the resurrection.', 'Anibersaryo sa kamatayon', 'Balaang Bata nga Hesus, sa among paghinumdom niining adlawa, dawata ang among pag-ampo alang sa among gimingaw ug bag-oha ang among paglaom sa pagkabanhaw.'],
+    ['All the faithful departed', 'Lord Jesus, through your mercy, bring all the faithful departed into the joy of your presence.', 'Tanang matinud-anong namatay', 'Ginoong Hesus, pinaagi sa imong kalooy, dad-a ang tanang matinud-anong namatay ngadto sa kalipay sa imong presensiya.']
+  ]
+};

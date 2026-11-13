@@ -124,27 +124,39 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   #sanctuary .arch { height: clamp(280px, 58vh, 450px); }
 }
 
+/* Equal side tracks keep the signed-in name on the header's centerline. */
 .topbar {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-areas: "identity name actions";
+  grid-template-columns: minmax(0, 1fr) minmax(0, 28%) minmax(0, 1fr);
 }
-.topbar .identity { grid-area: identity; justify-self: start; }
-.topbar .header-actions { grid-area: actions; justify-content: flex-end; }
+.topbar > * { grid-row: 1; }
+.topbar .identity { grid-column: 1; min-width: 0; }
 .devotional-user-name {
-  grid-area: name;
-  min-width: 0;
+  grid-column: 2;
   text-align: center;
-  color: var(--ivory);
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: bold;
 }
-
-@media (max-width: 760px) {
-  .topbar {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas: "identity name" "actions actions";
-  }
-}
+.header-actions { grid-column: 3; justify-content: flex-end; align-items: center; }
+.header-actions .text-control { white-space: nowrap; }
 [hidden]#devotionalUserName, #accountLoggedOut [hidden] { display: none; }
 
+#devotionalContent[hidden], #devotionalMobileNav[hidden] { display: none; }
+.account-gate { width: min(38rem, calc(100% - 2rem)); margin: 2rem auto; }
+.account-gate h1 { font-size: clamp(1.6rem, 5vw, 2.3rem); }
+
+@media (max-width: 540px) {
+  .topbar { gap: 6px; }
+  .topbar .identity { gap: 5px; }
+  .topbar .identity strong { font-size: .68rem; letter-spacing: .04em; }
+  .topbar .identity small { letter-spacing: 0; }
+  .devotional-user-name { font-size: .85rem; }
+  .header-actions { justify-self: end; }
+}
+
+@media (max-width: 360px) {
+  .topbar .identity img { width: 24px; }
+  .topbar .identity small { display: none; }
+}
