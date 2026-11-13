@@ -13,11 +13,9 @@ export default async (request) => {
     const {data,error}=await admin.auth.getUser(bearer.slice(7));
     if(error||!data?.user) return Response.json({error:'Invalid or expired session'},{status:401});
     const userId=data.user.id;
-    // Remove profile first; if deletion fails, do not claim success.
+    // Delete only the authenticated user’s Sto. Niño profile.
     const {error:dbError}=await admin.from('stonino_profiles').delete().eq('user_id',userId);
     if(dbError)throw dbError;
-    const {error:authError}=await admin.auth.admin.deleteUser(userId);
-    if(authError)throw authError;
     return Response.json({ok:true});
   } catch(e){console.error('Account deletion error',e);return Response.json({error:'Unable to complete deletion; contact support'},{status:500})}
 };
