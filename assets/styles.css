@@ -124,7 +124,27 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   #sanctuary .arch { height: clamp(280px, 58vh, 450px); }
 }
 
-.devotional-user-name { flex: 0 0 100%; min-width: 0; text-align: center; color: var(--ivory); overflow-wrap: anywhere; font-weight: bold; }
+.topbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas: "identity name actions";
+}
+.topbar .identity { grid-area: identity; justify-self: start; }
+.topbar .header-actions { grid-area: actions; justify-content: flex-end; }
+.devotional-user-name {
+  grid-area: name;
+  min-width: 0;
+  text-align: center;
+  color: var(--ivory);
+  overflow-wrap: anywhere;
+  font-weight: bold;
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "identity name" "actions actions";
+  }
+}
 [hidden]#devotionalUserName, #accountLoggedOut [hidden] { display: none; }
 
-.topbar { flex-wrap: wrap; }
