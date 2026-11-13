@@ -10,15 +10,21 @@ const saveAccountData = (key, value) => { if (state.user) store.set(accountKey(k
 let authStatus = 'loading';
 let authRevision = 0;
 const cebuano = window.stoninoCebuano;
+const filipino = window.stoninoFilipinoPrayers;
+const isFilipino = () => state.language === 'fil';
+const prayerLocale = () => ({ ceb: cebuano, fil: filipino })[state.language];
 const isCebuano = () => state.language === 'ceb';
-const tr = text => isCebuano() && Object.hasOwn(cebuano.messages, text) ? cebuano.messages[text] : text;
+const tr = text => {
+  const messages = prayerLocale()?.messages;
+  return messages && Object.hasOwn(messages, text) ? messages[text] : text;
+};
 const localizedError = (error, fallback) =>
   isCebuano() && !Object.hasOwn(cebuano.messages, error.message)
     ? tr(fallback)
     : tr(error.message || fallback);
-const offeringPrayers = window.stoninoOfferingPrayers;
+const offeringPrayers = type => isFilipino() ? filipino.offerings[type] : window.stoninoOfferingPrayers[type];
 function offeringPrayer(type, index) {
-  return Number.isInteger(index) ? offeringPrayers[type]?.[index] : undefined;
+  return Number.isInteger(index) ? offeringPrayers(type)?.[index] : undefined;
 }
 function offeringNote({ type, prayerIndex, note }) {
   const prayer = offeringPrayer(type, prayerIndex);
@@ -38,7 +44,7 @@ function renderOfferingPrayers(select) {
   const stem = select.id.slice(0, -'Prayer'.length);
   const type = $(stem + 'Type').value;
   const previous = select.value || '';
-  const prayers = offeringPrayers[type];
+  const prayers = offeringPrayers(type);
   select.replaceChildren();
   const appendOption = (value, label) => {
     const option = document.createElement('option');
@@ -180,7 +186,7 @@ function renderNovena() {
   const available = isNovenaDayOpen(state.day, now);
   const day = novena[state.day];
   const date = novenaSchedule[state.day].date;
-  const [theme, reflection, prayer] = isCebuano() ? cebuano.novena[state.day] : [day.theme, day.reflection, day.prayer];
+  const [theme, reflection, prayer] = prayerLocale()?.novena[state.day] ?? [day.theme, day.reflection, day.prayer];
 
   $('dayTitle').textContent = available ? `${isCebuano() ? 'Adlaw' : 'Day'} ${state.day + 1} — ${isCebuano() ? 'Enero' : 'January'} ${date}, 2027 · ${theme}` : tr('2027 Novena Schedule');
   $('dayProgress').textContent = `${state.completed.filter(index => isNovenaDayOpen(index, now)).length} ${isCebuano() ? 'sa 9 ang nahuman' : 'of 9 completed'}`;
@@ -228,7 +234,7 @@ $('completeDay').onclick = () => {
   renderNovena();
 };
 
-function displayPrayer(key){currentPrayer=key;$('extraPrayer').textContent=isCebuano()?cebuano.prayers[key]:prayers[key];document.querySelectorAll('[data-prayer]').forEach(e=>e.classList.toggle('selected',e.dataset.prayer===key))}document.querySelectorAll('[data-prayer]').forEach(e=>e.onclick=()=>displayPrayer(e.dataset.prayer));
+function displayPrayer(key){currentPrayer=key;$('extraPrayer').textContent=prayerLocale()?.prayers[key] ?? prayers[key];document.querySelectorAll('[data-prayer]').forEach(e=>e.classList.toggle('selected',e.dataset.prayer===key))}document.querySelectorAll('[data-prayer]').forEach(e=>e.onclick=()=>displayPrayer(e.dataset.prayer));
 // One immutable timestamp per offering is the source of truth. The GIF supplies
 // only flame flicker; the wax level is derived from wall-clock time (not frame rate).
 const CANDLE_LIFETIME_MS=24*60*60*1000;
