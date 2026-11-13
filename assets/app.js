@@ -7,7 +7,7 @@ for(const key of ['completed','intentions','candles','novenaCandles','novenaFlow
   if(!Array.isArray(state[key]))state[key]=[];
 }
 state.completed=[...new Set(state.completed.map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<9))];
-const translations={en:{navSanctuary:'Sanctuary',navNovena:'Novena & Prayers',navCandles:'Light a Candle',navIntentions:'My Intentions',navScripture:'Scripture',navSettings:'Settings & Privacy',welcome:'WELCOME TO THE CHAPEL',heroSub:'Enter a quiet space of prayer before Jesus Christ, the Holy Child. Bring your gratitude, your burdens, and your hopes.',beginPrayer:'Begin Devotion',quickNovena:'Pray one day at a time',quickCandle:'Offer a symbolic flame',quickJournal:'Keep a private prayer journal',quickScripture:'Read and reflect'},ceb:{navSanctuary:'Kapilya',navNovena:'Nobena ug mga Pag-ampo',navCandles:'Pagdagkot og Kandila',navIntentions:'Akong mga Intension',navScripture:'Balaang Kasulatan',navSettings:'Mga Setting ug Pribasidad',welcome:'MALIPAYONG PAG-ABOT SA KAPILYA',heroSub:'Sulod sa malinawon nga dapit sa pag-ampo kang Hesukristo, ang Balaang Bata. Idangop ang imong pasalamat, kabalaka, ug paglaom.',beginPrayer:'Sugdi ang Pag-ampo',quickNovena:'Pag-ampo matag adlaw',quickCandle:'Paghalad og simbolikong kahayag',quickJournal:'Tipigi ang pribadong pag-ampo',quickScripture:'Basaha ug pamalandonga'},fil:{navSanctuary:'Kapilya',navNovena:'Nobena at mga Panalangin',navCandles:'Magsindi ng Kandila',navIntentions:'Aking mga Intensiyon',navScripture:'Banal na Kasulatan',navSettings:'Mga Setting at Privacy',welcome:'MALIGAYANG PAGDATING SA KAPILYA',heroSub:'Pumasok sa tahimik na lugar ng panalangin kay Hesukristo, ang Banal na Sanggol. Dalhin ang iyong pasasalamat, mga pasanin, at pag-asa.',beginPrayer:'Simulan ang Panalangin',quickNovena:'Manalangin bawat araw',quickCandle:'Mag-alay ng simbolikong ilaw',quickJournal:'Itago ang pribadong dasal',quickScripture:'Magbasa at magnilay'}};
+const translations={en:{navSanctuary:'Sanctuary',navNovena:'Novena & Prayers',navCandles:'Light a Candle',navFlowers:'Offer Flowers',quickFlowers:'Offer a bouquet of roses',navIntentions:'My Intentions',navScripture:'Scripture',navSettings:'Settings & Privacy',welcome:'WELCOME TO THE CHAPEL',heroSub:'Enter a quiet space of prayer before Jesus Christ, the Holy Child. Bring your gratitude, your burdens, and your hopes.',beginPrayer:'Begin Devotion',quickNovena:'Pray one day at a time',quickCandle:'Offer a symbolic flame',quickJournal:'Keep a private prayer journal',quickScripture:'Read and reflect'},ceb:{navSanctuary:'Kapilya',navNovena:'Nobena ug mga Pag-ampo',navCandles:'Pagdagkot og Kandila',navFlowers:'Paghalad og mga Bulak',quickFlowers:'Paghalad og pungpong sa rosas',navIntentions:'Akong mga Intension',navScripture:'Balaang Kasulatan',navSettings:'Mga Setting ug Pribasidad',welcome:'MALIPAYONG PAG-ABOT SA KAPILYA',heroSub:'Sulod sa malinawon nga dapit sa pag-ampo kang Hesukristo, ang Balaang Bata. Idangop ang imong pasalamat, kabalaka, ug paglaom.',beginPrayer:'Sugdi ang Pag-ampo',quickNovena:'Pag-ampo matag adlaw',quickCandle:'Paghalad og simbolikong kahayag',quickJournal:'Tipigi ang pribadong pag-ampo',quickScripture:'Basaha ug pamalandonga'},fil:{navSanctuary:'Kapilya',navNovena:'Nobena at mga Panalangin',navCandles:'Magsindi ng Kandila',navFlowers:'Mag-alay ng mga Bulaklak',quickFlowers:'Mag-alay ng pumpon ng rosas',navIntentions:'Aking mga Intensiyon',navScripture:'Banal na Kasulatan',navSettings:'Mga Setting at Privacy',welcome:'MALIGAYANG PAGDATING SA KAPILYA',heroSub:'Pumasok sa tahimik na lugar ng panalangin kay Hesukristo, ang Banal na Sanggol. Dalhin ang iyong pasasalamat, mga pasanin, at pag-asa.',beginPrayer:'Simulan ang Panalangin',quickNovena:'Manalangin bawat araw',quickCandle:'Mag-alay ng simbolikong ilaw',quickJournal:'Itago ang pribadong dasal',quickScripture:'Magbasa at magnilay'}};
 const novena=[
 {theme:'Trust',ref:'Matthew 18:3–4',reflection:'Jesus calls us to receive the Kingdom with a childlike heart. Humility makes room for grace; trust turns us toward our heavenly Father.',prayer:'Lord Jesus, Holy Child, teach me to trust you with an open heart. Help me release pride and fear, and follow you in humility. May I become attentive to your will today. Amen.'},
 {theme:'Gratitude',ref:'Luke 17:11–19',reflection:'The thankful leper returned to Jesus. Gratitude helps us see God’s generosity even in ordinary moments.',prayer:'Holy Child Jesus, I thank you for the gift of life, for those who love me, and for the blessings I too easily overlook. Make gratitude the language of my heart. Amen.'},
@@ -229,16 +229,25 @@ function updateCandleClock(){
   }
 }
 function uid(){return globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`}
-// Floral offerings have their own collection, independent of candle timers.
-function renderNovenaFlowers(){
-  const list=Array.isArray(state.novenaFlowers)?state.novenaFlowers:[];
-  $('novenaFlowerEmpty').hidden=list.length>0;
-  $('novenaFlowerGrid').innerHTML=list.map(f=>`<article class="flower-offering">
-    <img src="assets/novena-rose-bouquet.png" alt="Bouquet of red roses offered in prayer" loading="lazy">
-    <div class="novena-day-tag">Novena Day ${Number(f.novena_day)+1}</div>
-    ${f.note?`<p class="flower-intention">${html(f.note)}</p>`:''}
-    <time datetime="${html(f.created_at)}">${html(new Date(f.created_at).toLocaleDateString())}</time>
-  </article>`).join('');
+// Main and novena bouquets share storage but appear in their own displays.
+function flowerOfferings(novena) {
+  return state.novenaFlowers.filter(flower => (flower.novena_day != null) === novena);
+}
+function renderFlowers() {
+  for (const [novena, grid, empty] of [
+    [false, 'flowerGrid', 'flowerEmpty'],
+    [true, 'novenaFlowerGrid', 'novenaFlowerEmpty']
+  ]) {
+    const flowers = flowerOfferings(novena);
+    $(empty).hidden = flowers.length > 0;
+    $(grid).innerHTML = flowers.map(flower => `<article class="flower-offering">
+      <img src="assets/novena-rose-bouquet.png" alt="Bouquet of red roses offered in prayer" loading="lazy">
+      ${novena ? `<div class="novena-day-tag">Novena Day ${Number(flower.novena_day) + 1}</div>` : ''}
+      ${flower.type && !novena ? `<div class="novena-day-tag">${html(flower.type)}</div>` : ''}
+      ${flower.note ? `<p class="flower-intention">${html(flower.note)}</p>` : ''}
+      <time datetime="${html(flower.created_at)}">${html(new Date(flower.created_at).toLocaleDateString())}</time>
+    </article>`).join('');
+  }
 }
 function renderIntentions(){$('intentionEmpty').hidden=!!state.intentions.length;$('intentionList').innerHTML=state.intentions.map(x=>`<article class="journal-entry"><h4>${html(x.title)}</h4><time>${html(new Date(x.created_at).toLocaleDateString())}</time><p>${html(x.body)}</p><button type="button" data-delete="${html(x.id)}">Delete intention</button></article>`).join('')}$('intentionForm').onsubmit=async e=>{e.preventDefault();const title=$('intentionName').value.trim(),body=$('intentionBody').value.trim();if(!title||!body)return;state.intentions.unshift({id:uid(),title,body,created_at:new Date().toISOString()});store.set('intentions',state.intentions);renderIntentions();e.target.reset();toast('Private intention saved');await syncCloud('intentions')};$('intentionList').addEventListener('click',async e=>{const b=e.target.closest('[data-delete]');if(!b||!confirm('Delete this prayer intention permanently?'))return;state.intentions=state.intentions.filter(x=>x.id!==b.dataset.delete);store.set('intentions',state.intentions);renderIntentions();await syncCloud('intentions');toast('Intention deleted')});
 function renderMeditation(){const m=meditations[state.meditation];$('scriptureCount').textContent=`Meditation ${state.meditation+1} of ${meditations.length}`;$('scriptureRef').textContent=m[0]+' ↗';$('scriptureTheme').textContent=m[1];$('scriptureReflection').textContent=m[2]}$('prevMeditation').onclick=()=>{state.meditation=(state.meditation+meditations.length-1)%meditations.length;renderMeditation()};$('nextMeditation').onclick=()=>{state.meditation=(state.meditation+1)%meditations.length;renderMeditation()};
@@ -317,7 +326,7 @@ async function initCloud(){
     state.supabase=window.supabase.createClient(config.supabaseUrl,config.supabaseAnonKey);const {data,error}=await state.supabase.auth.getUser();if(error&&error.name!=='AuthSessionMissingError')console.warn('Auth:',error.message);state.user=data?.user||null;state.supabase.auth.onAuthStateChange((_event,session)=>{state.user=session?.user||null;accountView()});if(state.user)await loadCloud();accountView()}catch(e){console.warn('Cloud init failed',e);toast('Cloud unavailable; guest data remains on this device')}}
 let deletingDevotionalData = false;
 const activeDevotionalSaves = new Set();
-async function loadCloud(){if(!state.user||!state.supabase)return;try{const {data,error}=await state.supabase.from('stonino_profiles').select('candles,novena_candles,novena_flowers,intentions,completed').eq('user_id',state.user.id).maybeSingle();if(deletingDevotionalData)return;if(error)throw error;if(data){/* Preserve local guest data on sign-in by merging, not silently overwriting. */const merge=(a,b)=>[...new Map([...b,...a].map(x=>[x.id,x])).values()];state.candles=merge(state.candles,Array.isArray(data.candles)?data.candles:[]);state.novenaCandles=merge(state.novenaCandles,Array.isArray(data.novena_candles)?data.novena_candles:[]);state.novenaFlowers=merge(state.novenaFlowers,Array.isArray(data.novena_flowers)?data.novena_flowers:[]);state.intentions=merge(state.intentions,Array.isArray(data.intentions)?data.intentions:[]);state.completed=[...new Set([...state.completed,...(Array.isArray(data.completed)?data.completed:[])].map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<9))];store.set('candles',state.candles);store.set('novenaCandles',state.novenaCandles);store.set('novenaFlowers',state.novenaFlowers);store.set('intentions',state.intentions);store.set('completed',state.completed);renderCandles();renderNovenaCandles();renderNovenaFlowers();renderIntentions();renderNovena()}await syncCloud('all')}catch(e){console.warn(e);toast('Cloud sync unavailable; data remains in this browser')}}
+async function loadCloud(){if(!state.user||!state.supabase)return;try{const {data,error}=await state.supabase.from('stonino_profiles').select('candles,novena_candles,novena_flowers,intentions,completed').eq('user_id',state.user.id).maybeSingle();if(deletingDevotionalData)return;if(error)throw error;if(data){/* Preserve local guest data on sign-in by merging, not silently overwriting. */const merge=(a,b)=>[...new Map([...b,...a].map(x=>[x.id,x])).values()];state.candles=merge(state.candles,Array.isArray(data.candles)?data.candles:[]);state.novenaCandles=merge(state.novenaCandles,Array.isArray(data.novena_candles)?data.novena_candles:[]);state.novenaFlowers=merge(state.novenaFlowers,Array.isArray(data.novena_flowers)?data.novena_flowers:[]);state.intentions=merge(state.intentions,Array.isArray(data.intentions)?data.intentions:[]);state.completed=[...new Set([...state.completed,...(Array.isArray(data.completed)?data.completed:[])].map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<9))];store.set('candles',state.candles);store.set('novenaCandles',state.novenaCandles);store.set('novenaFlowers',state.novenaFlowers);store.set('intentions',state.intentions);store.set('completed',state.completed);renderCandles();renderNovenaCandles();renderFlowers();renderIntentions();renderNovena()}await syncCloud('all')}catch(e){console.warn(e);toast('Cloud sync unavailable; data remains in this browser')}}
 async function syncCloud(){if(!state.user||!state.supabase||deletingDevotionalData)return;const save=Promise.resolve(state.supabase.from('stonino_profiles').upsert({user_id:state.user.id,candles:state.candles,novena_candles:state.novenaCandles,novena_flowers:state.novenaFlowers,intentions:state.intentions,completed:state.completed,updated_at:new Date().toISOString()},{onConflict:'user_id'}));activeDevotionalSaves.add(save);try{const {error}=await save;if(error)throw error}catch(e){console.warn(e);toast('Saved locally. Cloud sync needs attention.')}finally{activeDevotionalSaves.delete(save)}}
 async function accountAction(mode){if(!state.supabase){toast('Set up Supabase first. Guest access is already available.');return}const email=$('email').value.trim(),password=$('password').value;if(!email||!password){toast('Enter your email and password');return}const name = $('displayName').value.trim();
 if (mode === 'signUp' && (!name || name.length > 80)) {
@@ -344,7 +353,7 @@ try{const r=mode==='signUp'?await state.supabase.auth.signUp({email,password,opt
     }
     renderCandles();
     renderNovenaCandles();
-    renderNovenaFlowers();
+    renderFlowers();
     renderIntentions();
     renderNovena();
     localStorage.setItem(registrationPreference, 'yes');
@@ -365,7 +374,7 @@ try{const r=mode==='signUp'?await state.supabase.auth.signUp({email,password,opt
   }
 };
 
-language();setFont(state.font);renderNovena();displayPrayer('morning');renderCandles();renderNovenaCandles();renderNovenaFlowers();renderIntentions();renderMeditation();accountView();if(location.hash&&$(location.hash.slice(1))?.classList.contains('page'))nav(location.hash.slice(1));initCloud();function refreshDevotionalClock() {
+language();setFont(state.font);renderNovena();displayPrayer('morning');renderCandles();renderNovenaCandles();renderFlowers();renderIntentions();renderMeditation();accountView();if(location.hash&&$(location.hash.slice(1))?.classList.contains('page'))nav(location.hash.slice(1));initCloud();function refreshDevotionalClock() {
   updateCandleClock();
   if (Date.now() >= nextNovenaUnlock) renderNovena();
 }
@@ -383,10 +392,12 @@ document.addEventListener('visibilitychange', () => {
   const kinds = {
     candle: { form: 'candleForm', field: 'candleFor', type: 'candleType',
       collection: 'candles', label: 'Virtual candle', cap: 24, render: renderCandles },
-    'novena-candle': { form: 'novenaCandleForm', field: 'novenaCandleFor', type: 'novenaCandleType',
+    flowers: { form: 'flowerForm', field: 'flowerFor', type: 'flowerType',
+      collection: 'novenaFlowers', label: 'Flower bouquet', cap: 36, render: renderFlowers },
+    'novena-candle': { novena: true, form: 'novenaCandleForm', field: 'novenaCandleFor', type: 'novenaCandleType',
       collection: 'novenaCandles', label: 'Novena candle', cap: 24, render: renderNovenaCandles },
-    'novena-flowers': { form: 'novenaFlowerForm', field: 'novenaFlowerFor',
-      collection: 'novenaFlowers', label: 'Novena flower bouquet', cap: 36, render: renderNovenaFlowers }
+    'novena-flowers': { novena: true, form: 'novenaFlowerForm', field: 'novenaFlowerFor',
+      collection: 'novenaFlowers', label: 'Novena flower bouquet', cap: 36, render: renderFlowers }
   };
   let draft;
   let busy = false;
@@ -467,14 +478,17 @@ document.addEventListener('visibilitychange', () => {
       event.preventDefault();
       const existing = pending();
       if (existing) return open(existing);
-      if (kind !== 'candle' && !isNovenaDayOpen(state.day)) return;
+      if (settings.novena && !isNovenaDayOpen(state.day)) return;
       if (settings.type) settings.render();
-      if (state[settings.collection].length >= settings.cap) {
+      const display = settings.collection === 'novenaFlowers'
+        ? flowerOfferings(Boolean(settings.novena))
+        : state[settings.collection];
+      if (display.length >= settings.cap) {
         return toast('Your offering display has reached its limit of ' + settings.cap + '.');
       }
       open({ kind, note: $(settings.field).value.trim(),
         ...(settings.type && { type: $(settings.type).value }),
-        ...(kind !== 'candle' && { day: state.day }) });
+        ...(settings.novena && { day: state.day }) });
     };
   }
 

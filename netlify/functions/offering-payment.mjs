@@ -5,7 +5,7 @@ const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{1
 const referencePattern = /^[A-Z0-9-]{8,40}$/;
 const offeringAmountCentavos = 500;
 const legacyAmountCentavos = 100;
-const kinds = new Set(['candle', 'novena-candle', 'novena-flowers']);
+const kinds = new Set(['candle', 'flowers', 'novena-candle', 'novena-flowers']);
 const digest = value => createHash('sha256').update(value).digest();
 const reply = (status, body) => Response.json(body, {
   status, headers: { 'Cache-Control': 'no-store' }

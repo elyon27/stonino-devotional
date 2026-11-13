@@ -6,7 +6,7 @@ const reference = document.getElementById('reviewReference');
 const lookup = document.getElementById('lookupReview');
 const approve = document.getElementById('approveReview');
 const status = document.getElementById('reviewStatus');
-const labels = { candle: 'Virtual candle', 'novena-candle': 'Novena candle', 'novena-flowers': 'Novena bouquet' };
+const labels = { candle: 'Virtual candle', flowers: 'Flower bouquet', 'novena-candle': 'Novena candle', 'novena-flowers': 'Novena bouquet' };
 let review;
 
 async function request(method, body) {
