@@ -1,4 +1,5 @@
 [build]
+  command = "node build-music-library.mjs"
   publish = "."
   functions = "netlify/functions"
 [[headers]]

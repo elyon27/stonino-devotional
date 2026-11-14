@@ -160,3 +160,105 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   .topbar .identity img { width: 24px; }
   .topbar .identity small { display: none; }
 }
+
+.music-panel audio { display: block; width: 100%; margin-block: 12px; }
+.music-panel .music-repeat { display: flex; align-items: center; gap: 8px; }
+.music-panel .music-repeat input { width: auto; margin: 0; }
+
+.scripture-ticker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  background: var(--crimson-deep);
+  color: var(--ivory);
+  border-bottom: 1px solid var(--gold);
+  direction: ltr;
+}
+.scripture-ticker-viewport { overflow: hidden; white-space: nowrap; }
+.scripture-ticker-verse {
+  position: relative;
+  display: flex;
+  width: max-content;
+  gap: 20px;
+  font-size: .88rem;
+}
+.scripture-ticker-verse > span { flex: none; }
+.scripture-ticker-toggle {
+  min-width: 44px;
+  min-height: 36px;
+  border: 0;
+  border-inline-start: 1px solid var(--gold);
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.scripture-ticker-toggle:focus-visible { outline: 2px solid var(--gold-light); outline-offset: -3px; }
+
+#sanctuary .hero {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  text-align: center;
+  gap: 16px;
+}
+#sanctuary .arch { width: min(100%, 380px); margin-inline: auto; }
+#sanctuary .hero-text > p { margin-inline: auto; }
+.sanctuary-offerings {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: end;
+  gap: 6px;
+  width: 100%;
+}
+.sanctuary-offerings[hidden] { display: none; }
+.mini-candle, .mini-bouquet { position: relative; flex: 0 0 44px; height: 66px; }
+.mini-candle .photo-candle {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  margin: 0;
+  transform: translateX(-50%) scale(.27);
+  transform-origin: center bottom;
+}
+.mini-bouquet { display: grid; align-items: end; }
+.mini-bouquet img {
+  display: block;
+  width: 100%;
+  height: 49px;
+  object-fit: contain;
+  transform-origin: center bottom;
+  transform: rotate(calc(var(--wilt, 0) * 22deg)) scaleY(calc(1 - var(--wilt, 0) * .27));
+  filter: saturate(calc(1 - var(--wilt, 0) * .75)) brightness(calc(1 - var(--wilt, 0) * .26));
+}
+
+.sanctuary-offering-panel { width: 100%; }
+.sanctuary-offering-panel > .btn { margin-top: 10px; }
+
+.password-field {
+  position: relative;
+}
+.password-field input {
+  padding-inline-end: 50px;
+}
+.password-field input::-ms-reveal {
+  display: none;
+}
+.password-field button {
+  position: absolute;
+  inset-inline-end: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.password-field input[type="password"] + button .password-eye-slash {
+  display: none;
+}

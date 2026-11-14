@@ -1,5 +1,16 @@
 window.stoninoFilipinoPrayers = {
   messages: {
+    'Show password': 'Ipakita ang password',
+    'Hide password': 'Itago ang password',
+    'Day': 'Araw',
+    '{year} Novena Schedule': 'Iskedyul ng Nobena {year}',
+    'Day 1 opens {date}.': 'Magbubukas ang unang araw sa {date}.',
+    'Each day opens at midnight in Cebu.': 'Magbubukas ang bawat araw sa hatinggabi, oras sa Cebu.',
+    'of 9 completed': 'sa 9 ang natapos',
+    'Delete All Offerings': 'Burahin ang Lahat ng Alay',
+    'Permanently delete all your candles and flowers, including novena offerings?': 'Permanenteng burahin ang lahat ng iyong kandila at bulaklak, kasama ang mga alay sa nobena?',
+    'All candles and flowers were deleted.': 'Nabura na ang lahat ng kandila at bulaklak.',
+    'Could not delete offerings. Please try again.': 'Hindi nabura ang mga alay. Subukan muli.',
     'Additional original prayers': 'Mga karagdagang panalangin',
     'Morning': 'Sa umaga',
     'Family': 'Pamilya',

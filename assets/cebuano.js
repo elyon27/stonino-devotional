@@ -1,6 +1,8 @@
 // Cebuano content for the devotional app.
 window.stoninoCebuano = {
   messages: {
+  "Show password": "Ipakita ang password",
+  "Hide password": "Tagoa ang password",
   "Your offering has been placed.": "Nahalad na ang imong halad.",
   "Could not delete offerings. Please try again.": "Wala mapapas ang mga halad. Palihog sulayi pag-usab.",
   "All candles and flowers were deleted.": "Napapas na ang tanang kandila ug bulak.",
@@ -40,14 +42,16 @@ window.stoninoCebuano = {
   "This digital chapel supports personal prayer. It does not replace Mass, the Sacraments, or parish life.": "Kini nga digital nga kapilya nagtabang sa personal nga pag-ampo. Dili kini puli sa Misa, sa mga Sakramento, o sa kinabuhi sa parokya.",
   "NINE DAYS OF PRAYER": "SIYAM KA ADLAW SA PAG-AMPO",
   "An original, Scripture-inspired nine-day prayer journey to Jesus, the Holy Child. It is not presented as the official Basilica novena text.": "Usa ka orihinal nga siyam ka adlaw nga pag-ampo kang Hesus, ang Balaang Bata, nga gidasig sa Balaang Kasulatan. Dili kini ang opisyal nga teksto sa nobena sa Basilica.",
-  "January 7–15, 2027 · Each day opens at midnight in Cebu.": "Enero 7–15, 2027 · Ang matag adlaw maablihan sa tungang gabii, oras sa Sugbo.",
-  "2027 Novena Schedule": "Eskedyul sa Nobena 2027",
   "0 of 9 completed": "0 sa 9 ang nahuman",
-  "Day 1 opens January 7, 2027.": "Ang unang adlaw maablihan sa Enero 7, 2027.",
   "Scripture: Matthew 18:3–4 ↗": "Balaang Kasulatan: Mateo 18:3–4 ↗",
   "Reflection": "Pamalandong",
   "Prayer": "Pag-ampo",
   "← Previous": "← Miagi",
+  "Day": "Adlaw",
+  "{year} Novena Schedule": "Eskedyul sa Nobena {year}",
+  "Day 1 opens {date}.": "Ang unang adlaw maablihan sa {date}.",
+  "Each day opens at midnight in Cebu.": "Ang matag adlaw maablihan sa tungang gabii, oras sa Sugbo.",
+  "of 9 completed": "sa 9 ang nahuman",
   "Mark day complete": "Markahi nga nahuman",
   "✓ Day completed": "✓ Nahuman na ang adlaw",
   "Next →": "Sunod →",

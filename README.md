@@ -140,3 +140,13 @@ The Novena & Prayers page now contains an **Offer Flowers** area immediately bel
 
 ## v2.7 Scripture meditation popup
 Each Scripture & Meditation reference is clickable. It uses the novena Scripture dialog to fetch the full KJV passage with numbered verses and cache it locally after a successful request. This requires internet access for first use.
+
+## Music Prayers
+
+Place audio recordings in `assets/music/`. File names become the song titles. Run `node build-music-library.mjs` from the package root after changing the recordings. Netlify runs this command during a build.
+
+## Scripture ticker
+
+The ticker uses the public-domain World English Bible text from [TehShrike/world-english-bible](https://github.com/TehShrike/world-english-bible), with the New Testament books in canonical order.
+
+The ticker follows the app's language selection. Cebuano uses Biblica® Open Ang Pulong sa Dios™ (Biblica® Open Cebuano Contemporary Bible™), © 2009, 2010, 2014, 2024 Biblica, Inc. Biblica is a registered trademark of Biblica, Inc. Used with permission. See the [edition and source](https://ebible.org/cebocb/copyright.htm) and [CC BY-SA 4.0 license](https://creativecommons.org/licenses/by-sa/4.0/). Tagalog uses the public-domain Ang Dating Biblia (1905), Philippine Bible Society. Both datasets come from the [Bible JSON repository](https://github.com/thiagobodruk/bible).
