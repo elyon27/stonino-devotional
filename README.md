@@ -27,6 +27,10 @@ Open `index.html` in a browser. Devotional features require a Supabase account. 
 
 The root web app sells 20, 50, 100 or 200 credits at ₱1 per credit. Each candle or bouquet uses one credit, including novena offerings. The balance is shared across signed-in devices. Prayer, Scripture and novena readings remain free. Deleting offerings does not restore credits. Deleting the Sto. Niño profile also deletes its unused balance.
 
+### Multiple offerings
+
+Run `offering-quantities.sql` in the Supabase SQL Editor after `prayer-packs.sql` and before publishing this update. The quantity controls charge one credit for each candle or bouquet. Each submission adds the selected items together or leaves the balance unchanged if the credits are insufficient.
+
 ### Interim GCash Express Send checkout
 
 Express Send is the default purchase mode. The app displays the selected pack price and its GCash QR. The buyer scans the code and submits the GCash reference, then can use **Refresh balance** to recheck the order.

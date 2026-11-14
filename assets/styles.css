@@ -360,3 +360,19 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
 #adminMembersList { overflow-wrap: anywhere; }
 
 .prayer-pack-bar[hidden] { display: none; }
+
+.offering-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: .5rem;
+}
+.offering-actions [data-offering-action] { flex: 1 1 10rem; }
+.offering-stepper { display: flex; align-items: center; gap: .25rem; }
+.offering-stepper .btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: .5rem;
+  font-size: 1.15em;
+}
+.offering-stepper output { min-width: 2ch; text-align: center; font-variant-numeric: tabular-nums; }

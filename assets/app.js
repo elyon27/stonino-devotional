@@ -236,9 +236,7 @@ function renderNovena() {
   $('completeDay').disabled = !available;
   $('prevDay').disabled = !isNovenaDayOpen(state.day - 1, now);
   $('nextDay').disabled = !available || !isNovenaDayOpen(state.day + 1, now);
-  for (const form of ['novenaCandleForm', 'novenaFlowerForm']) {
-    $(form).querySelector('button[type="submit"]').disabled = !available;
-  }
+  renderOfferingQuantities();
   $('dayGrid').innerHTML = novenaSchedule.map(({isoDate, opensAt}, index) => {
     const open = isNovenaDayOpen(index, now);
     const selected = open && index === state.day;
@@ -501,6 +499,7 @@ async function setAccountUser(user) {
       }
     }
     packBalance = null;
+    for (const offering of Object.values(offerings)) offering.quantity = 1;
     clearPrayerPackQr();
     $('prayerPackTransfer').hidden = true;
     $('prayerPackTransfer').reset();
@@ -789,6 +788,7 @@ function renderPrayerPacks() {
   $('deleteAccount').disabled = packBusy || deletingDevotionalData;
   $('deleteAccount').title = packBusy ? 'Checking Prayer Packs…' : '';
   for (const button of packButtons) button.disabled = packBusy || Boolean(pending);
+  renderOfferingQuantities();
 }
 
 async function packRequest(action, body) {
@@ -1195,7 +1195,7 @@ $('continuePrayerPack').onclick = () => void startPrayerPack();
 for (const button of packButtons) button.onclick = () => void startPrayerPack(Number(button.dataset.prayerPack));
 
 let spendingCredit = false;
-language();setFont(state.font);if(location.hash&&$(location.hash.slice(1))?.classList.contains('page'))nav(location.hash.slice(1));initCloud();function refreshDevotionalClock() {
+function refreshDevotionalClock() {
   updateCandleClock();
   const now = Date.now();
   if (getNovenaYear(now) !== novenaYear || now >= nextNovenaUpdate) renderNovena();
@@ -1210,66 +1210,115 @@ document.addEventListener('visibilitychange', () => {
     else if (state.user) void readPrayerBalance();
   }
 });
-(() => {
-  const offerings = {
-    candle: { form: 'candleForm', field: 'candleFor', type: 'candleType' },
-    flowers: { form: 'flowerForm', field: 'flowerFor', type: 'flowerType' },
-    'novena-candle': { novena: true, form: 'novenaCandleForm', field: 'novenaCandleFor', type: 'novenaCandleType' },
-    'novena-flowers': { novena: true, form: 'novenaFlowerForm', field: 'novenaFlowerFor', type: 'novenaFlowerType' }
-  };
-  for (const [kind, settings] of Object.entries(offerings)) {
-    $(settings.form).onsubmit = async event => {
-      event.preventDefault();
-      if (!canUseApp() || deletingDevotionalData || clearingOfferings || spendingCredit) return;
-      const userId = state.user.id;
-      const form = event.currentTarget;
-      const button = form.querySelector('button[type="submit"]');
-      const select = form.querySelector('[data-offering-prayer]');
-      const pendingKey = 'pendingOffering.' + kind;
-      const pending = readAccountData(pendingKey, null);
-      if (!pending && settings.novena && !isNovenaDayOpen(state.day)) return;
-      const choice = select.value;
-      const type = $(settings.type).value;
-      const prayerIndex = choice === '' || choice === 'custom' ? null : Number(choice);
-      const args = pending || {
-        request_id: crypto.randomUUID(),
-        offering_kind: kind,
-        prayer_type: type,
-        prayer_index: prayerIndex,
-        note: choice === 'custom' ? $(settings.field).value.trim() : '',
-        novena_day: settings.novena ? state.day : null
-      };
-      saveAccountData(pendingKey, args);
-      spendingCredit = button.disabled = true;
-      offeringRevision++;
-      try {
-        const { error } = await state.supabase.rpc('stonino_spend_prayer_credit', args);
-        if (state.user?.id !== userId) return;
-        if (error) {
-          if (error.code === 'P0001') saveAccountData(pendingKey, null);
-          if (error.message === 'prayer_pack_empty') {
-            packBalance = 0;
-            renderPrayerPacks();
-            nav('prayerPacks');
-            void refreshPrayerPacks();
-            toast('Your Prayer Pack is empty.');
-            return;
-          }
-          throw error;
-        }
-        saveAccountData(pendingKey, null);
-        offeringRevision++;
-        form.reset();
-        renderOfferingPrayers(select);
-        await Promise.all([loadCloud(), readPrayerBalance()]);
-        if (state.user?.id === userId) toast('Your offering was placed. One credit used.');
-      } catch {
-        if (state.user?.id === userId) toast('Could not confirm the offering. Submit again to retry.');
-      } finally {
-        spendingCredit = false;
-        button.disabled = Boolean(settings.novena && !isNovenaDayOpen(state.day));
-      }
+const offerings = {
+  candle: { form: 'candleForm', field: 'candleFor', type: 'candleType', quantity: 1 },
+  flowers: { form: 'flowerForm', field: 'flowerFor', type: 'flowerType', quantity: 1 },
+  'novena-candle': { novena: true, form: 'novenaCandleForm', field: 'novenaCandleFor', type: 'novenaCandleType', quantity: 1 },
+  'novena-flowers': { novena: true, form: 'novenaFlowerForm', field: 'novenaFlowerFor', type: 'novenaFlowerType', quantity: 1 }
+};
+
+function renderOfferingQuantities() {
+  const balance = packBalance ?? 0;
+  for (const [kind, offering] of Object.entries(offerings)) {
+    const form = $(offering.form);
+    const pending = readAccountData('pendingOffering.' + kind, null);
+    const unavailable = Boolean(offering.novena && !isNovenaDayOpen(state.day));
+    offering.quantity = Math.max(1, Math.min(offering.quantity, balance));
+    const quantity = pending ? (pending.request_ids?.length ?? 1) : balance ? offering.quantity : 0;
+    const locked = !canUseApp() || spendingCredit;
+    const button = form.querySelector('[data-offering-action]');
+    const label = quantity > 1 && kind === 'candle' ? 'Light Candles'
+      : quantity > 1 && kind === 'novena-candle' ? 'Offer Novena Candles'
+      : button.dataset.offeringAction;
+    const cost = `${quantity} ${tr(quantity === 1 ? 'credit' : 'credits')}`;
+    button.textContent = pending ? tr('Retry offering')
+      : balance ? `${tr(label)} · ${cost}` : tr(label);
+    button.disabled = locked || (!pending && unavailable);
+    form.querySelector('[data-offering-quantity]').value = quantity;
+    form.querySelector('[data-quantity-step="-1"]').disabled = locked || unavailable || Boolean(pending) || quantity <= 1;
+    form.querySelector('[data-quantity-step="1"]').disabled = locked || unavailable || Boolean(pending) || quantity >= balance;
+  }
+}
+
+for (const [kind, offering] of Object.entries(offerings)) {
+  const form = $(offering.form);
+  for (const step of form.querySelectorAll('[data-quantity-step]')) {
+    step.onclick = () => {
+      offering.quantity += Number(step.dataset.quantityStep);
+      renderOfferingQuantities();
     };
   }
-})();
+  form.onsubmit = async event => {
+    event.preventDefault();
+    if (!canUseApp() || deletingDevotionalData || clearingOfferings || spendingCredit) return;
+    const userId = state.user.id;
+    const pendingKey = 'pendingOffering.' + kind;
+    const pending = readAccountData(pendingKey, null);
+    if (!pending && offering.novena && !isNovenaDayOpen(state.day)) return;
+    if (!pending && packBalance === null) {
+      await readPrayerBalance();
+      if (state.user?.id === userId && packBalance === null) toast(tr('Could not check your credit balance. Please try again.'));
+      if (state.user?.id !== userId || packBalance === null || spendingCredit) return;
+      // Require another click so the member can see the cost before submitting.
+      if (packBalance > 0) return;
+    }
+    if (!pending && packBalance < offering.quantity) {
+      nav('prayerPacks');
+      void refreshPrayerPacks();
+      toast(tr('Your Prayer Pack is empty.'));
+      return;
+    }
+
+    const select = form.querySelector('[data-offering-prayer]');
+    const choice = select.value;
+    const quantity = pending ? (pending.request_ids?.length ?? 1) : offering.quantity;
+    const args = pending || {
+      ...(quantity === 1 ? { request_id: crypto.randomUUID() }
+        : { request_ids: Array.from({ length: quantity }, () => crypto.randomUUID()) }),
+      offering_kind: kind,
+      prayer_type: $(offering.type).value,
+      prayer_index: choice === '' || choice === 'custom' ? null : Number(choice),
+      note: choice === 'custom' ? $(offering.field).value.trim() : '',
+      novena_day: offering.novena ? state.day : null
+    };
+    saveAccountData(pendingKey, args);
+    spendingCredit = true;
+    renderOfferingQuantities();
+    offeringRevision++;
+    try {
+      const rpc = args.request_ids ? 'stonino_spend_prayer_credits' : 'stonino_spend_prayer_credit';
+      const { error } = await state.supabase.rpc(rpc, args);
+      if (state.user?.id !== userId) return;
+      if (error) {
+        if (error.code === 'P0001' || error.code === 'PGRST202') saveAccountData(pendingKey, null);
+        if (error.message === 'prayer_pack_empty') {
+          await readPrayerBalance();
+          if (state.user?.id === userId) toast(tr('Your credit balance is too low for this quantity.'));
+          return;
+        }
+        if (error.code === 'PGRST202' && args.request_ids) {
+          toast(tr('Multiple offerings are temporarily unavailable. You can still offer one at a time.'));
+          return;
+        }
+        throw error;
+      }
+      saveAccountData(pendingKey, null);
+      offeringRevision++;
+      offering.quantity = 1;
+      form.reset();
+      renderOfferingPrayers(select);
+      await Promise.all([loadCloud(), readPrayerBalance()]);
+      if (state.user?.id === userId) {
+        toast(tr('Your offering was placed. {count} {credits} used.')
+          .replace('{count}', quantity).replace('{credits}', tr(quantity === 1 ? 'credit' : 'credits')));
+      }
+    } catch {
+      if (state.user?.id === userId) toast(tr('Could not confirm the offering. Submit again to retry.'));
+    } finally {
+      spendingCredit = false;
+      renderOfferingQuantities();
+    }
+  };
+}
+language();setFont(state.font);if(location.hash&&$(location.hash.slice(1))?.classList.contains('page'))nav(location.hash.slice(1));initCloud();
 })();

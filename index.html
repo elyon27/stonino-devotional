@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#8B1E2D"><meta name="description" content="A Catholic devotional sanctuary honoring Señor Santo Niño de Cebu.">
   <title>Sto. Niño | Cebu Heritage Chapel</title>
-  <link rel="stylesheet" href="assets/styles.css?v=admin-payment-notices"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/styles.css?v=offering-quantity"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/chapel-icon-192.png">
   <script defer src="assets/install.js?v=cebuano"></script>
@@ -160,7 +160,14 @@
           <label for="novenaCandleFor">Your prayer</label>
           <input id="novenaCandleFor" type="text" maxlength="120" placeholder="My intention for this novena…">
         </div>
-        <button class="btn gold full" type="submit">Offer a Novena Candle · 1 credit</button>
+        <div class="offering-actions">
+          <button class="btn gold" type="submit" data-offering-action="Offer a Novena Candle">Offer a Novena Candle · 1 credit</button>
+          <div class="offering-stepper" role="group" aria-label="Offering quantity">
+            <button class="btn outline" type="button" data-quantity-step="-1" aria-label="Decrease quantity" disabled>−</button>
+            <output data-offering-quantity aria-label="Quantity">1</output>
+            <button class="btn outline" type="button" data-quantity-step="1" aria-label="Increase quantity" disabled>+</button>
+          </div>
+        </div>
     </form><p class="hint">This candle is offered for your currently selected novena day.</p></div>
     <div class="panel candle-panel"><h3>My Novena Candles</h3>
       <div class="candle-grid" id="novenaCandleGrid"></div>
@@ -184,7 +191,14 @@
           <label for="novenaFlowerFor">Your prayer</label>
           <textarea id="novenaFlowerFor" maxlength="250" rows="3" placeholder="My prayer intention with this floral offering…"></textarea>
         </div>
-        <button class="btn gold full" type="submit">Offer Flowers · 1 credit</button>
+        <div class="offering-actions">
+          <button class="btn gold" type="submit" data-offering-action="Offer Flowers">Offer Flowers · 1 credit</button>
+          <div class="offering-stepper" role="group" aria-label="Offering quantity">
+            <button class="btn outline" type="button" data-quantity-step="-1" aria-label="Decrease quantity" disabled>−</button>
+            <output data-offering-quantity aria-label="Quantity">1</output>
+            <button class="btn outline" type="button" data-quantity-step="1" aria-label="Increase quantity" disabled>+</button>
+          </div>
+        </div>
       </form>
       <p class="hint">Each bouquet uses 1 credit.</p>
     </div>
@@ -206,7 +220,14 @@
           <label for="candleFor">Your prayer</label>
           <input id="candleFor" type="text" maxlength="120" placeholder="For my family, for healing, in thanksgiving…">
         </div>
-        <button class="btn gold full" type="submit">Light a Candle · 1 credit</button></form></div><div class="panel candle-panel"><h3>My offered candles</h3><div class="candle-grid" id="candleGrid"></div><p class="hint" id="candleEmpty">No candles yet. Light one as you offer a prayer.</p></div></div></section>
+        <div class="offering-actions">
+          <button class="btn gold" type="submit" data-offering-action="Light a Candle">Light a Candle · 1 credit</button>
+          <div class="offering-stepper" role="group" aria-label="Offering quantity">
+            <button class="btn outline" type="button" data-quantity-step="-1" aria-label="Decrease quantity" disabled>−</button>
+            <output data-offering-quantity aria-label="Quantity">1</output>
+            <button class="btn outline" type="button" data-quantity-step="1" aria-label="Increase quantity" disabled>+</button>
+          </div>
+        </div></form></div><div class="panel candle-panel"><h3>My offered candles</h3><div class="candle-grid" id="candleGrid"></div><p class="hint" id="candleEmpty">No candles yet. Light one as you offer a prayer.</p></div></div></section>
 <section class="page" id="flowers" aria-labelledby="flowerTitle">
   <p class="eyebrow">A SYMBOL OF PRAYER</p>
   <h2 id="flowerTitle" data-i18n="navFlowers">Offer Flowers</h2>
@@ -223,7 +244,14 @@
           <label for="flowerFor">Your prayer</label>
           <input id="flowerFor" type="text" maxlength="120" placeholder="For my family, for healing, in thanksgiving…">
         </div>
-        <button class="btn gold full" type="submit">Offer Flowers · 1 credit</button>
+        <div class="offering-actions">
+          <button class="btn gold" type="submit" data-offering-action="Offer Flowers">Offer Flowers · 1 credit</button>
+          <div class="offering-stepper" role="group" aria-label="Offering quantity">
+            <button class="btn outline" type="button" data-quantity-step="-1" aria-label="Decrease quantity" disabled>−</button>
+            <output data-offering-quantity aria-label="Quantity">1</output>
+            <button class="btn outline" type="button" data-quantity-step="1" aria-label="Increase quantity" disabled>+</button>
+          </div>
+        </div>
       </form>
       
     </div>
@@ -281,7 +309,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <template id="cebuanoScriptureCredit"><a href="https://ebible.org/cebocb/copyright.htm" target="_blank" rel="noopener">Biblica® Open Ang Pulong sa Dios™</a> · © 2009, 2010, 2014, 2024 Biblica, Inc. · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></template>
 <script src="assets/cebuano.js?v=password-visibility"></script><script src="assets/filipino-prayers.js?v=password-visibility"></script><script src="assets/localize.js?v=tagalog-prayers"></script>
-<script src="assets/config.js?v=admin-sanctuary"></script><script src="assets/offering-prayers.js"></script><script src="assets/app.js?v=admin-payment-notices"></script>
+<script src="assets/config.js?v=admin-sanctuary"></script><script src="assets/offering-prayers.js"></script><script src="assets/app.js?v=offering-quantity"></script>
 <script src="assets/music/tracks.js"></script><script src="assets/music-prayers.js?v=bundled-tracks"></script>
 <script src="assets/new-testament-web.js"></script><script src="assets/new-testament-cebuano.js"></script><script src="assets/new-testament-tagalog.js"></script><script src="assets/scripture-ticker.js?v=admin-payment-notices"></script>
 </body></html>
