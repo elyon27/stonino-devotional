@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>GCash Prayer Pack review · Sto. Niño Devotional</title>
+  <link rel="stylesheet" href="assets/styles.css?v=2.9.1">
+  <script src="assets/gcash-pack-review.js" defer></script>
+
+  <link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/chapel-icon-192.png">
+</head>
+<body>
+<header class="topbar">
+  <a class="identity" href="./" aria-label="Sto. Niño Devotional home">
+    <img src="assets/chapel-logo.svg" alt="" width="40" height="40">
+    <span><strong>SEÑOR SANTO NIÑO</strong><small>Cebu Heritage Chapel</small></span>
+  </a>
+</header>
+
+<main class="panel" style="max-width:36rem;margin:2rem auto">
+  <a href="/">Return to the chapel</a>
+  <h1>GCash payment review</h1>
+  <p>Look up the reference from your GCash transaction history. Verify that the transfer reached your GCash wallet and matches the reference and exact pack price. Check that it was received after the order was created.</p>
+  <form id="reviewForm">
+    <label for="reviewToken">Review token</label>
+    <input id="reviewToken" type="password" autocomplete="off" required>
+    <label for="reviewReference">GCash transaction reference</label>
+    <input id="reviewReference" autocomplete="off" maxlength="40" required>
+    <button class="btn outline" id="lookupReview" type="submit">Look up payment</button>
+    <div id="reviewApproval" hidden>
+      <label for="verifiedAmount">Amount received in pesos</label>
+      <input id="verifiedAmount" type="number" min="1" step="0.01">
+      <button class="btn gold" id="approveReview" type="button">Approve verified payment</button>
+    </div>
+  </form>
+  <p id="reviewStatus" role="status" aria-live="polite"></p>
+</main>
+<script src="assets/cebuano.js"></script><script src="assets/localize.js"></script></body>
+</html>

@@ -262,3 +262,56 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
 .password-field input[type="password"] + button .password-eye-slash {
   display: none;
 }
+
+.topbar .release-version { display: block; margin-top: 3px; color: var(--ivory); font-size: .7rem; white-space: nowrap; }
+
+.prayer-pack-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-block: .75rem;
+}
+.prayer-pack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: .75rem;
+  margin-block: 1rem;
+}
+.prayer-pack-grid > button {
+  display: grid;
+  justify-items: center;
+  gap: .35rem;
+}
+.prayer-pack-grid > button strong { font-size: 1.15em; }
+
+.prayer-pack-qr {
+  padding-block: 1rem;
+  border-top: 1px solid currentColor;
+}
+.prayer-pack-qr img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  padding: .75rem;
+  background: white;
+  border-radius: .5rem;
+}
+
+/* Show the QR area of GCash's 1080 × 2023 cards with its white border. */
+.gcash-scan-frame {
+  position: relative;
+  width: min(100%, 22rem);
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: white;
+}
+.gcash-scan-frame img {
+  position: absolute;
+  width: 207.6923%;
+  max-width: none;
+  left: -53.8462%;
+  top: -104.8077%;
+  padding: 0;
+  border-radius: 0;
+}
+
+.prayer-pack-reference { margin-top: 1rem; }

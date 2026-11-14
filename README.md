@@ -6,7 +6,7 @@
 - Mobile responsive, Cebu heritage-inspired virtual chapel with *original symbolic illustration* of the Holy Child Jesus.
 - Original nine-day Scripture-inspired novena with progression tracking (not the Basilica's official novena).
 - Original personal, family, thanksgiving and departed-souls prayers.
-- Symbolic candle offerings that diminish over 24 hours (maximum 24 active candles per visitor).
+- Symbolic candle offerings that diminish over 24 hours (one credit per candle).
 - Private prayer intention journal with add/delete.
 - Seven Bible-reference meditations (no unlicensed Bible text reproduced).
 - English, Cebuano and Filipino **navigation**; English prayers and reflections in this draft.
@@ -23,17 +23,49 @@ Open `index.html` in a browser. Devotional features require a Supabase account. 
 3. The published URL serves `/privacy.html` and `/account-deletion.html` for Google Play app listing requirements. Replace placeholder privacy details if operation changes.
 4. Do not claim this is an official Basilica or Archdiocese app.
 
-## Free offerings
+## Prayer Packs
 
-Candles and flowers, including novena offerings, are free while GCash checkout is paused.
-Use **Settings & Privacy → Delete All Offerings** to clear both kinds of offerings for the signed-in account.
-Existing GCash review records remain available through the operator review page.
+The root web app sells 20, 50, 100 or 200 credits at ₱1 per credit. Each candle or bouquet uses one credit, including novena offerings. The balance is shared across signed-in devices. Prayer, Scripture and novena readings remain free. Deleting offerings does not restore credits. Deleting the Sto. Niño profile also deletes its unused balance.
+
+### Interim GCash Express Send checkout
+
+Express Send is the default purchase mode. The app displays the selected pack price and its GCash QR. The buyer scans the code and submits the GCash reference, then can use **Refresh balance** to recheck the order.
+
+1. Apply `prayer-packs.sql` once if the Prayer Pack schema is absent. Deploy the web app and functions together.
+2. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` in the Netlify Functions environment.
+3. Each pack uses its matching GCash image from `assets/gcash-packs/`. Each QR carries its pack amount. Buyers should confirm the recipient and amount in GCash before sending.
+4. From your own GCash transaction history, verify the incoming reference, amount and time. Open Payment Review on the deployed site and confirm the matching payment. Only approve a new transfer received after its order was created. Never approve from a screenshot alone.
+
+### Payment Review and email alerts
+
+Apply `prayer-pack-admin.sql` after the original Prayer Pack migration, then deploy the updated site and Netlify functions. Keep Supabase email confirmation enabled. Sign in using the Supabase account with verified email `leuneib01@gmail.com` to open Payment Review automatically. It shows the buyer email, reference submission time in Philippine time, amount and reference number. Verify each transfer in GCash before confirming. The date shown is the submission date.
+
+For alerts to `leuneib01@gmail.com`, set `RESEND_API_KEY` and `PRAYER_PACK_EMAIL_FROM` in Netlify Functions. Use a Resend-verified sender address. A submitted reference triggers an alert, and a scheduled function retries pending alerts. The existing token review page remains available for older claims that stored only a reference digest. `GCASH_REVIEW_TOKEN` is needed only for that legacy page.
+
+### GCash for Business QR checkout
+
+Set `PRAYER_PACK_PAYMENT_MODE=merchant` when the verified merchant service is ready. Existing Express Send claims can still be reviewed with the review token.
+
+### Setup
+
+1. For an existing database, run `prayer-packs.sql` once in the same Supabase project as `stonino_profiles`. For a new database, run `supabase-schema.sql` first. Publish the root web app and its Netlify functions together. Older clients that submit offerings directly to the profiles table need the updated web app.
+2. Configure the Netlify Functions variables `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PRAYER_PACK_SITE_URL` (the canonical web app URL), `PRAYER_PACK_CHECKOUT_ORIGIN` (the HTTPS checkout host), `PRAYER_PACK_MERCHANT_URL` (the private merchant adapter base URL), `PRAYER_PACK_MERCHANT_KEY` and `PRAYER_PACK_NOTIFICATION_KEY` (at least 32 characters). Keep the keys server-side.
+3. Connect an approved GCash-compatible QR Ph merchant payment integration to the adapter contract below. Checkout stays unavailable until these settings are present. The former GCash Express Send reference review is separate from Prayer Packs.
+4. Verify a sandbox payment, the credit balance on a second signed-in device, and one debit for each offering before enabling live payments. This ZIP is web source. The historical APKs bundled in the archive predate Prayer Packs.
+
+### Merchant adapter contract
+
+The adapter is the server-side connection to your actual merchant provider. Use that provider's verified payment API and signed callbacks. The repository contains the app-side checkout and verification flow. It requires a working adapter to accept live payments.
+
+- `POST checkouts` receives `{ orderId, amountCentavos, currency, paymentMethod, returnUrl }`. Create or resume one merchant checkout per `orderId`. For `paymentMethod: "qrph"`, create a dynamic, amount-specific QR Ph checkout that GCash can scan. Return `{ id, checkoutUrl, qrPngBase64, expiresAt }` consistently for repeated requests. Send a plain base64 PNG with its quiet zone and an ISO 8601 expiration timestamp. Return the same checkout for the same order even when it expires. Treat merchant cancellation or expiry as final only after the provider confirms there was no successful payment. Keep the order ID linked to the provider session.
+- `GET checkouts/{id}` returns `{ id, orderId, amountCentavos, currency, status }`. Mark a payment `paid` only after verifying successful settlement through the provider. Use `pending`, `expired` or `cancelled` for other outcomes. Amounts are integers in PHP centavos.
+- Both requests authenticate with the merchant adapter bearer key. On a verified payment event, the adapter sends `POST /.netlify/functions/prayer-packs?action=notify` with `{ orderId }` and the notification bearer key. Retry non-success responses. The app queries the adapter independently and checks the order, provider ID, currency and amount before adding credits. Returning to the app also triggers that check. Repeated events for the same paid order grant credits once.
 
 ## Required Supabase setup
 1. Reuse an existing Supabase project. Execute `supabase-schema.sql` in Supabase SQL Editor.
 2. Configure URL and public **anon/publishable** key in `assets/config.js`. Never paste the service-role key here.
 3. In Supabase Auth configure Email provider, email-confirmation templates, Site URL and redirect allowlist to your Netlify domain.
-4. Add Netlify environment variables `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` only for older clients that call the **server-side** profile deletion function. Keep the service-role secret out of GitHub and front-end code.
+4. Add Netlify environment variables `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` for server-side checkout and payment confirmation. Keep the service-role secret out of GitHub and front-end code.
 5. Make sure Supabase Auth email delivery and Netlify functions work before enabling public signups. A public CAPTCHA/rate-limit strategy and monitoring are recommended.
 6. Test sign-up, sign-in, display name setup, syncing, sign-out, password-reset email and account deletion with test accounts before Google Play submission.
 

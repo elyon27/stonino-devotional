@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#8B1E2D"><meta name="description" content="A Catholic devotional sanctuary honoring Señor Santo Niño de Cebu.">
   <title>Sto. Niño | Cebu Heritage Chapel</title>
-  <link rel="stylesheet" href="assets/styles.css?v=password-visibility"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/styles.css?v=prayer-pack-admin"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/chapel-icon-192.png">
   <script defer src="assets/install.js?v=cebuano"></script>
@@ -13,7 +13,7 @@
 <a class="skip" href="#main">Skip to main content</a>
 <div class="app-shell">
 <header class="topbar">
-  <a class="identity" href="#sanctuary" data-nav="sanctuary" aria-label="Sto. Niño home"><img src="assets/chapel-logo.svg" alt="" width="40" height="40"><span><strong>SEÑOR SANTO NIÑO</strong><small>Cebu Heritage Chapel</small></span></a>
+  <a class="identity" href="#sanctuary" data-nav="sanctuary" aria-label="Sto. Niño home"><img src="assets/chapel-logo.svg" alt="" width="40" height="40"><span><strong>SEÑOR SANTO NIÑO</strong><small>Cebu Heritage Chapel</small><span class="release-version">v1.1.5</span></span></a>
   <span id="devotionalUserName" class="devotional-user-name" hidden></span>
   <div class="header-actions"><button class="text-control" id="soundBtn" title="Toggle ambient sound" hidden>Sound off</button><button class="text-control" id="langBtn" aria-label="Change language">English ▾</button><button class="text-control" id="themeBtn" type="button" title="Switch between light and dark backgrounds" aria-label="Switch to dark mode" aria-pressed="false">☾ Dark</button><button class="text-control" id="fontBtn" title="Increase text size">A+</button><button class="text-control" id="authBtn">My Account</button></div>
 </header>
@@ -46,6 +46,65 @@
   <div class="nav-foot">An independent Catholic devotional project.<br><a href="https://www.crownmind.net" target="_blank" rel="noopener noreferrer">CrownMind Institute</a></div>
 </nav>
 <main id="main" tabindex="-1">
+<button id="paymentReviewNav" class="btn outline" type="button" data-nav="paymentReview" hidden>Payment Review</button>
+<section id="paymentReview" class="page" aria-labelledby="paymentReviewTitle">
+  <h2 id="paymentReviewTitle">Payment Review</h2>
+  <p>Match each reference and amount against your GCash transaction history before confirming.</p>
+  <p id="paymentReviewStatus" role="status"></p>
+  <div id="paymentReviewList"></div>
+  <div class="button-row">
+    <button id="refreshPaymentReview" class="btn outline" type="button">Refresh payments</button>
+    <button id="nextPaymentReview" class="btn outline" type="button" hidden>Next page</button>
+  </div>
+</section>
+<div class="prayer-pack-bar">
+  <button type="button" class="btn outline" data-nav="prayerPacks">Prayer Packs · <span id="prayerPackBadge">Loading…</span></button>
+</div>
+<section class="page" id="prayerPacks" aria-labelledby="prayerPacksTitle">
+  <h2 id="prayerPacksTitle">Prayer Packs</h2>
+  <p class="lead">One credit costs ₱1. Each candle or bouquet uses one credit, including novena offerings.</p>
+  <div class="panel">
+    <p><strong id="prayerPackBalance" aria-live="polite">Remaining Balance 0</strong></p>
+    <p id="prayerPackStatus" role="status">Checking checkout availability…</p>
+    <div class="prayer-pack-grid">
+      <button type="button" class="btn outline" data-prayer-pack="20" disabled><strong>20 credits</strong><span>₱20</span></button>
+      <button type="button" class="btn outline" data-prayer-pack="50" disabled><strong>50 credits</strong><span>₱50</span></button>
+      <button type="button" class="btn outline" data-prayer-pack="100" disabled><strong>100 credits</strong><span>₱100</span></button>
+      <button type="button" class="btn outline" data-prayer-pack="200" disabled><strong>200 credits</strong><span>₱200</span></button>
+    </div>
+    <div id="prayerPackSelection" hidden>
+      <h3 id="prayerPackSelectionTitle"></h3>
+      <div id="prayerPackPersonalQr" class="prayer-pack-qr" hidden>
+        <p>Open <strong>GCash → QR</strong> and scan the code below. On the same phone, download the QR and upload it from GCash’s QR scanner.</p>
+        <div class="gcash-scan-frame">
+          <img id="prayerPackPersonalQrImage" alt="Recipient’s personal GCash Receive Money QR" width="1080" height="2023">
+        </div>
+        <p id="prayerPackPersonalQrAmount"></p>
+        <a id="prayerPackPersonalQrDownload" class="btn outline" download>Download QR for GCash</a>
+        <form id="prayerPackTransfer" class="prayer-pack-reference" hidden>
+          <label for="prayerPackReference">GCash payment reference</label>
+          <input id="prayerPackReference" autocomplete="off" maxlength="40" required>
+          <p>Enter the transaction reference from your GCash receipt after paying.</p>
+          <button id="submitPrayerPackReference" type="submit" class="btn gold" disabled>Submit payment reference</button>
+        </form>
+      </div>
+    </div>
+    <div id="prayerPackQr" class="prayer-pack-qr" hidden>
+      <h3 id="prayerPackQrTitle">Pay with GCash</h3>
+      <p>Open GCash and scan this QR with another device, or download it and upload it from GCash’s QR scanner.</p>
+      <img id="prayerPackQrImage" alt="GCash-compatible QR Ph payment code" width="256" height="256">
+      <p id="prayerPackQrExpiry"></p>
+      <div class="button-row">
+        <a id="prayerPackQrDownload" class="btn outline" download="prayer-pack-qr.png">Download payment QR</a>
+        <a id="prayerPackHosted" class="btn outline">Open payment page</a>
+      </div>
+    </div>
+    <div class="button-row">
+      <button class="btn outline" id="refreshPrayerPacks" type="button">Refresh balance</button>
+      <button class="btn gold" id="continuePrayerPack" type="button" hidden>View payment instructions</button>
+    </div>
+  </div>
+</section>
 <section class="page active" id="sanctuary" aria-labelledby="homeTitle">
   <div class="hero">
     <div class="arch"><div class="arch-inner"><span class="tiny-cross">✝</span><div class="halo"></div><img class="holy-icon" src="assets/santo-nino-portrait.png" alt="Señor Santo Niño de Cebu in red and gold vestments"><div class="pedestal"><span>VIVA PIT SEÑOR!</span></div></div></div>
@@ -73,7 +132,7 @@
           <label for="novenaCandleFor">Your prayer</label>
           <input id="novenaCandleFor" type="text" maxlength="120" placeholder="My intention for this novena…">
         </div>
-        <button class="btn gold full" type="submit">Offer a Novena Candle</button>
+        <button class="btn gold full" type="submit">Offer a Novena Candle · 1 credit</button>
     </form><p class="hint">This candle is offered for your currently selected novena day.</p></div>
     <div class="panel candle-panel"><h3>My Novena Candles</h3>
       <div class="candle-grid" id="novenaCandleGrid"></div>
@@ -97,9 +156,9 @@
           <label for="novenaFlowerFor">Your prayer</label>
           <textarea id="novenaFlowerFor" maxlength="250" rows="3" placeholder="My prayer intention with this floral offering…"></textarea>
         </div>
-        <button class="btn gold full" type="submit">Offer Flowers</button>
+        <button class="btn gold full" type="submit">Offer Flowers · 1 credit</button>
       </form>
-      <p class="hint">Flower offerings are free.</p>
+      <p class="hint">Each bouquet uses 1 credit.</p>
     </div>
     <div class="panel flowers-panel"><h3>My Offered Flowers</h3>
       <div class="flower-grid" id="novenaFlowerGrid" aria-live="polite"></div>
@@ -109,7 +168,7 @@
 </section>
 <div class="panel soft"><h3>Additional original prayers</h3><div class="button-row" id="prayerTabs"><button class="chip selected" data-prayer="morning">Morning</button><button class="chip" data-prayer="family">Family</button><button class="chip" data-prayer="thanks">Thanksgiving</button><button class="chip" data-prayer="departed">Departed</button><button class="chip" data-prayer="appCreator">For the App’s Creator</button></div><p class="prayer-copy" id="extraPrayer"></p><p class="hint">For the traditional Cebu novena and Friday devotion, consult the Basilica's approved prayer resources.</p></div>
 </section>
-<section class="page" id="candles" aria-labelledby="candleTitle"><p class="eyebrow">A SYMBOL OF PRAYER</p><h2 id="candleTitle" data-i18n="navCandles">Light a Candle</h2><p class="lead">Virtual candles are free and stay visible for 24 hours.</p><div class="two-column"><div class="panel"><form id="candleForm">
+<section class="page" id="candles" aria-labelledby="candleTitle"><p class="eyebrow">A SYMBOL OF PRAYER</p><h2 id="candleTitle" data-i18n="navCandles">Light a Candle</h2><p class="lead">Each candle uses 1 credit and stays visible for 24 hours.</p><div class="two-column"><div class="panel"><form id="candleForm">
         <label for="candleType">Intention Type</label>
         <select id="candleType"><option value="Personal prayer">Personal prayer</option><option value="Family">Family</option><option value="Thanksgiving">Thanksgiving</option><option value="For the departed">For the departed</option></select>
         <label for="candlePrayer">Prayers</label>
@@ -119,11 +178,11 @@
           <label for="candleFor">Your prayer</label>
           <input id="candleFor" type="text" maxlength="120" placeholder="For my family, for healing, in thanksgiving…">
         </div>
-        <button class="btn gold full" type="submit">Light a Candle</button></form></div><div class="panel candle-panel"><h3>My offered candles</h3><div class="candle-grid" id="candleGrid"></div><p class="hint" id="candleEmpty">No candles yet. Light one as you offer a prayer.</p></div></div></section>
+        <button class="btn gold full" type="submit">Light a Candle · 1 credit</button></form></div><div class="panel candle-panel"><h3>My offered candles</h3><div class="candle-grid" id="candleGrid"></div><p class="hint" id="candleEmpty">No candles yet. Light one as you offer a prayer.</p></div></div></section>
 <section class="page" id="flowers" aria-labelledby="flowerTitle">
   <p class="eyebrow">A SYMBOL OF PRAYER</p>
   <h2 id="flowerTitle" data-i18n="navFlowers">Offer Flowers</h2>
-  <p class="lead">Offer a bouquet of red roses to Señor Santo Niño. Flower offerings are free.</p>
+  <p class="lead">Offer a bouquet of red roses to Señor Santo Niño. Each bouquet uses 1 credit.</p>
   <div class="two-column">
     <div class="panel">
       <form id="flowerForm">
@@ -136,7 +195,7 @@
           <label for="flowerFor">Your prayer</label>
           <input id="flowerFor" type="text" maxlength="120" placeholder="For my family, for healing, in thanksgiving…">
         </div>
-        <button class="btn gold full" type="submit">Offer Flowers</button>
+        <button class="btn gold full" type="submit">Offer Flowers · 1 credit</button>
       </form>
       
     </div>
@@ -194,7 +253,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <template id="cebuanoScriptureCredit"><a href="https://ebible.org/cebocb/copyright.htm" target="_blank" rel="noopener">Biblica® Open Ang Pulong sa Dios™</a> · © 2009, 2010, 2014, 2024 Biblica, Inc. · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></template>
 <script src="assets/cebuano.js?v=password-visibility"></script><script src="assets/filipino-prayers.js?v=password-visibility"></script><script src="assets/localize.js?v=tagalog-prayers"></script>
-<script src="assets/config.js"></script><script src="assets/offering-prayers.js"></script><script src="assets/app.js?v=password-visibility"></script>
+<script src="assets/config.js?v=prayer-pack-admin"></script><script src="assets/offering-prayers.js"></script><script src="assets/app.js?v=prayer-pack-admin"></script>
 <script src="assets/music/tracks.js"></script><script src="assets/music-prayers.js?v=bundled-tracks"></script>
 <script src="assets/new-testament-web.js"></script><script src="assets/new-testament-cebuano.js"></script><script src="assets/new-testament-tagalog.js"></script><script src="assets/scripture-ticker.js?v=translations"></script>
 </body></html>

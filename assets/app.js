@@ -85,7 +85,7 @@ const novena=[
 ];
 const prayers={morning:'Lord Jesus, Holy Child, I offer you this morning. Bless my thoughts, words, and work. May I recognize your presence in each person I meet and honor you in all I do. Amen.',family:'Jesus, Holy Child, look lovingly upon our family. Keep us close in patience, forgiveness, and faith. Protect children, comfort the elderly, and guide every home toward your peace. Amen.',thanks:'Lord Jesus, receive my thanks for blessings seen and unseen. Keep me humble in prosperity, faithful in difficulty, and generous toward those in need. Amen.',departed:'Lord Jesus Christ, in your mercy remember those who have died. Grant them rest according to your holy will, console those who mourn, and strengthen our hope in the resurrection. Amen.',appCreator:'Lord Jesus, Holy Child, bless the person who built this app. Grant them wisdom, humility, and perseverance. May their work help others draw closer to you. Amen.'};
 const meditations=[['Matthew 19:13–15','Welcome','Jesus welcomes children. Consider how you can make room for the small, the vulnerable, and the overlooked. In prayer, ask for a heart ready to receive others.'],['Luke 2:1–20','God comes near','The birth of Jesus reveals God’s love in humility. Reflect on the ways you may encounter Christ in ordinary life.'],['Luke 2:41–52','Growth in wisdom','The child Jesus grows in wisdom. Ask God to guide your own growth in understanding, patience, and obedience to truth.'],['Mark 10:13–16','Blessing','Jesus blesses those brought to him. Pray for the children of your community and for all who care for them.'],['John 13:1–17','Humble service','Christ serves his disciples. Choose one practical act of kindness that asks for nothing in return.'],['John 14:27','Peace','Jesus promises his peace. Bring a burden before God and consider one step toward reconciliation.'],['Philippians 2:5–11','Christ’s humility','Christ’s self-giving love invites us to lay aside vanity and follow his example in daily choices.']];
-let toastTimer;function toast(msg){const e=$('toast');e.textContent=tr(msg);e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),3500)}function html(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function nav(name){if(!canUseApp()||!$(name))return;document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===name));document.querySelectorAll('[data-nav]').forEach(e=>e.classList.toggle('active',e.dataset.nav===name));history.replaceState(null,'','#'+name);window.scrollTo({top:0,behavior:'instant'});$('main').focus({preventScroll:true})}document.querySelectorAll('[data-nav]').forEach(e=>e.addEventListener('click',ev=>{ev.preventDefault();nav(e.dataset.nav)}));
+let toastTimer;function toast(msg){const e=$('toast');e.textContent=tr(msg);e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),3500)}function html(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function nav(name){if(!canUseApp()||!$(name)||(name==='paymentReview'&&!paymentAdmin))return;document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===name));document.querySelectorAll('[data-nav]').forEach(e=>e.classList.toggle('active',e.dataset.nav===name));history.replaceState(null,'','#'+name);if(name==='prayerPacks')void refreshPrayerPacks();if(name==='paymentReview')void loadPaymentReview();window.scrollTo({top:0,behavior:'instant'});$('main').focus({preventScroll:true})}document.querySelectorAll('[data-nav]').forEach(e=>e.addEventListener('click',ev=>{ev.preventDefault();nav(e.dataset.nav)}));
 function language(){document.documentElement.lang=state.language;window.stoninoLocalize(state.language);document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=(translations[state.language]||translations.en)[e.dataset.i18n]||e.textContent);$('language').value=state.language;$('langBtn').textContent=({en:'English',ceb:'Cebuano',fil:'Filipino'})[state.language]+' ▾';store.set('language',state.language);renderNovena();displayPrayer(currentPrayer);renderCandles();renderNovenaCandles();renderFlowers();renderIntentions();renderMeditation();accountView();document.querySelectorAll('[data-offering-prayer]').forEach(renderOfferingPrayers)}$('language').addEventListener('change',e=>{state.language=e.target.value;language()});$('langBtn').addEventListener('click',()=>{const seq=['en','ceb','fil'];state.language=seq[(seq.indexOf(state.language)+1)%3];language();});function setFont(v){state.font=Number(v);document.documentElement.style.setProperty('--scale',state.font);$('textSize').value=String(state.font);store.set('font',state.font)}$('textSize').addEventListener('change',e=>setFont(e.target.value));$('fontBtn').addEventListener('click',()=>{const opts=[1,1.12,1.25];setFont(opts[(opts.indexOf(state.font)+1)%3])});
 // Appearance preference is independent of prayer data and survives page reloads.
 function applyAppearance(mode){
@@ -340,7 +340,6 @@ function updateCandleClock(){
       saveAccountData(key,state[key]);
       $(grid).innerHTML=state[key].map(candleMarkup).join('');
       $(kind==='novena'?'novenaCandleEmpty':'candleEmpty').hidden=!!state[key].length;
-      if(state.user)syncCloud(key);
     }
   }
   if (sanctuaryChanged) renderSanctuaryOfferings();
@@ -473,11 +472,31 @@ function accountView() {
   headerName.hidden = !unlocked;
   $('authBtn').disabled = authStatus !== 'ready';
 }
+let paymentAdmin = false;
 async function setAccountUser(user) {
   const changed = state.user?.id !== user?.id;
   const revision = ++authRevision;
   state.user = user?.is_anonymous ? null : user;
   if (changed) {
+    paymentAdmin = false;
+    $('paymentReviewNav').hidden = true;
+    $('paymentReviewList').replaceChildren();
+    $('paymentReviewStatus').textContent = '';
+    $('nextPaymentReview').hidden = true;
+    if ($('paymentReview').classList.contains('active')) {
+      $('paymentReview').classList.remove('active');
+      $('sanctuary').classList.add('active');
+    }
+    packBalance = null;
+    clearPrayerPackQr();
+    $('prayerPackTransfer').hidden = true;
+    $('prayerPackTransfer').reset();
+    $('prayerPackSelection').hidden = true;
+    packBusy = false;
+    packAvailable = false;
+    packMessage = '';
+    packRevision++;
+    renderPrayerPacks();
     for (const key of devotionalKeys) {
       const saved = readAccountData(key, []);
       state[key] = key === 'completed' ? normalizeCompleted(saved) : Array.isArray(saved) ? saved : [];
@@ -495,8 +514,22 @@ async function setAccountUser(user) {
   }
   authStatus = 'ready';
   language();
-  if (changed && state.user) await loadCloud();
+  if (changed && state.user) {
+    void refreshPrayerPacks();
+    await loadCloud();
+  }
   if (revision !== authRevision) return;
+  if (canUseApp() && state.user?.email?.toLowerCase() === 'leuneib01@gmail.com') {
+    const result = await packRequest('admin-session', {}).catch(() => null);
+    if (revision !== authRevision) return;
+    const wasAdmin = paymentAdmin;
+    paymentAdmin = result?.admin === true;
+    $('paymentReviewNav').hidden = !paymentAdmin;
+    if (paymentAdmin && canUseApp() && (changed || !wasAdmin || location.hash === '#paymentReview')) {
+      nav('paymentReview');
+      return;
+    }
+  }
   const page = location.hash.slice(1);
   if (changed && canUseApp() && $(page)?.classList.contains('page')) nav(page);
 }
@@ -547,7 +580,7 @@ const offeringColumns = {
   novenaCandles: 'novena_candles',
   novenaFlowers: 'novena_flowers'
 };
-const cloudColumns = { ...offeringColumns, intentions: 'intentions', completed: 'completed' };
+const cloudColumns = { intentions: 'intentions', completed: 'completed' };
 const activeDevotionalSaves = new Set();
 async function loadCloud() {
   if (!state.user || !state.supabase) return;
@@ -584,8 +617,7 @@ async function loadCloud() {
   }
 }
 async function syncCloud(key) {
-  if (!state.user || !state.supabase || deletingDevotionalData ||
-      (clearingOfferings && Object.hasOwn(offeringColumns, key))) return;
+  if (!state.user || !state.supabase || deletingDevotionalData) return;
   const save = Promise.resolve(state.supabase.from('stonino_profiles').upsert({
     user_id: state.user.id,
     [cloudColumns[key]]: state[key],
@@ -604,8 +636,8 @@ async function syncCloud(key) {
 }
 
 async function deleteAllOfferings() {
-  if (!canUseApp() || deletingDevotionalData || clearingOfferings) return;
-  if (!confirm(tr('Permanently delete all your candles and flowers, including novena offerings?'))) return;
+  if (!canUseApp() || deletingDevotionalData || clearingOfferings || spendingCredit || packBusy) return;
+  if (!confirm(tr('Permanently delete all your candles and flowers, including novena offerings? Used credits will stay spent.'))) return;
 
   const userId = state.user.id;
   const buttons = [$('deleteOfferings'), $('deleteSanctuaryOfferings')];
@@ -615,9 +647,7 @@ async function deleteAllOfferings() {
   try {
     await Promise.allSettled(activeDevotionalSaves);
     if (state.user?.id !== userId) return;
-    const { error } = await state.supabase.from('stonino_profiles')
-      .update({ candles: [], novena_candles: [], novena_flowers: [], updated_at: new Date().toISOString() })
-      .eq('user_id', userId);
+    const { error } = await state.supabase.rpc('stonino_clear_offerings');
     if (error) throw error;
     for (const key of Object.keys(offeringColumns)) {
       store.set('account.' + userId + '.' + key, []);
@@ -645,8 +675,8 @@ if (mode === 'signUp' && (!name || name.length > 80)) {
   return;
 }
 try{const r=mode==='signUp'?await state.supabase.auth.signUp({email,password,options:{data:{stonino_display_name:name}}}):await state.supabase.auth.signInWithPassword({email,password});if(r.error)throw r.error;localStorage.removeItem(registrationPreference);if(r.data?.user&&r.data?.session)await setAccountUser(r.data.user);accountView();toast(mode==='signUp'?'Account request submitted. Confirm email if required.':'Signed in');if(state.user)$('accountDialog').close()}catch(e){toast(localizedError(e,'Unable to authenticate'))}}$('signIn').onclick=()=>accountAction('signIn');$('signUp').onclick=()=>{if(registering)return accountAction('signUp');setRegistrationMode(true);$('displayName').focus()};$('resetPassword').onclick=async()=>{const email=$('email').value.trim();if(!email||!state.supabase)return toast('Configure cloud access and enter your email');try{const {error}=await state.supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;toast('If the address is registered, a reset email will be sent.')}catch(e){toast(localizedError(e,'Unable to complete the request. Please try again.'))}};$('signOut').onclick=async()=>{const {error}=await state.supabase.auth.signOut({scope:'local'});if(error)return toast(localizedError(error,'Unable to complete the request. Please try again.'));await setAccountUser(null);$('accountDialog').close();toast('Signed out')};$('deleteAccount').onclick = async () => {
-  if (!state.user || !state.supabase || deletingDevotionalData || clearingOfferings) return;
-  if (!confirm(tr('Delete your Sto. Niño Devotional profile and devotional data, and sign out of this app? Your CrownMind login and access to other apps will be preserved.'))) return;
+  if (!state.user || !state.supabase || deletingDevotionalData || clearingOfferings || spendingCredit || packBusy) return;
+  if (!confirm(tr('Delete your Sto. Niño Devotional profile, devotional data and unused credits, and sign out of this app? Your CrownMind login and access to other apps will be preserved.'))) return;
 
   const userId = state.user.id;
   const button = $('deleteAccount');
@@ -654,9 +684,12 @@ try{const r=mode==='signUp'?await state.supabase.auth.signUp({email,password,opt
   try {
     await Promise.all(activeDevotionalSaves);
     if (state.user?.id !== userId) throw Error('Please sign in again.');
-    const { error } = await state.supabase.from('stonino_profiles').delete().eq('user_id', userId);
+    const { error } = await state.supabase.rpc('stonino_delete_devotional_profile');
     if (error) throw error;
 
+    for (const key of [packOrderKey, 'pendingOffering.candle', 'pendingOffering.flowers', 'pendingOffering.novena-candle', 'pendingOffering.novena-flowers']) {
+      localStorage.removeItem(prefix + accountKey(key));
+    }
     for (const key of ['candles', 'novenaCandles', 'novenaFlowers', 'intentions', 'completed']) {
       state[key] = [];
       localStorage.removeItem(prefix + accountKey(key));
@@ -685,6 +718,331 @@ try{const r=mode==='signUp'?await state.supabase.auth.signUp({email,password,opt
   }
 };
 
+let packBalance = null;
+let packAvailable = false;
+let packBusy = false;
+let packMessage = '';
+let packRevision = 0;
+const packEndpoint = '/.netlify/functions/prayer-packs';
+const packButtons = [...document.querySelectorAll('[data-prayer-pack]')];
+const packOrderKey = 'pendingPrayerPack';
+const packReturnOrder = new URL(location.href).searchParams.get('prayerPackOrder');
+let returnOrderChecked = false;
+let packRefreshTimer;
+let packQrExpiry = 0;
+
+function clearPrayerPackQr() {
+  clearTimeout(packRefreshTimer);
+  packQrExpiry = 0;
+  $('prayerPackQr').hidden = true;
+  $('prayerPackQrImage').removeAttribute('src');
+  $('prayerPackQrDownload').removeAttribute('href');
+  $('prayerPackHosted').removeAttribute('href');
+}
+
+function watchPrayerPackQr() {
+  clearTimeout(packRefreshTimer);
+  if (!packQrExpiry) return;
+  if (Date.now() >= packQrExpiry) {
+    clearPrayerPackQr();
+    packMessage = 'The QR code expired. Check the payment status before trying again.';
+    renderPrayerPacks();
+    return;
+  }
+  packRefreshTimer = setTimeout(() => {
+    if (document.hidden || location.hash !== '#prayerPacks') watchPrayerPackQr();
+    else void refreshPrayerPacks();
+  }, Math.min(8000, packQrExpiry - Date.now()));
+}
+
+function renderPrayerPacks() {
+  $('prayerPackBadge').textContent = packBalance === null ? 'View balance' : `${packBalance} credit${packBalance === 1 ? '' : 's'}`;
+  $('prayerPackBalance').textContent = `Remaining Balance ${packBalance ?? 0}`;
+  const pending = readAccountData(packOrderKey, null);
+  $('prayerPackStatus').textContent = packMessage || (pending ? 'You have a checkout in progress.' : 'Choose a Prayer Pack.');
+  $('continuePrayerPack').hidden = !pending?.credits;
+  $('continuePrayerPack').disabled = packBusy;
+  $('refreshPrayerPacks').disabled = packBusy;
+  $('submitPrayerPackReference').disabled = packBusy || $('prayerPackTransfer').dataset.ready !== 'true';
+  $('deleteAccount').disabled = packBusy || deletingDevotionalData;
+  $('deleteAccount').title = packBusy ? 'Checking Prayer Packs…' : '';
+  for (const button of packButtons) button.disabled = packBusy || Boolean(pending);
+}
+
+async function packRequest(action, body) {
+  const userId = state.user?.id;
+  const { data } = await state.supabase.auth.getSession();
+  if (data.session?.user.id !== userId || state.user?.id !== userId) throw Error('Please sign in again.');
+  const response = await fetch(`${packEndpoint}?action=${action}`, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + data.session.access_token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(20000)
+  });
+  const result = await response.json();
+  if (!response.ok) throw Object.assign(Error(result.error || 'Checkout is unavailable.'), { status: response.status });
+  return result;
+}
+
+let paymentReviewRevision = 0;
+let paymentReviewOffset = 0;
+async function loadPaymentReview(offset = 0) {
+  if (!paymentAdmin) return;
+  const userId = state.user.id;
+  const revision = ++paymentReviewRevision;
+  const current = () => state.user?.id === userId && paymentReviewRevision === revision && paymentAdmin;
+  const list = $('paymentReviewList');
+  const status = $('paymentReviewStatus');
+  const next = $('nextPaymentReview');
+  list.replaceChildren();
+  next.hidden = true;
+  status.textContent = 'Loading payments…';
+  try {
+    const result = await packRequest('admin-list', { offset });
+    if (!current()) return;
+    paymentReviewOffset = offset;
+    status.textContent = result.payments.length ? '' : 'No payment references are awaiting review.';
+    next.hidden = !result.more;
+    for (const payment of result.payments) {
+      const item = document.createElement('article');
+      item.className = 'panel';
+      const heading = document.createElement('h3');
+      heading.textContent = payment.email;
+      const details = document.createElement('p');
+      const date = new Date(payment.submitted_at).toLocaleString('en-PH', { timeZone: 'Asia/Manila' });
+      details.textContent = `${date} (Philippine time) · ₱${payment.credits} · Reference ${payment.payment_reference}`;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn gold';
+      button.textContent = 'Confirm payment';
+      button.onclick = async () => {
+        if (!current() || !confirm(`Confirm that you received ₱${payment.credits} in GCash with reference ${payment.payment_reference}?`)) return;
+        button.disabled = true;
+        try {
+          await packRequest('admin-confirm', { orderId: payment.id, verifiedCentavos: payment.credits * 100 });
+          if (current()) {
+            await loadPaymentReview();
+            if (state.user?.id === userId && paymentAdmin) toast('Payment confirmed. Credits added.');
+          }
+        } catch (error) {
+          if (current()) {
+            status.textContent = error.message;
+            button.disabled = false;
+          }
+        }
+      };
+      item.append(heading, details, button);
+      list.append(item);
+    }
+  } catch (error) {
+    if (current()) status.textContent = error.message;
+  }
+}
+$('refreshPaymentReview').onclick = () => void loadPaymentReview();
+$('nextPaymentReview').onclick = () => void loadPaymentReview(paymentReviewOffset + 50);
+
+async function readPrayerBalance() {
+  const userId = state.user?.id;
+  const revision = ++packRevision;
+  if (!userId) return;
+  try {
+    const { data, error } = await state.supabase.from('stonino_prayer_wallets')
+      .select('balance').eq('user_id', userId).maybeSingle();
+    if (error) throw error;
+    if (state.user?.id === userId && revision === packRevision) packBalance = data?.balance ?? 0;
+  } catch {
+    // Keep the last confirmed balance when a refresh fails.
+  }
+  if (state.user?.id === userId && revision === packRevision) renderPrayerPacks();
+}
+
+async function refreshPrayerPacks() {
+  const userId = state.user?.id;
+  if (!userId || packBusy || deletingDevotionalData) return;
+  packBusy = true;
+  packMessage = 'Checking your balance and checkout…';
+  renderPrayerPacks();
+  try {
+    const readiness = await fetch(packEndpoint + '?action=ready', { cache: 'no-store', signal: AbortSignal.timeout(6000) })
+      .then(response => response.ok ? response.json() : null).catch(() => null);
+    if (state.user?.id !== userId) return;
+    packAvailable = readiness?.available === true;
+    const pending = readAccountData(packOrderKey, null);
+    const returnOrder = !returnOrderChecked && packAvailable ? packReturnOrder : null;
+    const orderId = returnOrder || pending?.orderId;
+    packMessage = '';
+    if (orderId) {
+      if (returnOrder && !pending) saveAccountData(packOrderKey, { orderId });
+      const result = await packRequest('status', { orderId });
+      if (state.user?.id !== userId) return;
+      returnOrderChecked = true;
+      if (result.status === 'paid' || result.status === 'expired') {
+        if (!pending || pending.orderId === orderId) {
+          saveAccountData(packOrderKey, null);
+          clearPrayerPackQr();
+          $('prayerPackTransfer').hidden = true;
+          $('prayerPackTransfer').reset();
+          $('prayerPackSelection').hidden = true;
+        }
+        const pageUrl = new URL(location.href);
+        pageUrl.searchParams.delete('prayerPackOrder');
+        history.replaceState(null, '', pageUrl);
+        packMessage = result.status === 'paid' ? 'Payment confirmed. Your credits are ready.' : 'Checkout expired. Choose a pack to try again.';
+      } else {
+        if (result.status === 'review') {
+          $('prayerPackTransfer').hidden = true;
+          $('prayerPackPersonalQr').hidden = true;
+        }
+        packMessage = result.status === 'review' ? 'Reference submitted. Waiting for the recipient to verify your GCash transfer.' : 'Waiting for payment confirmation.';
+      }
+    }
+  } catch (error) {
+    if (state.user?.id === userId) {
+      if (error.status === 404) {
+        const pending = readAccountData(packOrderKey, null);
+        returnOrderChecked = true;
+        if (!pending?.credits) saveAccountData(packOrderKey, null);
+      }
+      packMessage = error.message || 'Could not check checkout.';
+    }
+  } finally {
+    if (state.user?.id === userId) {
+      await readPrayerBalance();
+      if (state.user?.id === userId) {
+        packBusy = false;
+        renderPrayerPacks();
+        watchPrayerPackQr();
+      }
+    }
+  }
+}
+
+function showPersonalPackQr(credits) {
+  const panel = $('prayerPackPersonalQr');
+  const qr = config.prayerPackReceiveQr?.[credits];
+  panel.hidden = !qr;
+  if (panel.hidden) return;
+
+  const amount = '₱' + credits;
+  const image = $('prayerPackPersonalQrImage');
+  image.alt = amount + ' Prayer Pack GCash payment QR';
+  image.src = qr.image;
+  $('prayerPackPersonalQrAmount').textContent = qr.amountEncoded
+    ? `Confirm the recipient and the ${amount} amount in GCash before sending.`
+    : `Enter ${amount} in GCash and confirm the recipient before sending.`;
+  const download = $('prayerPackPersonalQrDownload');
+  download.href = qr.image;
+  download.download = `gcash-prayer-pack-${credits}.jpg`;
+}
+
+async function startPrayerPack(credits) {
+  if (!canUseApp() || packBusy || deletingDevotionalData) return;
+  const userId = state.user.id;
+  const savedOrder = readAccountData(packOrderKey, null);
+  const selectedCredits = savedOrder?.credits ?? credits;
+  if (!selectedCredits) return;
+  $('prayerPackSelectionTitle').textContent = `₱${selectedCredits} Prayer Pack`;
+  $('prayerPackSelection').hidden = false;
+  $('prayerPackTransfer').dataset.ready = 'false';
+  $('submitPrayerPackReference').disabled = true;
+  $('prayerPackTransfer').hidden = false;
+  showPersonalPackQr(selectedCredits);
+  if (!packAvailable) {
+    await refreshPrayerPacks();
+    if (state.user?.id !== userId) return;
+    if (!packAvailable) {
+      packMessage = 'Open the deployed app to place your order and submit the payment reference.';
+      renderPrayerPacks();
+      return;
+    }
+  }
+  const pending = readAccountData(packOrderKey, null) || { orderId: crypto.randomUUID(), credits: selectedCredits };
+  saveAccountData(packOrderKey, pending);
+  packBusy = true;
+  packMessage = 'Preparing your GCash payment…';
+  renderPrayerPacks();
+  try {
+    const result = await packRequest('checkout', pending);
+    if (state.user?.id !== userId) return;
+    if (result.paymentMethod === 'gcash-qr' || result.receivingNumber) {
+      clearPrayerPackQr();
+      showPersonalPackQr(result.credits);
+      $('prayerPackTransfer').dataset.ready = 'true';
+      $('prayerPackTransfer').hidden = false;
+      packMessage = 'Your payment instructions are ready.';
+      return;
+    }
+    if (result.status === 'review') {
+      $('prayerPackPersonalQr').hidden = true;
+      $('prayerPackTransfer').hidden = true;
+      packMessage = 'Reference submitted. Waiting for the recipient to verify your GCash transfer.';
+      return;
+    }
+    if (result.qrPngBase64) {
+      $('prayerPackPersonalQr').hidden = true;
+      const image = 'data:image/png;base64,' + result.qrPngBase64;
+      packQrExpiry = Date.parse(result.expiresAt);
+      $('prayerPackQrImage').src = image;
+      $('prayerPackQrDownload').href = image;
+      $('prayerPackHosted').href = result.checkoutUrl;
+      $('prayerPackQrTitle').textContent = `Pay ₱${result.credits} with GCash`;
+      $('prayerPackQrExpiry').textContent = 'QR expires at ' + new Date(packQrExpiry).toLocaleTimeString([], {
+        hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila'
+      }) + ' Philippine time.';
+      $('prayerPackQr').hidden = false;
+      packMessage = 'Waiting for payment confirmation.';
+      watchPrayerPackQr();
+      return;
+    }
+    clearPrayerPackQr();
+    $('prayerPackSelection').hidden = true;
+    if (result.status === 'expired') {
+      packMessage = 'The QR code expired. Refresh to check whether payment went through.';
+      return;
+    }
+    if (result.status !== 'paid') throw Error('Could not prepare the payment QR.');
+    saveAccountData(packOrderKey, null);
+    await readPrayerBalance();
+    if (state.user?.id === userId) packMessage = 'Payment confirmed. Your credits are ready.';
+  } catch (error) {
+    if (state.user?.id === userId) packMessage = error.message || 'Could not open checkout.';
+  } finally {
+    if (state.user?.id === userId) {
+      packBusy = false;
+      renderPrayerPacks();
+    }
+  }
+}
+
+$('prayerPackTransfer').onsubmit = async event => {
+  event.preventDefault();
+  const pending = readAccountData(packOrderKey, null);
+  if (!canUseApp() || !pending?.orderId || packBusy || deletingDevotionalData || event.currentTarget.dataset.ready !== 'true') return;
+  const userId = state.user.id;
+  packBusy = true;
+  renderPrayerPacks();
+  try {
+    await packRequest('claim', { orderId: pending.orderId, reference: $('prayerPackReference').value.trim() });
+    if (state.user?.id !== userId) return;
+    $('prayerPackTransfer').hidden = true;
+    $('prayerPackTransfer').reset();
+    $('prayerPackPersonalQr').hidden = true;
+    packMessage = 'Reference submitted. Waiting for the recipient to verify your GCash transfer.';
+  } catch (error) {
+    if (state.user?.id === userId) packMessage = error.message || 'Could not submit your payment reference.';
+  } finally {
+    if (state.user?.id === userId) {
+      packBusy = false;
+      renderPrayerPacks();
+    }
+  }
+};
+
+$('refreshPrayerPacks').onclick = () => void refreshPrayerPacks();
+$('continuePrayerPack').onclick = () => void startPrayerPack();
+for (const button of packButtons) button.onclick = () => void startPrayerPack(Number(button.dataset.prayerPack));
+
+let spendingCredit = false;
 language();setFont(state.font);if(location.hash&&$(location.hash.slice(1))?.classList.contains('page'))nav(location.hash.slice(1));initCloud();function refreshDevotionalClock() {
   updateCandleClock();
   const now = Date.now();
@@ -692,51 +1050,72 @@ language();setFont(state.font);if(location.hash&&$(location.hash.slice(1))?.clas
 }
 setInterval(refreshDevotionalClock, 1000);
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) refreshDevotionalClock();
+  if (!document.hidden) {
+    refreshDevotionalClock();
+    if (location.hash === '#prayerPacks') void refreshPrayerPacks();
+    else if (state.user) void readPrayerBalance();
+  }
 });
 (() => {
-  const kinds = {
-    candle: { form: 'candleForm', field: 'candleFor', type: 'candleType',
-      collection: 'candles', cap: 24, render: renderCandles },
-    flowers: { form: 'flowerForm', field: 'flowerFor', type: 'flowerType',
-      collection: 'novenaFlowers', cap: 36, render: renderFlowers },
-    'novena-candle': { novena: true, form: 'novenaCandleForm', field: 'novenaCandleFor', type: 'novenaCandleType',
-      collection: 'novenaCandles', cap: 24, render: renderNovenaCandles },
-    'novena-flowers': { novena: true, form: 'novenaFlowerForm', field: 'novenaFlowerFor', type: 'novenaFlowerType',
-      collection: 'novenaFlowers', cap: 36, render: renderFlowers }
+  const offerings = {
+    candle: { form: 'candleForm', field: 'candleFor', type: 'candleType' },
+    flowers: { form: 'flowerForm', field: 'flowerFor', type: 'flowerType' },
+    'novena-candle': { novena: true, form: 'novenaCandleForm', field: 'novenaCandleFor', type: 'novenaCandleType' },
+    'novena-flowers': { novena: true, form: 'novenaFlowerForm', field: 'novenaFlowerFor', type: 'novenaFlowerType' }
   };
-  for (const settings of Object.values(kinds)) {
-    $(settings.form).onsubmit = event => {
+  for (const [kind, settings] of Object.entries(offerings)) {
+    $(settings.form).onsubmit = async event => {
       event.preventDefault();
-      if (!canUseApp() || deletingDevotionalData || clearingOfferings) return;
-      if (settings.novena && !isNovenaDayOpen(state.day)) return;
-      settings.render();
-      const display = settings.collection === 'novenaFlowers'
-        ? flowerOfferings(Boolean(settings.novena))
-        : state[settings.collection];
-      if (display.length >= settings.cap) {
-        return toast(isCebuano() ? `Naabot na ang kinutoban nga ${settings.cap} ka halad.` : 'Your offering display has reached its limit of ' + settings.cap + '.');
-      }
-      const choice = event.currentTarget.querySelector('[data-offering-prayer]').value;
+      if (!canUseApp() || deletingDevotionalData || clearingOfferings || spendingCredit) return;
+      const userId = state.user.id;
+      const form = event.currentTarget;
+      const button = form.querySelector('button[type="submit"]');
+      const select = form.querySelector('[data-offering-prayer]');
+      const pendingKey = 'pendingOffering.' + kind;
+      const pending = readAccountData(pendingKey, null);
+      if (!pending && settings.novena && !isNovenaDayOpen(state.day)) return;
+      const choice = select.value;
       const type = $(settings.type).value;
-      const prayerIndex = choice === '' || choice === 'custom' ? undefined : Number(choice);
-      const note = choice === 'custom'
-        ? $(settings.field).value.trim()
-        : offeringNote({ type, prayerIndex }) || '';
-      const { collection } = settings;
+      const prayerIndex = choice === '' || choice === 'custom' ? null : Number(choice);
+      const args = pending || {
+        request_id: crypto.randomUUID(),
+        offering_kind: kind,
+        prayer_type: type,
+        prayer_index: prayerIndex,
+        note: choice === 'custom' ? $(settings.field).value.trim() : '',
+        novena_day: settings.novena ? state.day : null
+      };
+      saveAccountData(pendingKey, args);
+      spendingCredit = button.disabled = true;
       offeringRevision++;
-      state[collection].unshift({
-        id: uid(), note, type, prayerIndex, created_at: new Date().toISOString(),
-        ...(settings.novena && { novena_day: state.day })
-      });
-      saveAccountData(collection, state[collection]);
-      settings.render();
-      event.currentTarget.reset();
-      renderOfferingPrayers(event.currentTarget.querySelector('[data-offering-prayer]'));
-      toast('Your offering has been placed.');
-      void syncCloud(collection);
+      try {
+        const { error } = await state.supabase.rpc('stonino_spend_prayer_credit', args);
+        if (state.user?.id !== userId) return;
+        if (error) {
+          if (error.code === 'P0001') saveAccountData(pendingKey, null);
+          if (error.message === 'prayer_pack_empty') {
+            packBalance = 0;
+            renderPrayerPacks();
+            nav('prayerPacks');
+            void refreshPrayerPacks();
+            toast('Your Prayer Pack is empty.');
+            return;
+          }
+          throw error;
+        }
+        saveAccountData(pendingKey, null);
+        offeringRevision++;
+        form.reset();
+        renderOfferingPrayers(select);
+        await Promise.all([loadCloud(), readPrayerBalance()]);
+        if (state.user?.id === userId) toast('Your offering was placed. One credit used.');
+      } catch {
+        if (state.user?.id === userId) toast('Could not confirm the offering. Submit again to retry.');
+      } finally {
+        spendingCredit = false;
+        button.disabled = Boolean(settings.novena && !isNovenaDayOpen(state.day));
+      }
     };
   }
-
 })();
 })();
