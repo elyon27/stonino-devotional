@@ -183,7 +183,8 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   font-size: .88rem;
 }
 .scripture-ticker-verse > span { flex: none; }
-.scripture-ticker-toggle {
+.scripture-ticker-controls { display: flex; }
+.scripture-ticker-control {
   min-width: 44px;
   min-height: 36px;
   border: 0;
@@ -192,7 +193,8 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   background: transparent;
   cursor: pointer;
 }
-.scripture-ticker-toggle:focus-visible { outline: 2px solid var(--gold-light); outline-offset: -3px; }
+.scripture-ticker-control:disabled { opacity: .5; cursor: default; }
+.scripture-ticker-control:focus-visible { outline: 2px solid var(--gold-light); outline-offset: -3px; }
 
 #sanctuary .hero {
   grid-template-columns: minmax(0, 1fr);

@@ -7,6 +7,8 @@
   const viewport = document.getElementById('scriptureTickerViewport');
   const line = document.getElementById('scriptureTickerVerse');
   const button = document.getElementById('scriptureTickerToggle');
+  const previousButton = document.getElementById('scriptureTickerPrevious');
+  const nextButton = document.getElementById('scriptureTickerNext');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const storageKey = 'stonino.scriptureTicker.position.v1';
   let savedPositions = {};
@@ -16,38 +18,43 @@
   } catch {
     // The ticker still works when storage is unavailable.
   }
+
   let paused = reducedMotion.matches;
+  let finished = false;
   let animation;
-  let index = 0;
   let language;
   let verses;
-
-  function appendVerse() {
-    const [reference, text] = verses[index];
-    const verse = document.createElement('span');
-    verse.dataset.index = index;
-    verse.textContent = `${reference} — ${text}`;
-    line.append(verse);
-    index = (index + 1) % verses.length;
-  }
+  let books;
+  let bookIndex;
+  let nextVerse;
 
   function fillLine() {
-    // Keep the viewport covered even after the first verse has moved offscreen.
-    if (!verses?.length) return;
+    const end = books[bookIndex].end;
     const width = viewport.clientWidth;
-    while (line.children.length < 2 || line.scrollWidth < width + line.children[1].offsetLeft) {
-      appendVerse();
+    while (nextVerse < end &&
+      (line.children.length < 2 || line.scrollWidth < width + line.children[1].offsetLeft)) {
+      const [reference, text] = verses[nextVerse];
+      const verse = document.createElement('span');
+      verse.dataset.index = nextVerse;
+      verse.textContent = `${reference} — ${text}`;
+      line.append(verse);
+      nextVerse++;
     }
   }
 
+  function currentIndex() {
+    return Number(line.firstElementChild?.dataset.index);
+  }
+
   function savePosition() {
-    const verseIndex = Number(line.firstElementChild?.dataset.index);
-    if (!language || !verses?.[verseIndex]) return;
+    const reference = verses?.[currentIndex()]?.[0];
+    if (!reference) return;
     const duration = animation?.effect.getTiming().duration;
     const progress = duration > 0 ? (animation.currentTime ?? 0) / duration : 0;
     savedPositions[language] = {
-      reference: verses[verseIndex][0],
-      progress: Math.min(0.999999, Math.max(0, progress))
+      reference,
+      progress: Math.min(1, Math.max(0, progress)),
+      finished
     };
     try {
       localStorage.setItem(storageKey, JSON.stringify(savedPositions));
@@ -56,79 +63,135 @@
     }
   }
 
+  function updateControls() {
+    button.disabled = finished;
+    button.textContent = paused || finished ? '▶' : 'Ⅱ';
+    button.title = finished ? 'End of book' : paused ? 'Play Scripture scroll' : 'Pause Scripture scroll';
+    button.setAttribute('aria-label', button.title);
+    previousButton.disabled = bookIndex === 0;
+    nextButton.disabled = bookIndex === books.length - 1;
+  }
+
+  function lastVerseDistance() {
+    return Math.max(0, line.scrollWidth - viewport.clientWidth);
+  }
+
+  function finishBook() {
+    finished = true;
+    line.style.transform = `translateX(-${lastVerseDistance()}px)`;
+    updateControls();
+    savePosition();
+  }
+
   function scrollLine(progress = 0) {
     fillLine();
-    const distance = line.children[1].offsetLeft;
-    animation = line.animate(
+    const followingVerse = line.children[1];
+    const distance = followingVerse ? followingVerse.offsetLeft : lastVerseDistance();
+    if (!distance) {
+      finishBook();
+      return;
+    }
+
+    const scroll = line.animate(
       [{ transform: 'translateX(0)' }, { transform: `translateX(-${distance}px)` }],
       { duration: distance / 38 * 1000, easing: 'linear', fill: 'both' }
     );
-    animation.currentTime = progress * animation.effect.getTiming().duration;
-    if (paused || document.hidden) animation.pause();
-    animation.onfinish = () => {
-      animation.cancel();
+    animation = scroll;
+    scroll.currentTime = progress * scroll.effect.getTiming().duration;
+    if (paused || document.hidden) scroll.pause();
+    scroll.onfinish = () => {
+      if (animation !== scroll) return;
+      scroll.cancel();
       animation = null;
-      line.firstElementChild.remove();
-      scrollLine();
-      savePosition();
+      if (followingVerse) {
+        line.firstElementChild.remove();
+        scrollLine();
+        savePosition();
+      } else {
+        finishBook();
+      }
     };
   }
 
-  function updateButton() {
-    button.textContent = paused ? '▶' : 'Ⅱ';
-    button.title = paused ? 'Play Scripture scroll' : 'Pause Scripture scroll';
-    button.setAttribute('aria-label', button.title);
+  function showBook(selectedBook, verseIndex = books[selectedBook].start, progress = 0, atEnd = false) {
+    animation?.cancel();
+    animation = null;
+    line.style.transform = '';
+    line.replaceChildren();
+    bookIndex = selectedBook;
+    nextVerse = verseIndex;
+    finished = false;
+    fillLine();
+    if (atEnd) finishBook();
+    else scrollLine(progress);
+    updateControls();
+    savePosition();
   }
 
+  function changeBook(offset) {
+    const selectedBook = bookIndex + offset;
+    if (selectedBook >= 0 && selectedBook < books.length) showBook(selectedBook);
+  }
+
+  previousButton.addEventListener('click', () => changeBook(-1));
+  nextButton.addEventListener('click', () => changeBook(1));
   button.addEventListener('click', () => {
+    if (finished) return;
     paused = !paused;
     if (paused) animation?.pause();
-    else if (animation && !document.hidden) animation.play();
-    else if (!animation) scrollLine();
+    else if (!document.hidden) animation?.play();
     savePosition();
-    updateButton();
+    updateControls();
   });
 
-  reducedMotion.addEventListener('change', event => {
-    if (event.matches && !paused) button.click();
-  });
-  new ResizeObserver(fillLine).observe(viewport);
   function updateTranslation() {
     const selected = document.documentElement.lang;
     const next = Object.hasOwn(translations, selected) ? selected : 'en';
     if (next === language) return;
-    const previousLanguage = language;
-    const previousIndex = Number(line.firstElementChild?.dataset.index);
-    const previousVerse = verses?.[previousIndex];
-    if (previousLanguage) savePosition();
+    const previousBook = bookIndex;
+    const previousReference = verses?.[currentIndex()]?.[0];
+    const previousFinished = finished;
+    if (language) savePosition();
     language = next;
     const translation = translations[language];
     verses = translation.verses;
     viewport.parentElement.setAttribute('aria-label', translation.label);
-    animation?.cancel();
-    animation = null;
-    line.replaceChildren();
-    // Match the chapter and verse within the same book. Book names vary by language.
-    const [book, chapterVerse] = previousVerse?.[0].match(/^(.*) (\d+:\d+)$/)?.slice(1) ?? [];
-    if (book) {
-      const previous = translations[previousLanguage].verses;
-      const bookIndex = new Set(previous.slice(0, Number(previousIndex) + 1).map(([ref]) => ref.replace(/ \d+:\d+$/, ''))).size - 1;
-      const books = [...new Set(verses.map(([ref]) => ref.replace(/ \d+:\d+$/, '')))];
-      const corresponding = verses.findIndex(([ref]) => ref === `${books[bookIndex]} ${chapterVerse}`);
-      const firstInBook = verses.findIndex(([ref]) => ref.startsWith(books[bookIndex] + ' '));
-      index = Math.max(0, corresponding === -1 ? firstInBook : corresponding);
-    } else {
-      const saved = savedPositions[language];
-      index = Math.max(0, verses.findIndex(([reference]) => reference === saved?.reference));
-      const progress = index >= 0 && verses[index]?.[0] === saved?.reference && Number.isFinite(saved?.progress)
-        ? Math.min(0.999999, Math.max(0, saved.progress))
-        : 0;
-      scrollLine(progress);
+
+    books = [];
+    verses.forEach(([reference], index) => {
+      const name = reference.replace(/ \d+:\d+$/, '');
+      if (books.at(-1)?.name !== name) books.push({ name, start: index, end: index + 1 });
+      else books.at(-1).end = index + 1;
+    });
+
+    if (previousReference) {
+      // The translations use the same book order and different book names.
+      const book = books[previousBook];
+      const chapterVerse = previousReference.split(' ').at(-1);
+      const corresponding = verses.findIndex(([reference]) => reference === `${book.name} ${chapterVerse}`);
+      const verseIndex = previousFinished ? book.end - 1 : corresponding;
+      showBook(previousBook, verseIndex === -1 ? book.start : verseIndex, 0, previousFinished);
       return;
     }
-    scrollLine();
+
+    const saved = savedPositions[language];
+    const savedIndex = verses.findIndex(([reference]) => reference === saved?.reference);
+    if (savedIndex === -1) {
+      showBook(0);
+      return;
+    }
+    const savedBook = books.findIndex(book => savedIndex < book.end);
+    const progress = Number.isFinite(saved.progress) ? Math.min(.999999, Math.max(0, saved.progress)) : 0;
+    showBook(savedBook, savedIndex, progress, saved.finished === true && savedIndex === books[savedBook].end - 1);
   }
 
+  reducedMotion.addEventListener('change', event => {
+    if (event.matches && !paused) button.click();
+  });
+  new ResizeObserver(() => {
+    if (finished) line.style.transform = `translateX(-${lastVerseDistance()}px)`;
+    else fillLine();
+  }).observe(viewport);
   new MutationObserver(updateTranslation).observe(document.documentElement, {
     attributes: true, attributeFilter: ['lang']
   });
@@ -143,8 +206,7 @@
     if (!paused && !document.hidden) animation?.play();
   });
   setInterval(() => {
-    if (!paused && !document.hidden) savePosition();
+    if (!finished && !paused && !document.hidden) savePosition();
   }, 1000);
-  updateButton();
   updateTranslation();
 })();

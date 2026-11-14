@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#8B1E2D"><meta name="description" content="A Catholic devotional sanctuary honoring Señor Santo Niño de Cebu.">
   <title>Sto. Niño | Cebu Heritage Chapel</title>
-  <link rel="stylesheet" href="assets/styles.css?v=admin-sanctuary"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/styles.css?v=scripture-books"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/chapel-icon-192.png">
   <script defer src="assets/install.js?v=cebuano"></script>
@@ -22,7 +22,11 @@
   <div id="scriptureTickerViewport" class="scripture-ticker-viewport">
     <span id="scriptureTickerVerse" class="scripture-ticker-verse"></span>
   </div>
-  <button id="scriptureTickerToggle" class="scripture-ticker-toggle" type="button" aria-label="Pause Scripture scroll">Ⅱ</button>
+  <div class="scripture-ticker-controls" role="group" aria-label="Scripture controls">
+    <button id="scriptureTickerPrevious" class="scripture-ticker-control" type="button" aria-label="Previous book" title="Previous book" disabled>&lt;</button>
+    <button id="scriptureTickerToggle" class="scripture-ticker-control" type="button" aria-label="Pause Scripture scroll">Ⅱ</button>
+    <button id="scriptureTickerNext" class="scripture-ticker-control" type="button" aria-label="Next book" title="Next book" disabled>&gt;</button>
+  </div>
 </div>
 <section id="accountGate" class="panel account-gate" aria-labelledby="accountGateTitle">
   <h1 id="accountGateTitle">Welcome to Sto. Niño Devotional</h1>
@@ -272,6 +276,6 @@
 <script src="assets/cebuano.js?v=password-visibility"></script><script src="assets/filipino-prayers.js?v=password-visibility"></script><script src="assets/localize.js?v=tagalog-prayers"></script>
 <script src="assets/config.js?v=admin-sanctuary"></script><script src="assets/offering-prayers.js"></script><script src="assets/app.js?v=admin-sanctuary"></script>
 <script src="assets/music/tracks.js"></script><script src="assets/music-prayers.js?v=bundled-tracks"></script>
-<script src="assets/new-testament-web.js"></script><script src="assets/new-testament-cebuano.js"></script><script src="assets/new-testament-tagalog.js"></script><script src="assets/scripture-ticker.js?v=resume-position"></script>
+<script src="assets/new-testament-web.js"></script><script src="assets/new-testament-cebuano.js"></script><script src="assets/new-testament-tagalog.js"></script><script src="assets/scripture-ticker.js?v=scripture-books"></script>
 </body></html>
 
