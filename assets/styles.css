@@ -332,10 +332,29 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   font-weight: bold;
 }
 
-#paymentAwaitingNotice {
+.payment-review-declined {
+  border-color: #a95943;
+  background: #fff0e8;
+  color: #702d24;
+}
+
+.topbar > .payment-awaiting-header {
   grid-column: 1 / -1;
+  grid-row: 2;
   justify-self: center;
-  flex-basis: auto;
+  position: relative;
+}
+
+.payment-awaiting-header:has(#paymentAwaitingNotice[hidden]) {
+  position: absolute;
+}
+
+.payment-awaiting-header .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 #paymentAwaitingNotice[hidden] { display: none; }
 #adminMembersList { overflow-wrap: anywhere; }

@@ -482,7 +482,7 @@ async function setAccountUser(user) {
   state.user = user?.is_anonymous ? null : user;
   if (changed) {
     paymentAdmin = false;
-    $('paymentAwaitingNotice').hidden = true;
+    showPaymentAwaitingNotice(false);
     $('adminMembersList').replaceChildren();
     $('adminMembersStatus').textContent = '';
     $('previousAdminMembers').hidden = $('nextAdminMembers').hidden = true;
@@ -859,8 +859,13 @@ async function loadPaymentReview(offset = 0, background = false) {
       actions.className = 'button-row';
       actions.append(button, decline);
       const review = async (isDecline) => {
-        if (!current() || button.disabled || decline.disabled) return;
-        if (!isDecline && !confirm(`Confirm that you received ₱${payment.credits} in GCash with reference ${payment.payment_reference}?`)) return;
+        if (state.user?.id !== userId || !paymentAdmin || !list.contains(item) || button.disabled || decline.disabled) return;
+        const prompt = isDecline
+          ? `Decline payment reference ${payment.payment_reference}? The member will see “${paymentDeclineMessage}” on their Payment page.`
+          : `Confirm that you received ₱${payment.credits} in GCash with reference ${payment.payment_reference}?`;
+        if (!confirm(prompt)) return;
+        const notice = $('paymentConfirmedNotice');
+        notice.hidden = true;
         button.disabled = decline.disabled = true;
         try {
           const result = isDecline
@@ -868,16 +873,16 @@ async function loadPaymentReview(offset = 0, background = false) {
             : await packRequest('admin-confirm', { orderId: payment.id, verifiedCentavos: payment.credits * 100 });
           if (result.status !== (isDecline ? 'declined' : 'paid')) throw Error('Could not verify the review outcome.');
           if (state.user?.id === userId && paymentAdmin) {
-            const notice = $('paymentConfirmedNotice');
+            notice.classList.toggle('payment-review-declined', isDecline);
             notice.textContent = isDecline
-              ? `Payment declined · Reference ${payment.payment_reference}`
+              ? `Payment declined · Reference ${payment.payment_reference}. No module points were credited. The notice is available on the member’s Payment page.`
               : `✓ Payment confirmed · ₱${payment.credits} · Reference ${payment.payment_reference}. Credits added.`;
             notice.hidden = false;
             void refreshPaymentAwaitingNotice();
             if (location.hash === '#paymentReview') await loadPaymentReview();
           }
         } catch (error) {
-          if (current()) status.textContent = error.message;
+          if (state.user?.id === userId && paymentAdmin && list.contains(item)) status.textContent = error.message;
         } finally {
           button.disabled = decline.disabled = false;
         }
@@ -934,6 +939,13 @@ $('refreshAdminMembers').onclick = () => void loadAdminMembers();
 $('previousAdminMembers').onclick = () => void loadAdminMembers(Math.max(0, memberOffset - 50));
 $('nextAdminMembers').onclick = () => void loadAdminMembers(memberOffset + 50);
 
+function showPaymentAwaitingNotice(awaiting) {
+  const button = $('paymentAwaitingNotice');
+  if (button.hidden === !awaiting) return;
+  button.hidden = !awaiting;
+  $('paymentAwaitingStatus').textContent = awaiting ? button.textContent : '';
+}
+
 let awaitingRequest = 0;
 async function refreshPaymentAwaitingNotice() {
   if (!paymentAdmin || document.hidden) return;
@@ -942,7 +954,7 @@ async function refreshPaymentAwaitingNotice() {
   try {
     const result = await packRequest('admin-awaiting', {});
     if (paymentAdmin && state.user?.id === userId && request === awaitingRequest) {
-      $('paymentAwaitingNotice').hidden = result.awaiting !== true;
+      showPaymentAwaitingNotice(result.awaiting === true);
     }
   } catch {
     // Keep the last verified state until the next refresh.
