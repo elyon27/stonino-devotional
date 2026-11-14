@@ -8,6 +8,14 @@
   const line = document.getElementById('scriptureTickerVerse');
   const button = document.getElementById('scriptureTickerToggle');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const storageKey = 'stonino.scriptureTicker.position.v1';
+  let savedPositions = {};
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey));
+    if (saved && typeof saved === 'object' && !Array.isArray(saved)) savedPositions = saved;
+  } catch {
+    // The ticker still works when storage is unavailable.
+  }
   let paused = reducedMotion.matches;
   let animation;
   let index = 0;
@@ -25,25 +33,44 @@
 
   function fillLine() {
     // Keep the viewport covered even after the first verse has moved offscreen.
+    if (!verses?.length) return;
     const width = viewport.clientWidth;
     while (line.children.length < 2 || line.scrollWidth < width + line.children[1].offsetLeft) {
       appendVerse();
     }
   }
 
-  function scrollLine() {
+  function savePosition() {
+    const verseIndex = Number(line.firstElementChild?.dataset.index);
+    if (!language || !verses?.[verseIndex]) return;
+    const duration = animation?.effect.getTiming().duration;
+    const progress = duration > 0 ? (animation.currentTime ?? 0) / duration : 0;
+    savedPositions[language] = {
+      reference: verses[verseIndex][0],
+      progress: Math.min(0.999999, Math.max(0, progress))
+    };
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(savedPositions));
+    } catch {
+      // Storage limits do not interrupt the scroll.
+    }
+  }
+
+  function scrollLine(progress = 0) {
     fillLine();
     const distance = line.children[1].offsetLeft;
     animation = line.animate(
       [{ transform: 'translateX(0)' }, { transform: `translateX(-${distance}px)` }],
       { duration: distance / 38 * 1000, easing: 'linear', fill: 'both' }
     );
+    animation.currentTime = progress * animation.effect.getTiming().duration;
+    if (paused || document.hidden) animation.pause();
     animation.onfinish = () => {
       animation.cancel();
       animation = null;
       line.firstElementChild.remove();
-      if (paused) fillLine();
-      else scrollLine();
+      scrollLine();
+      savePosition();
     };
   }
 
@@ -56,8 +83,9 @@
   button.addEventListener('click', () => {
     paused = !paused;
     if (paused) animation?.pause();
-    else if (animation) animation.play();
-    else scrollLine();
+    else if (animation && !document.hidden) animation.play();
+    else if (!animation) scrollLine();
+    savePosition();
     updateButton();
   });
 
@@ -72,6 +100,7 @@
     const previousLanguage = language;
     const previousIndex = Number(line.firstElementChild?.dataset.index);
     const previousVerse = verses?.[previousIndex];
+    if (previousLanguage) savePosition();
     language = next;
     const translation = translations[language];
     verses = translation.verses;
@@ -88,14 +117,34 @@
       const corresponding = verses.findIndex(([ref]) => ref === `${books[bookIndex]} ${chapterVerse}`);
       const firstInBook = verses.findIndex(([ref]) => ref.startsWith(books[bookIndex] + ' '));
       index = Math.max(0, corresponding === -1 ? firstInBook : corresponding);
-    } else index = 0;
-    if (paused) fillLine();
-    else scrollLine();
+    } else {
+      const saved = savedPositions[language];
+      index = Math.max(0, verses.findIndex(([reference]) => reference === saved?.reference));
+      const progress = index >= 0 && verses[index]?.[0] === saved?.reference && Number.isFinite(saved?.progress)
+        ? Math.min(0.999999, Math.max(0, saved.progress))
+        : 0;
+      scrollLine(progress);
+      return;
+    }
+    scrollLine();
   }
 
   new MutationObserver(updateTranslation).observe(document.documentElement, {
     attributes: true, attributeFilter: ['lang']
   });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      animation?.pause();
+      savePosition();
+    } else if (!paused) animation?.play();
+  });
+  window.addEventListener('pagehide', savePosition);
+  window.addEventListener('pageshow', () => {
+    if (!paused && !document.hidden) animation?.play();
+  });
+  setInterval(() => {
+    if (!paused && !document.hidden) savePosition();
+  }, 1000);
   updateButton();
   updateTranslation();
 })();
