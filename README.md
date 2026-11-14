@@ -184,3 +184,9 @@ Place audio recordings in `assets/music/`. File names become the song titles. Ru
 The ticker uses the public-domain World English Bible text from [TehShrike/world-english-bible](https://github.com/TehShrike/world-english-bible), with the New Testament books in canonical order.
 
 The ticker follows the app's language selection. Cebuano uses Biblica® Open Ang Pulong sa Dios™ (Biblica® Open Cebuano Contemporary Bible™), © 2009, 2010, 2014, 2024 Biblica, Inc. Biblica is a registered trademark of Biblica, Inc. Used with permission. See the [edition and source](https://ebible.org/cebocb/copyright.htm) and [CC BY-SA 4.0 license](https://creativecommons.org/licenses/by-sa/4.0/). Tagalog uses the public-domain Ang Dating Biblia (1905), Philippine Bible Society. Both datasets come from the [Bible JSON repository](https://github.com/thiagobodruk/bible).
+
+## Declining a payment reference
+
+Before deploying this update to Netlify, run the updated `prayer-pack-admin.sql` in the Sto. Niño app's Supabase SQL Editor. Run it after the existing prayer-pack schema is installed. The script can be rerun on an existing installation.
+
+In Payment Review, **Decline** removes the claim from the review queue without adding credits. The member sees **Payment Transaction Reference Does Not Match** with the reference on the Prayer Packs page. A declined reference remains recorded to prevent reuse. A member can open a new checkout to submit a different reference.

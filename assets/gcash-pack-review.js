@@ -44,8 +44,8 @@ form.onsubmit = event => {
     const result = await request('review', { reference: value });
     claim = { ...result, reference: value };
     const created = new Date(result.createdAt).toLocaleString('en-PH', { timeZone: 'Asia/Manila' });
-    status.textContent = `${result.credits} credits · ₱${result.credits} · Order created ${created} Philippine time · ${result.status === 'paid' ? 'Already approved' : 'Awaiting verification'}`;
-    approval.hidden = result.status === 'paid';
+    status.textContent = `${result.credits} credits · ₱${result.credits} · Order created ${created} Philippine time · ${result.status === 'paid' ? 'Already approved' : result.status === 'declined' ? 'Declined' : 'Awaiting verification'}`;
+    approval.hidden = result.status !== 'pending';
   });
 };
 

@@ -13,7 +13,7 @@ export default async function () {
   });
   const { data, error } = await admin.from('stonino_prayer_pack_orders')
     .select('id,credits,notification_sent_at').not('payment_reference', 'is', null)
-    .is('notification_sent_at', null).order('submitted_at').limit(10);
+    .is('notification_sent_at', null).is('declined_at', null).order('submitted_at').limit(10);
   if (error) return new Response(null, { status: 502 });
   const results = await Promise.allSettled(data.map(order => sendPaymentAlert(admin, order)));
   return new Response(null, { status: results.some(result => result.status === 'rejected') ? 502 : 204 });

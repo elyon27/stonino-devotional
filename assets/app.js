@@ -491,6 +491,7 @@ async function setAccountUser(user) {
     $('paymentReviewStatus').textContent = '';
     $('paymentConfirmedNotice').textContent = '';
     $('paymentConfirmedNotice').hidden = true;
+    showPaymentDeclineNotice(null);
     $('nextPaymentReview').hidden = true;
     for (const page of ['paymentReview', 'memberList']) {
       if ($(page).classList.contains('active')) {
@@ -741,6 +742,7 @@ let packRevision = 0;
 const packEndpoint = '/.netlify/functions/prayer-packs';
 const packButtons = [...document.querySelectorAll('[data-prayer-pack]')];
 const packOrderKey = 'pendingPrayerPack';
+const paymentDeclineMessage = 'Payment Transaction Reference Does Not Match';
 const packReturnOrder = new URL(location.href).searchParams.get('prayerPackOrder');
 let returnOrderChecked = false;
 let packRefreshTimer;
@@ -768,6 +770,11 @@ function watchPrayerPackQr() {
     if (document.hidden || location.hash !== '#prayerPacks') watchPrayerPackQr();
     else void refreshPrayerPacks();
   }, Math.min(8000, packQrExpiry - Date.now()));
+}
+
+function showPaymentDeclineNotice(reference) {
+  $('paymentDeclineNotice').hidden = !reference;
+  $('paymentDeclineReference').textContent = reference ? `Reference ${reference}` : '';
 }
 
 function renderPrayerPacks() {
@@ -844,27 +851,40 @@ async function loadPaymentReview(offset = 0, background = false) {
       button.type = 'button';
       button.className = 'btn gold';
       button.textContent = 'Confirm payment';
-      button.onclick = async () => {
-        if (!current() || !confirm(`Confirm that you received ₱${payment.credits} in GCash with reference ${payment.payment_reference}?`)) return;
-        button.disabled = true;
+      const decline = document.createElement('button');
+      decline.type = 'button';
+      decline.className = 'btn outline';
+      decline.textContent = 'Decline';
+      const actions = document.createElement('div');
+      actions.className = 'button-row';
+      actions.append(button, decline);
+      const review = async (isDecline) => {
+        if (!current() || button.disabled || decline.disabled) return;
+        if (!isDecline && !confirm(`Confirm that you received ₱${payment.credits} in GCash with reference ${payment.payment_reference}?`)) return;
+        button.disabled = decline.disabled = true;
         try {
-          const result = await packRequest('admin-confirm', { orderId: payment.id, verifiedCentavos: payment.credits * 100 });
-          if (result.status !== 'paid') throw Error('Could not verify that the payment was confirmed.');
+          const result = isDecline
+            ? await packRequest('admin-decline', { orderId: payment.id })
+            : await packRequest('admin-confirm', { orderId: payment.id, verifiedCentavos: payment.credits * 100 });
+          if (result.status !== (isDecline ? 'declined' : 'paid')) throw Error('Could not verify the review outcome.');
           if (state.user?.id === userId && paymentAdmin) {
             const notice = $('paymentConfirmedNotice');
-            notice.textContent = `✓ Payment confirmed · ₱${payment.credits} · Reference ${payment.payment_reference}. Credits added.`;
+            notice.textContent = isDecline
+              ? `Payment declined · Reference ${payment.payment_reference}`
+              : `✓ Payment confirmed · ₱${payment.credits} · Reference ${payment.payment_reference}. Credits added.`;
             notice.hidden = false;
             void refreshPaymentAwaitingNotice();
             if (location.hash === '#paymentReview') await loadPaymentReview();
           }
         } catch (error) {
-          if (current()) {
-            status.textContent = error.message;
-            button.disabled = false;
-          }
+          if (current()) status.textContent = error.message;
+        } finally {
+          button.disabled = decline.disabled = false;
         }
       };
-      item.append(heading, details, button);
+      button.onclick = () => void review(false);
+      decline.onclick = () => void review(true);
+      item.append(heading, details, actions);
       list.append(item);
     }
   } catch (error) {
@@ -961,7 +981,9 @@ async function refreshPrayerPacks() {
   try {
     const readiness = await fetch(packEndpoint + '?action=ready', { cache: 'no-store', signal: AbortSignal.timeout(6000) })
       .then(response => response.ok ? response.json() : null).catch(() => null);
+    const notice = await packRequest('decline-notice', {}).catch(() => null);
     if (state.user?.id !== userId) return;
+    if (notice) showPaymentDeclineNotice(notice.reference);
     packAvailable = readiness?.available === true;
     const pending = readAccountData(packOrderKey, null);
     const returnOrder = !returnOrderChecked && packAvailable ? packReturnOrder : null;
@@ -972,7 +994,7 @@ async function refreshPrayerPacks() {
       const result = await packRequest('status', { orderId });
       if (state.user?.id !== userId) return;
       returnOrderChecked = true;
-      if (result.status === 'paid' || result.status === 'expired') {
+      if (['paid', 'expired', 'declined'].includes(result.status)) {
         if (!pending || pending.orderId === orderId) {
           saveAccountData(packOrderKey, null);
           clearPrayerPackQr();
@@ -983,7 +1005,11 @@ async function refreshPrayerPacks() {
         const pageUrl = new URL(location.href);
         pageUrl.searchParams.delete('prayerPackOrder');
         history.replaceState(null, '', pageUrl);
-        packMessage = result.status === 'paid' ? 'Payment confirmed. Your credits are ready.' : 'Checkout expired. Choose a pack to try again.';
+        packMessage = {
+          paid: 'Payment confirmed. Your credits are ready.',
+          expired: 'Checkout expired. Choose a pack to try again.',
+          declined: notice?.reference ? '' : paymentDeclineMessage
+        }[result.status];
       } else {
         if (result.status === 'review') {
           $('prayerPackTransfer').hidden = true;
@@ -1068,6 +1094,11 @@ async function startPrayerPack(credits) {
       packMessage = 'Your payment instructions are ready.';
       return;
     }
+    if (result.status === 'declined') {
+      packBusy = false;
+      await refreshPrayerPacks();
+      return;
+    }
     if (result.status === 'review') {
       $('prayerPackPersonalQr').hidden = true;
       $('prayerPackTransfer').hidden = true;
@@ -1119,8 +1150,13 @@ $('prayerPackTransfer').onsubmit = async event => {
   renderPrayerPacks();
   try {
     const result = await packRequest('claim', { orderId: pending.orderId, reference: $('prayerPackReference').value.trim() });
-    if (result.status !== 'review' && result.status !== 'paid') throw Error('Could not verify that the reference was submitted.');
     if (state.user?.id !== userId) return;
+    if (result.status === 'declined') {
+      packBusy = false;
+      await refreshPrayerPacks();
+      return;
+    }
+    if (result.status !== 'review' && result.status !== 'paid') throw Error('Could not verify that the reference was submitted.');
     $('prayerPackTransfer').hidden = true;
     $('prayerPackTransfer').reset();
     $('prayerPackPersonalQr').hidden = true;

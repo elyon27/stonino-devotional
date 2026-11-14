@@ -86,6 +86,10 @@
   <p class="lead">One credit costs ₱1. Each candle or bouquet uses one credit, including novena offerings.</p>
   <div class="panel">
     <p><strong id="prayerPackBalance" aria-live="polite">Remaining Balance 0</strong></p>
+    <div id="paymentDeclineNotice" class="payment-confirmed-notice" role="status" hidden>
+      <strong>Payment Transaction Reference Does Not Match</strong>
+      <div id="paymentDeclineReference"></div>
+    </div>
     <p id="prayerPackStatus" role="status">Checking checkout availability…</p>
     <div class="prayer-pack-grid">
       <button type="button" class="btn outline" data-prayer-pack="20" disabled><strong>20 credits</strong><span>₱20</span></button>
@@ -274,7 +278,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <template id="cebuanoScriptureCredit"><a href="https://ebible.org/cebocb/copyright.htm" target="_blank" rel="noopener">Biblica® Open Ang Pulong sa Dios™</a> · © 2009, 2010, 2014, 2024 Biblica, Inc. · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></template>
 <script src="assets/cebuano.js?v=password-visibility"></script><script src="assets/filipino-prayers.js?v=password-visibility"></script><script src="assets/localize.js?v=tagalog-prayers"></script>
-<script src="assets/config.js?v=admin-sanctuary"></script><script src="assets/offering-prayers.js"></script><script src="assets/app.js?v=admin-sanctuary"></script>
+<script src="assets/config.js?v=admin-sanctuary"></script><script src="assets/offering-prayers.js"></script><script src="assets/app.js?v=payment-decline"></script>
 <script src="assets/music/tracks.js"></script><script src="assets/music-prayers.js?v=bundled-tracks"></script>
 <script src="assets/new-testament-web.js"></script><script src="assets/new-testament-cebuano.js"></script><script src="assets/new-testament-tagalog.js"></script><script src="assets/scripture-ticker.js?v=scripture-books"></script>
 </body></html>

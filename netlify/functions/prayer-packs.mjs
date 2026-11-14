@@ -34,8 +34,8 @@ export default async function handler(request) {
   if (request.method === 'GET' && action === 'ready') return reply(200, { available: configured });
   if (request.method !== 'POST') return reply(405, {});
   const review = action === 'review' || action === 'approve';
-  const dashboard = ['admin-session', 'admin-list', 'admin-confirm', 'admin-members', 'admin-awaiting'].includes(action);
-  if (!project || !serviceKey || (!configured && !dashboard && !review && action !== 'notify' && action !== 'status')) {
+  const dashboard = ['admin-session', 'admin-list', 'admin-confirm', 'admin-decline', 'admin-members', 'admin-awaiting'].includes(action);
+  if (!project || !serviceKey || (!configured && !dashboard && !review && action !== 'notify' && action !== 'status' && action !== 'decline-notice')) {
     return reply(503, { error: action === 'admin-members'
       ? 'Member List is temporarily unavailable. Please try again.'
       : 'Could not start checkout. Please try again.' });
@@ -78,7 +78,7 @@ export default async function handler(request) {
     if (action === 'admin-session') return reply(200, { admin: true });
     if (action === 'admin-awaiting') {
       const { data, error } = await orders.select('id').not('payment_reference', 'is', null)
-        .not('user_id', 'is', null).is('paid_at', null).limit(1);
+        .not('user_id', 'is', null).is('paid_at', null).is('declined_at', null).limit(1);
       if (error) throw error;
       return reply(200, { awaiting: data.length > 0 });
     }
@@ -98,18 +98,39 @@ export default async function handler(request) {
       if (error) throw error;
       return reply(200, { payments: data.slice(0, 50), more: data.length > 50 });
     }
-    if (action === 'admin-confirm') {
+    if (action === 'decline-notice') {
+      const { data, error } = await orders.select('payment_reference').eq('user_id', userId)
+        .not('declined_at', 'is', null).not('payment_reference', 'is', null)
+        .order('declined_at', { ascending: false }).limit(1).maybeSingle();
+      if (error) throw error;
+      return reply(200, { reference: data?.payment_reference ?? null });
+    }
+    if (action === 'admin-confirm' || action === 'admin-decline') {
       if (typeof body?.orderId !== 'string' || !uuid.test(body.orderId)) return reply(400, { error: 'Invalid order.' });
-      const { data: claim, error } = await orders.select('id,user_id,provider_id,credits,payment_reference')
+      const { data: claim, error } = await orders.select('id,user_id,provider_id,credits,payment_reference,paid_at,declined_at')
         .eq('id', body.orderId).maybeSingle();
       if (error) throw error;
       if (!claim?.user_id || !claim.payment_reference || !claim.provider_id?.startsWith(directPrefix)) {
         return reply(404, { error: 'Payment claim unavailable.' });
       }
+      if (action === 'admin-decline') {
+        if (claim.declined_at) return reply(200, { status: 'declined' });
+        const updated = await orders.update({ declined_at: new Date().toISOString() })
+          .eq('id', claim.id).eq('user_id', claim.user_id)
+          .is('paid_at', null).is('declined_at', null).select('id').maybeSingle();
+        if (updated.error) throw updated.error;
+        if (!updated.data) {
+          const latest = await orders.select('declined_at').eq('id', claim.id).eq('user_id', claim.user_id).maybeSingle();
+          if (latest.error) throw latest.error;
+          if (!latest.data?.declined_at) return reply(409, { error: 'This payment has already been reviewed or is unavailable.' });
+        }
+        return reply(200, { status: 'declined' });
+      }
       if (body.verifiedCentavos !== claim.credits * 100) return reply(409, { error: 'Verify the exact amount received.' });
       const settled = await admin.rpc('stonino_settle_prayer_pack', {
         order_id: claim.id, verified_provider_id: claim.provider_id, paid_centavos: body.verifiedCentavos
       });
+      if (settled.error?.message === 'prayer_pack_declined') return reply(409, { error: 'This payment was declined.' });
       if (settled.error) throw settled.error;
       return reply(200, { status: 'paid' });
     }
@@ -119,24 +140,28 @@ export default async function handler(request) {
       if (lookupError) throw lookupError;
       if (!claim?.user_id) return reply(404, { error: 'No active Prayer Pack claim uses this reference.' });
       if (action === 'approve') {
+        if (claim.declined_at) return reply(409, { error: 'This payment was declined.' });
         if (body.orderId !== claim.id || body.verifiedCentavos !== claim.credits * 100) {
           return reply(409, { error: 'Verify the exact amount received before approving.' });
         }
         const { error } = await admin.rpc('stonino_settle_prayer_pack', {
           order_id: claim.id, verified_provider_id: directId, paid_centavos: body.verifiedCentavos
         });
+        if (error?.message === 'prayer_pack_declined') return reply(409, { error: 'This payment was declined.' });
         if (error) throw error;
         return reply(200, { status: 'paid' });
       }
       return reply(200, {
         orderId: claim.id, credits: claim.credits, createdAt: claim.created_at,
-        status: claim.paid_at ? 'paid' : 'pending'
+        status: claim.declined_at ? 'declined' : claim.paid_at ? 'paid' : 'pending'
       });
     }
     if (typeof body?.orderId !== 'string' || !uuid.test(body.orderId)) return reply(400, { error: 'Invalid order.' });
     let { data: order, error } = await orders.select('*').eq('id', body.orderId).maybeSingle();
     if (error) throw error;
     if (userId && order && order.user_id !== userId) return reply(404, { error: 'Order unavailable.' });
+
+    if (order?.declined_at) return reply(200, { status: 'declined' });
 
     if (action === 'claim') {
       if (!order || order.checkout_url || !referencePattern.test(reference)) {
