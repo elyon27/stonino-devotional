@@ -40,7 +40,7 @@ Express Send is the default purchase mode. The app displays the selected pack pr
  
 Apply `stonino-admin-members.sql` for the Members list. It lists confirmed accounts with a Sto. Niño display name, using the Supabase account creation date as the enrollment date.
 
-Apply `prayer-pack-admin.sql` after the original Prayer Pack migration, then deploy the updated site and Netlify functions. Keep Supabase email confirmation enabled. Sign in using the Supabase account with verified email `leuneib01@gmail.com` to open Payment Review automatically. It shows the buyer email, reference submission time in Philippine time, amount and reference number. Verify each transfer in GCash before confirming. The date shown is the submission date.
+Apply `prayer-pack-admin.sql` after the original Prayer Pack migration, then deploy the updated site and Netlify functions. Keep Supabase email confirmation enabled. Sign in using the Supabase account with verified email `leuneib01@gmail.com` and select Payment Review from the navigation. Admin sessions start on Sanctuary. It shows the buyer email, reference submission time in Philippine time, amount and reference number. Verify each transfer in GCash before confirming. The date shown is the submission date.
 
 For alerts to `leuneib01@gmail.com`, set `RESEND_API_KEY` and `PRAYER_PACK_EMAIL_FROM` in Netlify Functions. Use a Resend-verified sender address. A submitted reference triggers an alert, and a scheduled function retries pending alerts. The existing token review page remains available for older claims that stored only a reference digest. `GCASH_REVIEW_TOKEN` is needed only for that legacy page.
 
