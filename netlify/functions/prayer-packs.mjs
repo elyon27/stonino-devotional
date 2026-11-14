@@ -35,7 +35,8 @@ export default async function handler(request) {
   if (request.method !== 'POST') return reply(405, {});
   const review = action === 'review' || action === 'approve';
   const dashboard = ['admin-session', 'admin-list', 'admin-confirm', 'admin-decline', 'admin-members', 'admin-awaiting'].includes(action);
-  if (!project || !serviceKey || (!configured && !dashboard && !review && action !== 'notify' && action !== 'status' && action !== 'decline-notice')) {
+  const declineAction = ['decline-notice', 'correct-reference', 'cancel-reference'].includes(action);
+  if (!project || !serviceKey || (!configured && !dashboard && !review && !declineAction && action !== 'notify' && action !== 'status')) {
     return reply(503, { error: action === 'admin-members'
       ? 'Member List is temporarily unavailable. Please try again.'
       : 'Could not start checkout. Please try again.' });
@@ -99,11 +100,44 @@ export default async function handler(request) {
       return reply(200, { payments: data.slice(0, 50), more: data.length > 50 });
     }
     if (action === 'decline-notice') {
-      const { data, error } = await orders.select('payment_reference').eq('user_id', userId)
-        .not('declined_at', 'is', null).not('payment_reference', 'is', null)
-        .order('declined_at', { ascending: false }).limit(1).maybeSingle();
+      const notices = [];
+      const pageSize = 200;
+      for (let offset = 0; ; offset += pageSize) {
+        const { data, error } = await orders.select('id,payment_reference,credits').eq('user_id', userId)
+          .not('declined_at', 'is', null).not('payment_reference', 'is', null)
+          .is('paid_at', null).is('reference_resolved_at', null)
+          .order('declined_at', { ascending: false }).order('id').range(offset, offset + pageSize - 1);
+        if (error) throw error;
+        notices.push(...data.map(row => ({ orderId: row.id, reference: row.payment_reference, credits: row.credits })));
+        if (data.length < pageSize) break;
+      }
+      return reply(200, { notices, reference: notices[0]?.reference ?? null });
+    }
+    if (action === 'correct-reference' || action === 'cancel-reference') {
+      if (typeof body?.orderId !== 'string' || !uuid.test(body.orderId)) return reply(400, { error: 'Invalid order.' });
+      const correcting = action === 'correct-reference';
+      if (correcting && !referencePattern.test(reference)) {
+        return reply(400, { error: 'Enter the transaction reference from your GCash receipt.' });
+      }
+      const { data: replacementId, error } = await admin.rpc('stonino_resolve_declined_reference', {
+        owner_id: userId, order_id: body.orderId,
+        corrected_reference: correcting ? reference : null,
+        corrected_provider_id: correcting ? directId : null
+      });
+      if (error?.code === '23505') return reply(409, { error: 'This GCash reference has already been submitted. Check your receipt and enter the correct reference.' });
+      if (error?.message === 'declined_reference_unavailable') {
+        return reply(409, { error: 'This notice has already been resolved or is unavailable. Refresh the Prayer Packs page.' });
+      }
       if (error) throw error;
-      return reply(200, { reference: data?.payment_reference ?? null });
+      if (replacementId) {
+        const replacement = await admin.from('stonino_prayer_pack_orders')
+          .select('id,credits,notification_sent_at').eq('id', replacementId)
+          .is('paid_at', null).is('declined_at', null).maybeSingle();
+        if (replacement.data) {
+          await sendPaymentAlert(admin, replacement.data).catch(() => console.error('Prayer Pack payment alert will be retried.'));
+        }
+      }
+      return reply(200, { status: correcting ? 'review' : 'cancelled' });
     }
     if (action === 'admin-confirm' || action === 'admin-decline') {
       if (typeof body?.orderId !== 'string' || !uuid.test(body.orderId)) return reply(400, { error: 'Invalid order.' });
@@ -161,7 +195,7 @@ export default async function handler(request) {
     if (error) throw error;
     if (userId && order && order.user_id !== userId) return reply(404, { error: 'Order unavailable.' });
 
-    if (order?.declined_at) return reply(200, { status: 'declined' });
+    if (order?.declined_at) return reply(200, { status: order.reference_resolved_at ? 'resolved' : 'declined' });
 
     if (action === 'claim') {
       if (!order || order.checkout_url || !referencePattern.test(reference)) {
@@ -245,6 +279,21 @@ export default async function handler(request) {
     return reply(200, { status: 'paid' });
   } catch (error) {
     console.error('Prayer Pack checkout:', error.code ?? error.name);
+    if (dashboard && action !== 'admin-members') {
+      const missingDeclineColumn = ['42703', 'PGRST204'].includes(error.code) &&
+        /\bdeclined_at\b/.test(error.message ?? '');
+      if (missingDeclineColumn) {
+        return reply(503, { error: 'Payment Review needs the updated prayer-pack-admin.sql migration in Supabase. Apply it, then retry.' });
+      }
+      const messages = {
+        'admin-decline': 'Could not verify that the payment was declined. Refresh Payment Review and check the reference before retrying.',
+        'admin-confirm': 'Could not verify that the payment was confirmed. Refresh Payment Review and check the reference before retrying.',
+        'admin-list': 'Could not load Payment Review. Please try again.',
+        'admin-awaiting': 'Could not check for payments awaiting review.',
+        'admin-session': 'Could not verify access to Payment Review.'
+      };
+      return reply(502, { error: messages[action] });
+    }
     return reply(502, { error: action === 'admin-members'
       ? 'Could not load the Member List. Please try again.'
       : 'Could not check your Prayer Pack. Please try again.' });

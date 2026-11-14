@@ -4,7 +4,49 @@ alter table public.stonino_prayer_pack_orders
   add column if not exists payment_reference text,
   add column if not exists submitted_at timestamptz,
   add column if not exists notification_sent_at timestamptz,
-  add column if not exists declined_at timestamptz;
+  add column if not exists declined_at timestamptz,
+  add column if not exists reference_resolved_at timestamptz,
+  add column if not exists replacement_order_id uuid;
+
+create or replace function public.stonino_resolve_declined_reference(
+  owner_id uuid, order_id uuid, corrected_reference text, corrected_provider_id text
+)
+returns uuid language plpgsql security invoker set search_path = '' as $$
+declare
+  original public.stonino_prayer_pack_orders%rowtype;
+  replacement_id uuid;
+begin
+  select * into original from public.stonino_prayer_pack_orders
+    where id = order_id and user_id = owner_id and declined_at is not null
+      and paid_at is null and payment_reference is not null
+    for update;
+  if not found then raise exception 'declined_reference_unavailable'; end if;
+
+  if original.reference_resolved_at is not null then
+    if corrected_reference is null and original.replacement_order_id is null then return null; end if;
+    select id into replacement_id from public.stonino_prayer_pack_orders
+      where id = original.replacement_order_id and user_id = owner_id
+        and provider_id = corrected_provider_id;
+    if found then return replacement_id; end if;
+    raise exception 'declined_reference_unavailable';
+  end if;
+
+  if corrected_reference is not null then
+    insert into public.stonino_prayer_pack_orders
+      (user_id, credits, provider_id, payment_reference, submitted_at)
+    values (owner_id, original.credits, corrected_provider_id, corrected_reference, pg_catalog.now())
+    returning id into replacement_id;
+  end if;
+
+  update public.stonino_prayer_pack_orders
+    set reference_resolved_at = pg_catalog.now(), replacement_order_id = replacement_id
+    where id = original.id;
+  return replacement_id;
+end;
+$$;
+revoke all on function public.stonino_resolve_declined_reference(uuid, uuid, text, text)
+  from public, anon, authenticated;
+grant execute on function public.stonino_resolve_declined_reference(uuid, uuid, text, text) to service_role;
 
 create or replace function public.stonino_admin_pending_payments(page_offset integer)
 returns table (id uuid, email text, credits integer, payment_reference text, submitted_at timestamptz)

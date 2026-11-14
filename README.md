@@ -27,10 +27,6 @@ Open `index.html` in a browser. Devotional features require a Supabase account. 
 
 The root web app sells 20, 50, 100 or 200 credits at ₱1 per credit. Each candle or bouquet uses one credit, including novena offerings. The balance is shared across signed-in devices. Prayer, Scripture and novena readings remain free. Deleting offerings does not restore credits. Deleting the Sto. Niño profile also deletes its unused balance.
 
-### Multiple offerings
-
-Run `offering-quantities.sql` in the Supabase SQL Editor after `prayer-packs.sql` and before publishing this update. The quantity controls charge one credit for each candle or bouquet. Each submission adds the selected items together or leaves the balance unchanged if the credits are insufficient.
-
 ### Interim GCash Express Send checkout
 
 Express Send is the default purchase mode. The app displays the selected pack price and its GCash QR. The buyer scans the code and submits the GCash reference, then can use **Refresh balance** to recheck the order.
@@ -193,4 +189,4 @@ The ticker follows the app's language selection. Cebuano uses Biblica® Open Ang
 
 Before deploying this update to Netlify, run the updated `prayer-pack-admin.sql` in the Sto. Niño app's Supabase SQL Editor. Run it after the existing prayer-pack schema is installed. The script can be rerun on an existing installation.
 
-In Payment Review, **Decline** removes the claim from the review queue without adding credits. The member sees **Payment Transaction Reference Does Not Match** with the reference on the Prayer Packs page. A declined reference remains recorded to prevent reuse. A member can open a new checkout to submit a different reference.
+In Payment Review, **Decline** removes the claim from the review queue without adding credits. Each unresolved decline appears on the member’s Prayer Packs page with **Correct reference** and **Cancel claim**. A correction uses the existing GCash receipt and submits the same pack amount for admin review. Cancelling removes the notice from the member’s view across devices. Resolved references remain recorded to prevent reuse.
