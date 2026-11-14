@@ -485,6 +485,8 @@ async function setAccountUser(user) {
     showPaymentReviewEntry(false);
     $('paymentReviewList').replaceChildren();
     $('paymentReviewStatus').textContent = '';
+    $('paymentConfirmedNotice').textContent = '';
+    $('paymentConfirmedNotice').hidden = true;
     $('nextPaymentReview').hidden = true;
     if ($('paymentReview').classList.contains('active')) {
       $('paymentReview').classList.remove('active');
@@ -799,13 +801,13 @@ let paymentReviewLoading = false;
 async function loadPaymentReview(offset = 0, background = false) {
   if (!paymentAdmin) return;
   const userId = state.user.id;
-  const revision = ++paymentReviewRevision;
-  const current = () => state.user?.id === userId && paymentReviewRevision === revision && paymentAdmin;
   const list = $('paymentReviewList');
-  const status = $('paymentReviewStatus');
-  const next = $('nextPaymentReview');
   if (background && (paymentReviewLoading || list.contains(document.activeElement) ||
       list.querySelector('button:disabled'))) return;
+  const revision = ++paymentReviewRevision;
+  const current = () => state.user?.id === userId && paymentReviewRevision === revision && paymentAdmin;
+  const status = $('paymentReviewStatus');
+  const next = $('nextPaymentReview');
   paymentReviewLoading = true;
   if (!background) {
     list.replaceChildren();
@@ -838,10 +840,13 @@ async function loadPaymentReview(offset = 0, background = false) {
         if (!current() || !confirm(`Confirm that you received ₱${payment.credits} in GCash with reference ${payment.payment_reference}?`)) return;
         button.disabled = true;
         try {
-          await packRequest('admin-confirm', { orderId: payment.id, verifiedCentavos: payment.credits * 100 });
-          if (current()) {
-            await loadPaymentReview();
-            if (state.user?.id === userId && paymentAdmin) toast('Payment confirmed. Credits added.');
+          const result = await packRequest('admin-confirm', { orderId: payment.id, verifiedCentavos: payment.credits * 100 });
+          if (result.status !== 'paid') throw Error('Could not verify that the payment was confirmed.');
+          if (state.user?.id === userId && paymentAdmin) {
+            const notice = $('paymentConfirmedNotice');
+            notice.textContent = `✓ Payment confirmed · ₱${payment.credits} · Reference ${payment.payment_reference}. Credits added.`;
+            notice.hidden = false;
+            if (location.hash === '#paymentReview') await loadPaymentReview();
           }
         } catch (error) {
           if (current()) {

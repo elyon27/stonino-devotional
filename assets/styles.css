@@ -320,3 +320,12 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
 @media (min-width: 751px) {
   .payment-review-mobile { display: none; }
 }
+
+.payment-confirmed-notice {
+  padding: .75rem 1rem;
+  border: 1px solid #558463;
+  border-radius: .5rem;
+  background: #e4f3e8;
+  color: #21462c;
+  font-weight: bold;
+}
