@@ -472,6 +472,9 @@ function accountView() {
   headerName.hidden = !unlocked;
   $('authBtn').disabled = authStatus !== 'ready';
 }
+function showPaymentReviewEntry(show) {
+  document.querySelectorAll('[data-payment-review-entry]').forEach(button => { button.hidden = !show; });
+}
 let paymentAdmin = false;
 async function setAccountUser(user) {
   const changed = state.user?.id !== user?.id;
@@ -479,7 +482,7 @@ async function setAccountUser(user) {
   state.user = user?.is_anonymous ? null : user;
   if (changed) {
     paymentAdmin = false;
-    $('paymentReviewNav').hidden = true;
+    showPaymentReviewEntry(false);
     $('paymentReviewList').replaceChildren();
     $('paymentReviewStatus').textContent = '';
     $('nextPaymentReview').hidden = true;
@@ -520,15 +523,17 @@ async function setAccountUser(user) {
   }
   if (revision !== authRevision) return;
   if (canUseApp() && state.user?.email?.toLowerCase() === 'leuneib01@gmail.com') {
-    const result = await packRequest('admin-session', {}).catch(() => null);
-    if (revision !== authRevision) return;
     const wasAdmin = paymentAdmin;
-    paymentAdmin = result?.admin === true;
-    $('paymentReviewNav').hidden = !paymentAdmin;
-    if (paymentAdmin && canUseApp() && (changed || !wasAdmin || location.hash === '#paymentReview')) {
+    // The email only controls navigation. The server authorizes every review request.
+    paymentAdmin = true;
+    showPaymentReviewEntry(true);
+    if (changed || !wasAdmin || location.hash === '#paymentReview') {
       nav('paymentReview');
       return;
     }
+  } else {
+    paymentAdmin = false;
+    showPaymentReviewEntry(false);
   }
   const page = location.hash.slice(1);
   if (changed && canUseApp() && $(page)?.classList.contains('page')) nav(page);
@@ -779,14 +784,19 @@ async function packRequest(action, body) {
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(20000)
   });
-  const result = await response.json();
+  const result = await response.json().catch(() => null);
+  if (!result) throw Error(action.startsWith('admin-')
+    ? 'Payment Review could not reach the server. Open the deployed Netlify app and try again.'
+    : 'Checkout could not reach the server. Please try again.');
   if (!response.ok) throw Object.assign(Error(result.error || 'Checkout is unavailable.'), { status: response.status });
   return result;
 }
 
 let paymentReviewRevision = 0;
 let paymentReviewOffset = 0;
-async function loadPaymentReview(offset = 0) {
+let paymentReviewSnapshot = '';
+let paymentReviewLoading = false;
+async function loadPaymentReview(offset = 0, background = false) {
   if (!paymentAdmin) return;
   const userId = state.user.id;
   const revision = ++paymentReviewRevision;
@@ -794,12 +804,21 @@ async function loadPaymentReview(offset = 0) {
   const list = $('paymentReviewList');
   const status = $('paymentReviewStatus');
   const next = $('nextPaymentReview');
-  list.replaceChildren();
-  next.hidden = true;
-  status.textContent = 'Loading payments…';
+  if (background && (paymentReviewLoading || list.contains(document.activeElement) ||
+      list.querySelector('button:disabled'))) return;
+  paymentReviewLoading = true;
+  if (!background) {
+    list.replaceChildren();
+    next.hidden = true;
+    status.textContent = 'Loading payments…';
+  }
   try {
     const result = await packRequest('admin-list', { offset });
     if (!current()) return;
+    const snapshot = JSON.stringify(result);
+    if (background && snapshot === paymentReviewSnapshot) return;
+    paymentReviewSnapshot = snapshot;
+    list.replaceChildren();
     paymentReviewOffset = offset;
     status.textContent = result.payments.length ? '' : 'No payment references are awaiting review.';
     next.hidden = !result.more;
@@ -835,11 +854,21 @@ async function loadPaymentReview(offset = 0) {
       list.append(item);
     }
   } catch (error) {
-    if (current()) status.textContent = error.message;
+    if (!background && current()) status.textContent = location.protocol === 'file:'
+      ? 'Open the deployed Netlify app to load and confirm payments.'
+      : error.message;
+  } finally {
+    if (revision === paymentReviewRevision) paymentReviewLoading = false;
   }
 }
 $('refreshPaymentReview').onclick = () => void loadPaymentReview();
 $('nextPaymentReview').onclick = () => void loadPaymentReview(paymentReviewOffset + 50);
+function refreshVisiblePaymentReview() {
+  if (!document.hidden && location.hash === '#paymentReview' && paymentReviewOffset === 0) {
+    void loadPaymentReview(0, true);
+  }
+}
+setInterval(refreshVisiblePaymentReview, 10000);
 
 async function readPrayerBalance() {
   const userId = state.user?.id;
@@ -893,7 +922,7 @@ async function refreshPrayerPacks() {
           $('prayerPackTransfer').hidden = true;
           $('prayerPackPersonalQr').hidden = true;
         }
-        packMessage = result.status === 'review' ? 'Reference submitted. Waiting for the recipient to verify your GCash transfer.' : 'Waiting for payment confirmation.';
+        packMessage = result.status === 'review' ? 'Payment reference submitted. Your GCash payment is awaiting admin review.' : 'Waiting for payment confirmation.';
       }
     }
   } catch (error) {
@@ -975,7 +1004,7 @@ async function startPrayerPack(credits) {
     if (result.status === 'review') {
       $('prayerPackPersonalQr').hidden = true;
       $('prayerPackTransfer').hidden = true;
-      packMessage = 'Reference submitted. Waiting for the recipient to verify your GCash transfer.';
+      packMessage = 'Payment reference submitted. Your GCash payment is awaiting admin review.';
       return;
     }
     if (result.qrPngBase64) {
@@ -1022,12 +1051,20 @@ $('prayerPackTransfer').onsubmit = async event => {
   packBusy = true;
   renderPrayerPacks();
   try {
-    await packRequest('claim', { orderId: pending.orderId, reference: $('prayerPackReference').value.trim() });
+    const result = await packRequest('claim', { orderId: pending.orderId, reference: $('prayerPackReference').value.trim() });
+    if (result.status !== 'review' && result.status !== 'paid') throw Error('Could not verify that the reference was submitted.');
     if (state.user?.id !== userId) return;
     $('prayerPackTransfer').hidden = true;
     $('prayerPackTransfer').reset();
     $('prayerPackPersonalQr').hidden = true;
-    packMessage = 'Reference submitted. Waiting for the recipient to verify your GCash transfer.';
+    if (result.status === 'paid') {
+      saveAccountData(packOrderKey, null);
+      packMessage = 'Payment already confirmed. Your credits are ready.';
+      await readPrayerBalance();
+    } else {
+      packMessage = 'Payment reference submitted. Your GCash payment is awaiting admin review.';
+    }
+    if (state.user?.id === userId) toast(packMessage);
   } catch (error) {
     if (state.user?.id === userId) packMessage = error.message || 'Could not submit your payment reference.';
   } finally {
@@ -1052,6 +1089,7 @@ setInterval(refreshDevotionalClock, 1000);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
     refreshDevotionalClock();
+    refreshVisiblePaymentReview();
     if (location.hash === '#prayerPacks') void refreshPrayerPacks();
     else if (state.user) void readPrayerBalance();
   }

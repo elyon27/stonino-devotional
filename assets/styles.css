@@ -315,3 +315,8 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
 }
 
 .prayer-pack-reference { margin-top: 1rem; }
+
+[data-payment-review-entry][hidden] { display: none; }
+@media (min-width: 751px) {
+  .payment-review-mobile { display: none; }
+}
