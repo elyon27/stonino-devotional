@@ -85,7 +85,7 @@ const novena=[
 ];
 const prayers={morning:'Lord Jesus, Holy Child, I offer you this morning. Bless my thoughts, words, and work. May I recognize your presence in each person I meet and honor you in all I do. Amen.',family:'Jesus, Holy Child, look lovingly upon our family. Keep us close in patience, forgiveness, and faith. Protect children, comfort the elderly, and guide every home toward your peace. Amen.',thanks:'Lord Jesus, receive my thanks for blessings seen and unseen. Keep me humble in prosperity, faithful in difficulty, and generous toward those in need. Amen.',departed:'Lord Jesus Christ, in your mercy remember those who have died. Grant them rest according to your holy will, console those who mourn, and strengthen our hope in the resurrection. Amen.',appCreator:'Lord Jesus, Holy Child, bless the person who built this app. Grant them wisdom, humility, and perseverance. May their work help others draw closer to you. Amen.'};
 const meditations=[['Matthew 19:13–15','Welcome','Jesus welcomes children. Consider how you can make room for the small, the vulnerable, and the overlooked. In prayer, ask for a heart ready to receive others.'],['Luke 2:1–20','God comes near','The birth of Jesus reveals God’s love in humility. Reflect on the ways you may encounter Christ in ordinary life.'],['Luke 2:41–52','Growth in wisdom','The child Jesus grows in wisdom. Ask God to guide your own growth in understanding, patience, and obedience to truth.'],['Mark 10:13–16','Blessing','Jesus blesses those brought to him. Pray for the children of your community and for all who care for them.'],['John 13:1–17','Humble service','Christ serves his disciples. Choose one practical act of kindness that asks for nothing in return.'],['John 14:27','Peace','Jesus promises his peace. Bring a burden before God and consider one step toward reconciliation.'],['Philippians 2:5–11','Christ’s humility','Christ’s self-giving love invites us to lay aside vanity and follow his example in daily choices.']];
-let toastTimer;function toast(msg){const e=$('toast');e.textContent=tr(msg);e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),3500)}function html(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function nav(name){if(!canUseApp()||!$(name)||(name==='paymentReview'&&!paymentAdmin))return;document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===name));document.querySelectorAll('[data-nav]').forEach(e=>e.classList.toggle('active',e.dataset.nav===name));history.replaceState(null,'','#'+name);if(name==='prayerPacks')void refreshPrayerPacks();if(name==='paymentReview')void loadPaymentReview();window.scrollTo({top:0,behavior:'instant'});$('main').focus({preventScroll:true})}document.querySelectorAll('[data-nav]').forEach(e=>e.addEventListener('click',ev=>{ev.preventDefault();nav(e.dataset.nav)}));
+let toastTimer;function toast(msg){const e=$('toast');e.textContent=tr(msg);e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),3500)}function html(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function nav(name){if(!canUseApp()||!$(name)||(name==='paymentReview'&&!paymentAdmin))return;document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===name));document.querySelectorAll('[data-nav]').forEach(e=>e.classList.toggle('active',e.dataset.nav===name));history.replaceState(null,'','#'+name);if(name==='prayerPacks')void refreshPrayerPacks();if(name==='paymentReview'){void loadPaymentReview();void loadAdminMembers();}window.scrollTo({top:0,behavior:'instant'});$('main').focus({preventScroll:true})}document.querySelectorAll('[data-nav]').forEach(e=>e.addEventListener('click',ev=>{ev.preventDefault();nav(e.dataset.nav)}));
 function language(){document.documentElement.lang=state.language;window.stoninoLocalize(state.language);document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=(translations[state.language]||translations.en)[e.dataset.i18n]||e.textContent);$('language').value=state.language;$('langBtn').textContent=({en:'English',ceb:'Cebuano',fil:'Filipino'})[state.language]+' ▾';store.set('language',state.language);renderNovena();displayPrayer(currentPrayer);renderCandles();renderNovenaCandles();renderFlowers();renderIntentions();renderMeditation();accountView();document.querySelectorAll('[data-offering-prayer]').forEach(renderOfferingPrayers)}$('language').addEventListener('change',e=>{state.language=e.target.value;language()});$('langBtn').addEventListener('click',()=>{const seq=['en','ceb','fil'];state.language=seq[(seq.indexOf(state.language)+1)%3];language();});function setFont(v){state.font=Number(v);document.documentElement.style.setProperty('--scale',state.font);$('textSize').value=String(state.font);store.set('font',state.font)}$('textSize').addEventListener('change',e=>setFont(e.target.value));$('fontBtn').addEventListener('click',()=>{const opts=[1,1.12,1.25];setFont(opts[(opts.indexOf(state.font)+1)%3])});
 // Appearance preference is independent of prayer data and survives page reloads.
 function applyAppearance(mode){
@@ -482,6 +482,10 @@ async function setAccountUser(user) {
   state.user = user?.is_anonymous ? null : user;
   if (changed) {
     paymentAdmin = false;
+    $('paymentAwaitingNotice').hidden = true;
+    $('adminMembersList').replaceChildren();
+    $('adminMembersStatus').textContent = '';
+    $('previousAdminMembers').hidden = $('nextAdminMembers').hidden = true;
     showPaymentReviewEntry(false);
     $('paymentReviewList').replaceChildren();
     $('paymentReviewStatus').textContent = '';
@@ -529,6 +533,7 @@ async function setAccountUser(user) {
     // The email only controls navigation. The server authorizes every review request.
     paymentAdmin = true;
     showPaymentReviewEntry(true);
+    void refreshPaymentAwaitingNotice();
     if (changed || !wasAdmin || location.hash === '#paymentReview') {
       nav('paymentReview');
       return;
@@ -846,6 +851,7 @@ async function loadPaymentReview(offset = 0, background = false) {
             const notice = $('paymentConfirmedNotice');
             notice.textContent = `✓ Payment confirmed · ₱${payment.credits} · Reference ${payment.payment_reference}. Credits added.`;
             notice.hidden = false;
+            void refreshPaymentAwaitingNotice();
             if (location.hash === '#paymentReview') await loadPaymentReview();
           }
         } catch (error) {
@@ -868,6 +874,57 @@ async function loadPaymentReview(offset = 0, background = false) {
 }
 $('refreshPaymentReview').onclick = () => void loadPaymentReview();
 $('nextPaymentReview').onclick = () => void loadPaymentReview(paymentReviewOffset + 50);
+let memberRequest = 0;
+let memberOffset = 0;
+async function loadAdminMembers(offset = 0) {
+  if (!paymentAdmin) return;
+  const userId = state.user.id;
+  const request = ++memberRequest;
+  const current = () => paymentAdmin && state.user?.id === userId && request === memberRequest;
+  const list = $('adminMembersList');
+  const status = $('adminMembersStatus');
+  const previous = $('previousAdminMembers');
+  const next = $('nextAdminMembers');
+  status.textContent = 'Loading members…';
+  previous.hidden = next.hidden = true;
+  try {
+    const result = await packRequest('admin-members', { offset });
+    if (!current()) return;
+    memberOffset = offset;
+    list.replaceChildren();
+    for (const member of result.members) {
+      const entry = document.createElement('li');
+      const date = new Date(member.enrolled_at).toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' });
+      entry.textContent = `${member.email} · Enrolled ${date}`;
+      list.append(entry);
+    }
+    status.textContent = result.members.length ? '' : 'No members found.';
+    previous.hidden = offset === 0;
+    next.hidden = !result.more;
+  } catch (error) {
+    if (current()) status.textContent = error.message;
+  }
+}
+$('refreshAdminMembers').onclick = () => void loadAdminMembers();
+$('previousAdminMembers').onclick = () => void loadAdminMembers(Math.max(0, memberOffset - 50));
+$('nextAdminMembers').onclick = () => void loadAdminMembers(memberOffset + 50);
+
+let awaitingRequest = 0;
+async function refreshPaymentAwaitingNotice() {
+  if (!paymentAdmin || document.hidden) return;
+  const userId = state.user.id;
+  const request = ++awaitingRequest;
+  try {
+    const result = await packRequest('admin-awaiting', {});
+    if (paymentAdmin && state.user?.id === userId && request === awaitingRequest) {
+      $('paymentAwaitingNotice').hidden = result.awaiting !== true;
+    }
+  } catch {
+    // Keep the last verified state until the next refresh.
+  }
+}
+setInterval(refreshPaymentAwaitingNotice, 10000);
+
 function refreshVisiblePaymentReview() {
   if (!document.hidden && location.hash === '#paymentReview' && paymentReviewOffset === 0) {
     void loadPaymentReview(0, true);
@@ -1095,6 +1152,7 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
     refreshDevotionalClock();
     refreshVisiblePaymentReview();
+    void refreshPaymentAwaitingNotice();
     if (location.hash === '#prayerPacks') void refreshPrayerPacks();
     else if (state.user) void readPrayerBalance();
   }

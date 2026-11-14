@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#8B1E2D"><meta name="description" content="A Catholic devotional sanctuary honoring Señor Santo Niño de Cebu.">
   <title>Sto. Niño | Cebu Heritage Chapel</title>
-  <link rel="stylesheet" href="assets/styles.css?v=payment-confirmed-indicator"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/styles.css?v=admin-members"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/chapel-icon-192.png">
   <script defer src="assets/install.js?v=cebuano"></script>
@@ -16,6 +16,7 @@
   <a class="identity" href="#sanctuary" data-nav="sanctuary" aria-label="Sto. Niño home"><img src="assets/chapel-logo.svg" alt="" width="40" height="40"><span><strong>SEÑOR SANTO NIÑO</strong><small>Cebu Heritage Chapel</small><span class="release-version">v1.1.5</span></span></a>
   <span id="devotionalUserName" class="devotional-user-name" hidden></span>
   <div class="header-actions"><button class="text-control" id="soundBtn" title="Toggle ambient sound" hidden>Sound off</button><button class="text-control" id="langBtn" aria-label="Change language">English ▾</button><button class="text-control" id="themeBtn" type="button" title="Switch between light and dark backgrounds" aria-label="Switch to dark mode" aria-pressed="false">☾ Dark</button><button class="text-control" id="fontBtn" title="Increase text size">A+</button><button class="text-control" id="authBtn">My Account</button></div>
+  <button id="paymentAwaitingNotice" class="btn gold" type="button" data-nav="paymentReview" hidden>Payment Review Awaiting</button>
 </header>
 <div class="scripture-ticker" role="region" aria-label="New Testament · World English Bible">
   <div id="scriptureTickerViewport" class="scripture-ticker-viewport">
@@ -58,6 +59,16 @@
     <button id="refreshPaymentReview" class="btn outline" type="button">Refresh payments</button>
     <button id="nextPaymentReview" class="btn outline" type="button" hidden>Next page</button>
   </div>
+  <section class="panel" aria-labelledby="adminMembersTitle">
+    <h3 id="adminMembersTitle">Members</h3>
+    <p id="adminMembersStatus" role="status"></p>
+    <ul id="adminMembersList"></ul>
+    <div class="button-row">
+      <button id="refreshAdminMembers" class="btn outline" type="button">Refresh members</button>
+      <button id="previousAdminMembers" class="btn outline" type="button" hidden>Previous members</button>
+      <button id="nextAdminMembers" class="btn outline" type="button" hidden>Next members</button>
+    </div>
+  </section>
 </section>
 <div class="prayer-pack-bar">
   <button type="button" class="btn outline" data-nav="prayerPacks">Prayer Packs · <span id="prayerPackBadge">Loading…</span></button>
@@ -255,7 +266,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <template id="cebuanoScriptureCredit"><a href="https://ebible.org/cebocb/copyright.htm" target="_blank" rel="noopener">Biblica® Open Ang Pulong sa Dios™</a> · © 2009, 2010, 2014, 2024 Biblica, Inc. · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></template>
 <script src="assets/cebuano.js?v=password-visibility"></script><script src="assets/filipino-prayers.js?v=password-visibility"></script><script src="assets/localize.js?v=tagalog-prayers"></script>
-<script src="assets/config.js?v=payment-confirmed-indicator"></script><script src="assets/offering-prayers.js"></script><script src="assets/app.js?v=payment-confirmed-indicator"></script>
+<script src="assets/config.js?v=admin-members"></script><script src="assets/offering-prayers.js"></script><script src="assets/app.js?v=admin-members"></script>
 <script src="assets/music/tracks.js"></script><script src="assets/music-prayers.js?v=bundled-tracks"></script>
 <script src="assets/new-testament-web.js"></script><script src="assets/new-testament-cebuano.js"></script><script src="assets/new-testament-tagalog.js"></script><script src="assets/scripture-ticker.js?v=resume-position"></script>
 </body></html>

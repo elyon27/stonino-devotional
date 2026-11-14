@@ -34,7 +34,7 @@ export default async function handler(request) {
   if (request.method === 'GET' && action === 'ready') return reply(200, { available: configured });
   if (request.method !== 'POST') return reply(405, {});
   const review = action === 'review' || action === 'approve';
-  const dashboard = ['admin-session', 'admin-list', 'admin-confirm'].includes(action);
+  const dashboard = ['admin-session', 'admin-list', 'admin-confirm', 'admin-members', 'admin-awaiting'].includes(action);
   if (!project || !serviceKey || (!configured && !dashboard && !review && action !== 'notify' && action !== 'status')) {
     return reply(503, { error: 'Could not start checkout. Please try again.' });
   }
@@ -74,6 +74,21 @@ export default async function handler(request) {
     const directId = directPrefix + hash(reference).toString('hex');
     const orders = admin.from('stonino_prayer_pack_orders');
     if (action === 'admin-session') return reply(200, { admin: true });
+    if (action === 'admin-awaiting') {
+      const { data, error } = await orders.select('id').not('payment_reference', 'is', null)
+        .not('user_id', 'is', null).is('paid_at', null).limit(1);
+      if (error) throw error;
+      return reply(200, { awaiting: data.length > 0 });
+    }
+    if (action === 'admin-members') {
+      const offset = body?.offset ?? 0;
+      if (!Number.isSafeInteger(offset) || offset < 0 || offset > 2147483647) {
+        return reply(400, { error: 'Invalid page.' });
+      }
+      const { data, error } = await admin.rpc('stonino_admin_members', { page_offset: offset });
+      if (error) throw error;
+      return reply(200, { members: data.slice(0, 50), more: data.length > 50 });
+    }
     if (action === 'admin-list') {
       const offset = body?.offset ?? 0;
       if (!Number.isSafeInteger(offset) || offset < 0) return reply(400, { error: 'Invalid page.' });

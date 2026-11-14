@@ -37,6 +37,8 @@ Express Send is the default purchase mode. The app displays the selected pack pr
 4. From your own GCash transaction history, verify the incoming reference, amount and time. Open Payment Review on the deployed site and confirm the matching payment. Only approve a new transfer received after its order was created. Never approve from a screenshot alone.
 
 ### Payment Review and email alerts
+ 
+Apply `stonino-admin-members.sql` for the Members list. It lists confirmed accounts with a Sto. Niño display name, using the Supabase account creation date as the enrollment date.
 
 Apply `prayer-pack-admin.sql` after the original Prayer Pack migration, then deploy the updated site and Netlify functions. Keep Supabase email confirmation enabled. Sign in using the Supabase account with verified email `leuneib01@gmail.com` to open Payment Review automatically. It shows the buyer email, reference submission time in Philippine time, amount and reference number. Verify each transfer in GCash before confirming. The date shown is the submission date.
 

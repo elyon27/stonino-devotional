@@ -329,3 +329,11 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   color: #21462c;
   font-weight: bold;
 }
+
+#paymentAwaitingNotice {
+  grid-column: 1 / -1;
+  justify-self: center;
+  flex-basis: auto;
+}
+#paymentAwaitingNotice[hidden] { display: none; }
+#adminMembersList { overflow-wrap: anywhere; }
