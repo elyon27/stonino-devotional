@@ -904,7 +904,9 @@ async function loadAdminMembers(offset = 0) {
     previous.hidden = offset === 0;
     next.hidden = !result.more;
   } catch (error) {
-    if (current()) status.textContent = error.message;
+    if (current()) status.textContent = error.status === 401 || error.status === 403
+      ? error.message
+      : 'Could not load the Member List. Please try again.';
   }
 }
 $('refreshAdminMembers').onclick = () => void loadAdminMembers();

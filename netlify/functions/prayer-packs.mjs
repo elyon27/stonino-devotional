@@ -36,7 +36,9 @@ export default async function handler(request) {
   const review = action === 'review' || action === 'approve';
   const dashboard = ['admin-session', 'admin-list', 'admin-confirm', 'admin-members', 'admin-awaiting'].includes(action);
   if (!project || !serviceKey || (!configured && !dashboard && !review && action !== 'notify' && action !== 'status')) {
-    return reply(503, { error: 'Could not start checkout. Please try again.' });
+    return reply(503, { error: action === 'admin-members'
+      ? 'Member List is temporarily unavailable. Please try again.'
+      : 'Could not start checkout. Please try again.' });
   }
 
   const admin = createClient(project, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -218,6 +220,8 @@ export default async function handler(request) {
     return reply(200, { status: 'paid' });
   } catch (error) {
     console.error('Prayer Pack checkout:', error.code ?? error.name);
-    return reply(502, { error: 'Could not check your Prayer Pack. Please try again.' });
+    return reply(502, { error: action === 'admin-members'
+      ? 'Could not load the Member List. Please try again.'
+      : 'Could not check your Prayer Pack. Please try again.' });
   }
 }
