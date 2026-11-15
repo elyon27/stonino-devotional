@@ -1,6 +1,6 @@
-# Sto. Niño Devotional v1.2.7
+# Sto. Niño Devotional v1.2.8
 
-The English prayers from pages 3–9 of the Basilica’s 2019 Fiesta Señor Pilgrim’s Booklet appear above each day’s Scripture link. Novena days unlock in order as each day is marked complete. Starting before the scheduled first day requires confirmation. Novena candle and flower offerings open on their scheduled dates. To restore date-based prayer access, set `NOVENA_PREVIEW_ENABLED` to `false` in `public/assets/app.js`.
+The English prayers from pages 3–9 of the Basilica’s 2019 Fiesta Señor Pilgrim’s Booklet appear above each day’s Scripture link. Novena days unlock in order as each day is marked complete. A day opens only when selected. Opening a day before its scheduled date requires confirmation. Novena candle and flower offerings open on their scheduled dates. To restore date-based prayer access, set `NOVENA_PREVIEW_ENABLED` to `false` in `public/assets/app.js`.
 
 ## Release version
 

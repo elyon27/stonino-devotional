@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id), config=window.STONINO_CONFIG||{}, prefix='stonino.v1.', store={get(k,f){try{return JSON.parse(localStorage.getItem(prefix+k))??f}catch{return f}},set(k,v){try{localStorage.setItem(prefix+k,JSON.stringify(v))}catch(err){console.warn('Local storage unavailable; using in-memory data',err)}}};
 const devotionalKeys = ['completed', 'intentions', 'candles', 'novenaCandles', 'novenaFlowers'];
 const state = { language: store.get('language', 'en'), font: store.get('font', 1),
-  day: 0, earlyNovenaYear: null, meditation: 0, completed: [], intentions: [], candles: [],
+  day: null, meditation: 0, completed: [], intentions: [], candles: [],
   novenaCandles: [], novenaFlowers: [], user: null, supabase: null };
 const accountKey = key => 'account.' + state.user.id + '.' + key;
 const readAccountData = (key, fallback) => state.user ? store.get(accountKey(key), fallback) : fallback;
@@ -85,7 +85,7 @@ const novena=[
 ];
 const prayers={morning:'Lord Jesus, Holy Child, I offer you this morning. Bless my thoughts, words, and work. May I recognize your presence in each person I meet and honor you in all I do. Amen.',family:'Jesus, Holy Child, look lovingly upon our family. Keep us close in patience, forgiveness, and faith. Protect children, comfort the elderly, and guide every home toward your peace. Amen.',thanks:'Lord Jesus, receive my thanks for blessings seen and unseen. Keep me humble in prosperity, faithful in difficulty, and generous toward those in need. Amen.',departed:'Lord Jesus Christ, in your mercy remember those who have died. Grant them rest according to your holy will, console those who mourn, and strengthen our hope in the resurrection. Amen.',appCreator:'Lord Jesus, Holy Child, bless the person who built this app. Grant them wisdom, humility, and perseverance. May their work help others draw closer to you. Amen.'};
 const meditations=[['Matthew 19:13–15','Welcome','Jesus welcomes children. Consider how you can make room for the small, the vulnerable, and the overlooked. In prayer, ask for a heart ready to receive others.'],['Luke 2:1–20','God comes near','The birth of Jesus reveals God’s love in humility. Reflect on the ways you may encounter Christ in ordinary life.'],['Luke 2:41–52','Growth in wisdom','The child Jesus grows in wisdom. Ask God to guide your own growth in understanding, patience, and obedience to truth.'],['Mark 10:13–16','Blessing','Jesus blesses those brought to him. Pray for the children of your community and for all who care for them.'],['John 13:1–17','Humble service','Christ serves his disciples. Choose one practical act of kindness that asks for nothing in return.'],['John 14:27','Peace','Jesus promises his peace. Bring a burden before God and consider one step toward reconciliation.'],['Philippians 2:5–11','Christ’s humility','Christ’s self-giving love invites us to lay aside vanity and follow his example in daily choices.']];
-let toastTimer;function toast(msg){const e=$('toast');e.textContent=tr(msg);e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),3500)}function html(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function nav(name){if(!canUseApp()||!$(name)||(['paymentReview','memberList'].includes(name)&&!paymentAdmin))return;$('prayerPackBar').hidden=['paymentReview','memberList'].includes(name);document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===name));document.querySelectorAll('[data-nav]').forEach(e=>e.classList.toggle('active',e.dataset.nav===name));history.replaceState(null,'','#'+name);if(name==='prayerPacks')void refreshPrayerPacks();if(name==='paymentReview')void loadPaymentReview();if(name==='memberList')void loadAdminMembers();window.scrollTo({top:0,behavior:'instant'});$('main').focus({preventScroll:true})}document.querySelectorAll('[data-nav]').forEach(e=>e.addEventListener('click',ev=>{ev.preventDefault();nav(e.dataset.nav)}));
+let toastTimer;function toast(msg){const e=$('toast');e.textContent=tr(msg);e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),3500)}function html(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function nav(name){if(!canUseApp()||!$(name)||(['paymentReview','memberList'].includes(name)&&!paymentAdmin))return;$('prayerPackBar').hidden=['paymentReview','memberList'].includes(name);document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===name));document.querySelectorAll('[data-nav]').forEach(e=>e.classList.toggle('active',e.dataset.nav===name));history.replaceState(null,'','#'+name);if(name==='novena')renderNovena();else state.day=null;if(name==='prayerPacks')void refreshPrayerPacks();if(name==='paymentReview')void loadPaymentReview();if(name==='memberList')void loadAdminMembers();window.scrollTo({top:0,behavior:'instant'});$('main').focus({preventScroll:true})}document.querySelectorAll('[data-nav]').forEach(e=>e.addEventListener('click',ev=>{ev.preventDefault();nav(e.dataset.nav)}));
 function language(){document.documentElement.lang=state.language;window.stoninoLocalize(state.language);document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=(translations[state.language]||translations.en)[e.dataset.i18n]||e.textContent);$('language').value=state.language;$('langBtn').textContent=({en:'English',ceb:'Cebuano',fil:'Filipino'})[state.language]+' ▾';store.set('language',state.language);renderNovena();displayPrayer(currentPrayer);renderCandles();renderNovenaCandles();renderFlowers();renderIntentions();renderMeditation();accountView();document.querySelectorAll('[data-offering-prayer]').forEach(renderOfferingPrayers)}$('language').addEventListener('change',e=>{state.language=e.target.value;language()});$('langBtn').addEventListener('click',()=>{const seq=['en','ceb','fil'];state.language=seq[(seq.indexOf(state.language)+1)%3];language();});function setFont(v){state.font=Number(v);document.documentElement.style.setProperty('--scale',state.font);$('textSize').value=String(state.font);store.set('font',state.font)}$('textSize').addEventListener('change',e=>setFont(e.target.value));$('fontBtn').addEventListener('click',()=>{const opts=[1,1.12,1.25];setFont(opts[(opts.indexOf(state.font)+1)%3])});
 // Appearance preference is independent of prayer data and survives page reloads.
 function applyAppearance(mode){
@@ -124,8 +124,6 @@ function showScriptureText(data){
 }
 async function openScripturePassage(ref){
   if (!canUseApp()) return;
-  // Explicit reference prevents confusing the novena with the meditation currently on screen.
-  if(typeof ref!=='string')ref=novena[state.day].ref;
   const requestId=++scriptureRequestId;
   $('scriptureDialogTitle').textContent=scriptureLabel(ref);
   const attribution = $('scriptureTranslation');
@@ -156,7 +154,7 @@ async function openScripturePassage(ref){
     scriptureDialogBody.replaceChildren();
     const message=document.createElement('p');
     message.textContent=tr('Unable to load the full passage. Please check your internet connection and try again. Successfully opened passages remain available offline in this browser.');
-    const retry=document.createElement('button');retry.type='button';retry.className='btn outline';retry.textContent=tr('Retry');retry.addEventListener('click',openScripturePassage);
+    const retry=document.createElement('button');retry.type='button';retry.className='btn outline';retry.textContent=tr('Retry');retry.addEventListener('click',()=>openScripturePassage(ref));
     scriptureDialogBody.append(message,retry);
   }
 }
@@ -192,12 +190,6 @@ function normalizeCompleted(entries) {
   }).filter(Boolean);
 }
 
-function needsEarlyNovenaConfirmation(now) {
-  return NOVENA_PREVIEW_ENABLED && !hasNovenaDayStarted(0, now)
-    && state.earlyNovenaYear !== novenaYear
-    && !state.completed.includes(novenaSchedule[0].isoDate);
-}
-
 function isNovenaDayUnlocked(day, now) {
   return Number.isInteger(day) && Boolean(novenaSchedule[day])
     && getNovenaYear(now) === novenaYear
@@ -206,7 +198,7 @@ function isNovenaDayUnlocked(day, now) {
 }
 
 function isNovenaDayOpen(day, now = Date.now()) {
-  return isNovenaDayUnlocked(day, now) && !needsEarlyNovenaConfirmation(now);
+  return state.day === day && isNovenaDayUnlocked(day, now);
 }
 
 function novenaDateFormatter(options) {
@@ -236,15 +228,12 @@ function renderNovena() {
   if (year !== novenaYear) {
     novenaYear = year;
     novenaSchedule = buildNovenaSchedule(year);
-    state.day = 0;
+    state.day = null;
   }
   const nextDay = novenaSchedule.find(day => day.opensAt > now);
   nextNovenaUpdate = nextDay?.opensAt ?? Date.UTC(year + 1, 0, 1) - CEBU_OFFSET_MS;
-  if (!isNovenaDayOpen(state.day, now)) state.day = 0;
-  const available = isNovenaDayOpen(state.day, now);
-  const day = novena[state.day];
-  const selectedDate = novenaSchedule[state.day];
-  const [theme, reflection, prayer] = prayerLocale()?.novena[state.day] ?? [day.theme, day.reflection, day.prayer];
+  if (!isNovenaDayOpen(state.day, now)) state.day = null;
+  const available = state.day !== null;
 
   const formatter = novenaDateFormatter({month: 'long', day: 'numeric', year: 'numeric'});
   const shortDate = novenaDateFormatter({month: 'short', day: 'numeric'});
@@ -253,30 +242,35 @@ function renderNovena() {
   const dayLabel = tr('Day');
   const scheduleHint = tr('Mark each day complete to unlock the next. Novena candles and flowers open on each scheduled date.');
   $('novenaScheduleHint').textContent = `${shortDate.format(first)} – ${formatter.format(last)} · ${scheduleHint}`;
-  $('novenaScheduleStatus').textContent = needsEarlyNovenaConfirmation(now)
-    ? tr('Select Day 1 to start early.')
+  $('novenaScheduleStatus').textContent = isNovenaDayUnlocked(0, now)
+    ? tr('Select a day to open its prayers.')
     : tr('Day 1 opens {date}.').replace('{date}', formatter.format(first));
-  $('dayTitle').textContent = available
-    ? `${dayLabel} ${state.day + 1} — ${formatter.format(selectedDate.opensAt)} · ${theme}`
-    : tr('{year} Novena Schedule').replace('{year}', year);
-  const completedCount = novenaSchedule.filter(({isoDate}, index) =>
-    isNovenaDayOpen(index, now) && state.completed.includes(isoDate)).length;
+  $('dayTitle').textContent = tr('{year} Novena Schedule').replace('{year}', year);
+  const completedCount = novenaSchedule.filter(({isoDate}) => state.completed.includes(isoDate)).length;
   $('dayProgress').textContent = `${completedCount} ${tr('of 9 completed')}`;
   $('novenaScheduleStatus').hidden = available;
   $('novenaDayContent').hidden = !available;
-  $('bookletPetitionTitle').textContent = `Day ${state.day + 1} Petition`;
-  $('bookletPetition').replaceChildren(...bookletPetitions[state.day].map(text => {
-    const paragraph = document.createElement('p');
-    paragraph.textContent = text;
-    return paragraph;
-  }));
-  $('dayScripture').textContent = `${isCebuano() ? 'Balaang Kasulatan' : 'Scripture'}: ${scriptureLabel(day.ref)} ↗`;
-  $('dayReflection').textContent = reflection;
-  $('dayPrayer').textContent = prayer;
-  $('completeDay').textContent = state.completed.includes(novenaSchedule[state.day].isoDate) ? tr('✓ Day completed') : tr('Mark day complete');
+
+  if (available) {
+    const day = novena[state.day];
+    const selectedDate = novenaSchedule[state.day];
+    const [theme, reflection, prayer] = prayerLocale()?.novena[state.day] ?? [day.theme, day.reflection, day.prayer];
+    $('dayTitle').textContent = `${dayLabel} ${state.day + 1} — ${formatter.format(selectedDate.opensAt)} · ${theme}`;
+    $('bookletPetitionTitle').textContent = `Day ${state.day + 1} Petition`;
+    $('bookletPetition').replaceChildren(...bookletPetitions[state.day].map(text => {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = text;
+      return paragraph;
+    }));
+    $('dayScripture').textContent = `${isCebuano() ? 'Balaang Kasulatan' : 'Scripture'}: ${scriptureLabel(day.ref)} ↗`;
+    $('dayReflection').textContent = reflection;
+    $('dayPrayer').textContent = prayer;
+    $('completeDay').textContent = state.completed.includes(selectedDate.isoDate) ? tr('✓ Day completed') : tr('Mark day complete');
+  }
+
   $('completeDay').disabled = !available;
-  $('prevDay').disabled = !isNovenaDayOpen(state.day - 1, now);
-  $('nextDay').disabled = !available || !isNovenaDayOpen(state.day + 1, now);
+  $('prevDay').disabled = !available || !isNovenaDayUnlocked(state.day - 1, now);
+  $('nextDay').disabled = !available || !isNovenaDayUnlocked(state.day + 1, now);
   for (const form of ['novenaCandleForm', 'novenaFlowerForm']) {
     $(form).querySelector('button[type="submit"]').disabled = !hasNovenaDayStarted(state.day, now);
   }
@@ -286,19 +280,17 @@ function renderNovena() {
     const completed = state.completed.includes(isoDate);
     return `<button type="button" data-day="${index}" class="${selected ? 'selected ' : ''}${completed ? 'completed' : ''}" aria-pressed="${selected}" ${unlocked ? '' : 'disabled'}><span>${dayLabel} ${index + 1}</span><time datetime="${isoDate}">${shortDate.format(opensAt)}</time></button>`;
   }).join('');
-  if (available) saveAccountData('selectedDay', { year, day: state.day });
 }
 
 function selectNovenaDay(day) {
   const now = Date.now();
   if (!canUseApp() || !isNovenaDayUnlocked(day, now)) return;
-  if (needsEarlyNovenaConfirmation(now)) {
+  if (day === state.day) return;
+  if (!hasNovenaDayStarted(day, now)) {
     const formatter = novenaDateFormatter({month: 'long', day: 'numeric', year: 'numeric'});
-    const date = formatter.format(novenaSchedule[0].opensAt);
-    const message = tr('The scheduled novena begins on {date} (Cebu time). Do you want to start early?');
-    if (!confirm(message.replace('{date}', date))) return;
-    state.earlyNovenaYear = novenaYear;
-    saveAccountData('earlyNovenaYear', novenaYear);
+    const date = formatter.format(novenaSchedule[day].opensAt);
+    const message = tr('Day {day} is scheduled for {date} (Cebu time). Do you want to open it early?');
+    if (!confirm(message.replace('{day}', day + 1).replace('{date}', date))) return;
   }
   state.day = day;
   renderNovena();
@@ -565,12 +557,7 @@ async function setAccountUser(user) {
       const saved = readAccountData(key, []);
       state[key] = key === 'completed' ? normalizeCompleted(saved) : Array.isArray(saved) ? saved : [];
     }
-    state.earlyNovenaYear = readAccountData('earlyNovenaYear', null);
-    const savedSelection = readAccountData('selectedDay', null);
-    const year = getNovenaYear(Date.now());
-    const day = year === 2027 && Number.isInteger(savedSelection) ? savedSelection
-      : savedSelection?.year === year ? savedSelection.day : 0;
-    state.day = Number.isInteger(day) && day >= 0 && day < novena.length ? day : 0;
+    state.day = null;
     $('accountDisplayName').value = displayName();
     for (const id of ['scriptureDialog', 'installHelp', 'prayerPackInstructions']) {
       if ($(id).open) $(id).close();
@@ -755,8 +742,8 @@ try{const r=mode==='signUp'?await state.supabase.auth.signUp({email,password,opt
     const { error } = await state.supabase.rpc('stonino_delete_devotional_profile');
     if (error) throw error;
 
-    state.earlyNovenaYear = null;
-    for (const key of ['earlyNovenaYear', packOrderKey, 'pendingOffering.candle', 'pendingOffering.flowers', 'pendingOffering.novena-candle', 'pendingOffering.novena-flowers']) {
+    state.day = null;
+    for (const key of ['earlyNovenaYear', 'selectedDay', packOrderKey, 'pendingOffering.candle', 'pendingOffering.flowers', 'pendingOffering.novena-candle', 'pendingOffering.novena-flowers']) {
       localStorage.removeItem(prefix + accountKey(key));
     }
     for (const key of ['candles', 'novenaCandles', 'novenaFlowers', 'intentions', 'completed']) {
@@ -768,7 +755,6 @@ try{const r=mode==='signUp'?await state.supabase.auth.signUp({email,password,opt
     renderFlowers();
     renderIntentions();
     renderNovena();
-    localStorage.removeItem(prefix + accountKey('selectedDay'));
     localStorage.setItem(registrationPreference, 'yes');
     const { error: signOutError } = await state.supabase.auth.signOut({ scope: 'local' });
     if (signOutError) {
