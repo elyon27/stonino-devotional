@@ -256,10 +256,10 @@ function renderNovena() {
     const selectedDate = novenaSchedule[state.day];
     const [theme, reflection, prayer] = prayerLocale()?.novena[state.day] ?? [day.theme, day.reflection, day.prayer];
     $('dayTitle').textContent = `${dayLabel} ${state.day + 1} — ${formatter.format(selectedDate.opensAt)} · ${theme}`;
-    $('bookletPetitionTitle').textContent = `Day ${state.day + 1} Petition`;
+    $('bookletPetitionTitle').textContent = tr('Day {day} Petition').replace('{day}', state.day + 1);
     $('bookletPetition').replaceChildren(...bookletPetitions[state.day].map(text => {
       const paragraph = document.createElement('p');
-      paragraph.textContent = text;
+      paragraph.textContent = tr(text);
       return paragraph;
     }));
     $('dayScripture').textContent = `${isCebuano() ? 'Balaang Kasulatan' : 'Scripture'}: ${scriptureLabel(day.ref)} ↗`;
