@@ -1,6 +1,6 @@
-# Sto. Niño Devotional v1.2.4
+# Sto. Niño Devotional v1.2.6
 
-This web release adds the CrownMind Bible Library link in Scripture and shortens the candle burn time to seven hours.
+Novena days unlock in order as each day is marked complete. Starting before the scheduled first day requires confirmation. Novena candle and flower offerings open on their scheduled dates. To restore date-based prayer access, set `NOVENA_PREVIEW_ENABLED` to `false` in `public/assets/app.js`.
 
 ## Release version
 
