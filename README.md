@@ -1,6 +1,10 @@
-# Sto. Niño Devotional v1.2.3
+# Sto. Niño Devotional v1.2.4
 
-The web package carries the interface and assets bundled with the v1.2.3 Android release. The browser uses the matching web payment code to reach same-origin Netlify functions. The Cancel Claim fix is included.
+This web release adds the CrownMind Bible Library link in Scripture and shortens the candle burn time to seven hours.
+
+## Release version
+
+Increment the patch version for each web revision unless the release calls for a minor or major version bump. Use the same version in the header badge and install script query in `public/index.html`, the root project metadata in `package.json` and `package-lock.json`, this README heading, and the web ZIP filename. Verify that the app header displays the new version before distributing the package.
 
 ## Preview
 
