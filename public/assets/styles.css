@@ -365,3 +365,5 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
 #adminMembersList { overflow-wrap: anywhere; }
 
 .prayer-pack-bar[hidden] { display: none; }
+
+#prayerPacks .button-row > [hidden] { display: none; }

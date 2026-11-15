@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#8B1E2D"><meta name="description" content="A Catholic devotional sanctuary honoring Señor Santo Niño de Cebu.">
   <title>Sto. Niño | Cebu Heritage Chapel</title>
-  <link rel="stylesheet" href="assets/styles.css?v=remove-cancelled-claim"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/styles.css?v=prayer-pack-controls"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/chapel-icon-192.png">
   <script defer src="assets/install.js?v=1.2.3"></script>
@@ -113,6 +113,11 @@
       <button type="button" class="btn outline" data-prayer-pack="100" disabled><strong>100 credits</strong><span>₱100</span></button>
       <button type="button" class="btn outline" data-prayer-pack="200" disabled><strong>200 credits</strong><span>₱200</span></button>
     </div>
+    <div class="button-row">
+      <button class="btn outline" id="refreshPrayerPacks" type="button">Refresh balance</button>
+      <button class="btn gold" id="continuePrayerPack" type="button" aria-haspopup="dialog" hidden>View payment instructions</button>
+      <button class="btn outline" id="cancelPrayerPack" type="button" hidden>Cancel Prayer Pack</button>
+    </div>
     <div id="prayerPackSelection" hidden>
       <h3 id="prayerPackSelectionTitle"></h3>
       <div id="prayerPackPersonalQr" class="prayer-pack-qr" hidden>
@@ -140,11 +145,17 @@
         <a id="prayerPackHosted" class="btn outline">Open payment page</a>
       </div>
     </div>
-    <div class="button-row">
-      <button class="btn outline" id="refreshPrayerPacks" type="button">Refresh balance</button>
-      <button class="btn gold" id="continuePrayerPack" type="button" hidden>View payment instructions</button>
-    </div>
+
   </div>
+  <dialog id="prayerPackInstructions" class="scripture-dialog" aria-labelledby="prayerPackInstructionsTitle">
+    <h3 id="prayerPackInstructionsTitle">GCash payment instructions</h3>
+    <ol>
+      <li>In GCash, tap <strong>QR</strong> and scan the payment code. If you are using the same phone, download the QR image and upload it from the GCash scanner.</li>
+      <li>Confirm the recipient and amount before sending. Save your GCash receipt.</li>
+      <li>If the checkout shows a <strong>GCash payment reference</strong> field, enter the reference from your receipt and submit it for review. Otherwise, return to this app and tap <strong>Refresh balance</strong>.</li>
+    </ol>
+    <form method="dialog"><button class="btn gold" type="submit">Close</button></form>
+  </dialog>
 </section>
 <section class="page active" id="sanctuary" aria-labelledby="homeTitle">
   <div class="hero">
@@ -294,7 +305,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <template id="cebuanoScriptureCredit"><a href="https://ebible.org/cebocb/copyright.htm" target="_blank" rel="noopener">Biblica® Open Ang Pulong sa Dios™</a> · © 2009, 2010, 2014, 2024 Biblica, Inc. · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></template>
 <script src="assets/cebuano.js?v=password-visibility"></script><script src="assets/filipino-prayers.js?v=password-visibility"></script><script src="assets/localize.js?v=tagalog-prayers"></script>
-<script src="assets/config.js?v=admin-sanctuary"></script><script src="assets/offering-prayers.js"></script><script src="assets/app.js?v=1.2.3-web"></script>
+<script src="assets/config.js?v=admin-sanctuary"></script><script src="assets/offering-prayers.js"></script><script src="assets/app.js?v=prayer-pack-controls"></script>
 <script src="assets/music/tracks.js"></script><script src="assets/music-prayers.js?v=bundled-tracks"></script>
 <script src="assets/new-testament-web.js"></script><script src="assets/new-testament-cebuano.js"></script><script src="assets/new-testament-tagalog.js"></script><script src="assets/scripture-ticker.js?v=remove-cancelled-claim"></script>
 </body></html>

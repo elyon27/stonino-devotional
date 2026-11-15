@@ -36,7 +36,7 @@ export default async function handler(request) {
   const review = action === 'review' || action === 'approve';
   const dashboard = ['admin-session', 'admin-list', 'admin-confirm', 'admin-decline', 'admin-members', 'admin-awaiting'].includes(action);
   const declineAction = ['decline-notice', 'correct-reference', 'cancel-reference'].includes(action);
-  if (!project || !serviceKey || (!configured && !dashboard && !review && !declineAction && action !== 'notify' && action !== 'status')) {
+  if (!project || !serviceKey || (!configured && !dashboard && !review && !declineAction && action !== 'notify' && action !== 'status' && action !== 'cancel-checkout')) {
     return reply(503, { error: action === 'admin-members'
       ? 'Member List is temporarily unavailable. Please try again.'
       : 'Could not start checkout. Please try again.' });
@@ -194,6 +194,22 @@ export default async function handler(request) {
     let { data: order, error } = await orders.select('*').eq('id', body.orderId).maybeSingle();
     if (error) throw error;
     if (userId && order && order.user_id !== userId) return reply(404, { error: 'Order unavailable.' });
+
+    if (action === 'cancel-checkout') {
+      if (!order) return reply(200, { status: 'cancelled' });
+      if (order.paid_at || order.payment_reference || order.declined_at || order.provider_id?.startsWith(directPrefix)) {
+        return reply(409, { error: 'A payment is already attached to this order. Refresh to check its status.' });
+      }
+      // A merchant QR can still settle. Leave its order available for payment notifications.
+      if (order.provider_id || order.checkout_url) return reply(200, { status: 'left' });
+      if (!useDirect) return reply(200, { status: 'left' });
+      const cancelled = await orders.delete().eq('id', order.id).eq('user_id', userId)
+        .is('provider_id', null).is('checkout_url', null).is('payment_reference', null)
+        .is('paid_at', null).is('declined_at', null).select('id').maybeSingle();
+      if (cancelled.error) throw cancelled.error;
+      if (!cancelled.data) return reply(409, { error: 'This order changed. Refresh to check its status.' });
+      return reply(200, { status: 'cancelled' });
+    }
 
     if (order?.declined_at) return reply(200, { status: order.reference_resolved_at ? 'resolved' : 'declined' });
 
