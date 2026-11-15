@@ -1,10 +1,12 @@
-# Sto. Niño Devotional v1.2.13
+# Sto. Niño Devotional v1.2.14
 
 The prayers from pages 3–9 of the Basilica’s 2019 Fiesta Señor Pilgrim’s Booklet appear above each day’s Scripture link in English or in the app’s Cebuano and Filipino translations. Novena days unlock in order as each day is marked complete. A day opens only when selected. Opening a day before its scheduled date requires confirmation. Novena candles and flowers can be offered at any time. An open prayer day is recorded with the offering when applicable. To restore date-based prayer access, set `NOVENA_PREVIEW_ENABLED` to `false` in `public/assets/app.js`.
 
 Flowers wilt over seven hours on the Sanctuary, Novena, and Offer Flowers pages. After seven hours, the bouquet disappears from all three displays.
 
 The Sanctuary’s Install App link downloads the signed Android v1.2.12 APK from `public/assets/apk/`.
+
+Prayer Packs display USD prices. GCash checkout uses the fixed peso amount shown before payment. On an existing database, apply `sql/prayer-pack-usd-tiers.sql` before deploying this release if the new tiers have not been enabled yet.
 
 ## Release version
 

@@ -1191,7 +1191,7 @@ async function refreshPrayerPacks() {
 
 function showPersonalPackQr(credits) {
   const panel = $('prayerPackPersonalQr');
-  const qr = config.prayerPackReceiveQr?.[credits];
+  const qr = config.prayerPackReceiveQr[credits] ?? config.prayerPackOpenAmountQr;
   panel.hidden = !qr;
   if (panel.hidden) return;
 
@@ -1204,7 +1204,7 @@ function showPersonalPackQr(credits) {
     : `Enter ${amount} in GCash and confirm the recipient before sending.`;
   const download = $('prayerPackPersonalQrDownload');
   download.href = qr.image;
-  download.download = `gcash-prayer-pack-${credits}.jpg`;
+  download.download = qr.image.split('/').at(-1);
 }
 
 async function startPrayerPack(credits) {
@@ -1213,7 +1213,9 @@ async function startPrayerPack(credits) {
   const savedOrder = readAccountData(packOrderKey, null);
   const selectedCredits = savedOrder?.credits ?? credits;
   if (!selectedCredits || savedOrder?.status === 'review') return;
-  $('prayerPackSelectionTitle').textContent = `₱${selectedCredits} Prayer Pack`;
+  const pack = packButtons.find(button => Number(button.dataset.prayerPack) === selectedCredits);
+  const price = pack ? `$${pack.dataset.priceUsd} USD` : `₱${selectedCredits}`;
+  $('prayerPackSelectionTitle').textContent = `${price} · ${selectedCredits} credits`;
   $('prayerPackSelection').hidden = false;
   $('prayerPackTransfer').dataset.ready = 'false';
   $('submitPrayerPackReference').disabled = true;

@@ -8,6 +8,7 @@ window.STONINO_CONFIG = {
     100: { image: 'assets/gcash-packs/100.jpg', amountEncoded: true },
     200: { image: 'assets/gcash-packs/200.jpg', amountEncoded: true }
   },
+  prayerPackOpenAmountQr: { image: 'assets/gcash-packs/open-amount.png', amountEncoded: false },
   // When using Netlify, the included secure deletion function is available here:
   deleteAccountEndpoint: '/.netlify/functions/delete-account'
 };

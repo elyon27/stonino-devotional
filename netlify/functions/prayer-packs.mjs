@@ -4,7 +4,7 @@ import { timingSafeEqual, createHash } from 'node:crypto';
 
 const directPrefix = 'gcash-express:';
 const referencePattern = /^[A-Z0-9-]{8,40}$/;
-const packs = new Set([20, 50, 100, 200]);
+const packs = new Set([20, 50, 100, 150, 200, 250, 500]);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const reply = (status, data) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 const hash = value => createHash('sha256').update(value).digest();

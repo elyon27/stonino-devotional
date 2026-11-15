@@ -11,7 +11,7 @@ create table public.stonino_prayer_wallets (
 create table public.stonino_prayer_pack_orders (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete set null,
-  credits integer not null check (credits in (20, 50, 100, 200)),
+  credits integer not null check (credits in (20, 50, 100, 150, 200, 250, 500)),
   provider_id text unique,
   checkout_url text,
   paid_at timestamptz,
