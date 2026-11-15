@@ -240,7 +240,7 @@ function renderNovena() {
   const first = novenaSchedule[0].opensAt;
   const last = novenaSchedule.at(-1).opensAt;
   const dayLabel = tr('Day');
-  const scheduleHint = tr('Mark each day complete to unlock the next. Novena candles and flowers open on each scheduled date.');
+  const scheduleHint = tr('Mark each day complete to unlock the next. You can offer novena candles and flowers at any time.');
   $('novenaScheduleHint').textContent = `${shortDate.format(first)} – ${formatter.format(last)} · ${scheduleHint}`;
   $('novenaScheduleStatus').textContent = isNovenaDayUnlocked(0, now)
     ? tr('Select a day to open its prayers.')
@@ -271,9 +271,6 @@ function renderNovena() {
   $('completeDay').disabled = !available;
   $('prevDay').disabled = !available || !isNovenaDayUnlocked(state.day - 1, now);
   $('nextDay').disabled = !available || !isNovenaDayUnlocked(state.day + 1, now);
-  for (const form of ['novenaCandleForm', 'novenaFlowerForm']) {
-    $(form).querySelector('button[type="submit"]').disabled = !hasNovenaDayStarted(state.day, now);
-  }
   $('dayGrid').innerHTML = novenaSchedule.map(({isoDate, opensAt}, index) => {
     const unlocked = isNovenaDayUnlocked(index, now);
     const selected = available && index === state.day;
@@ -423,7 +420,7 @@ function updateSanctuaryOfferings(now) {
 function uid(){return globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`}
 // Main and novena bouquets share storage but appear in their own displays.
 function flowerOfferings(novena) {
-  return state.novenaFlowers.filter(flower => (flower.novena_day != null) === novena);
+  return state.novenaFlowers.filter(flower => (flower.offering_kind === 'novena-flowers' || Number.isInteger(flower.novena_day)) === novena);
 }
 function renderFlowers() {
   for (const [novena, grid, empty] of [
@@ -434,7 +431,7 @@ function renderFlowers() {
     $(empty).hidden = flowers.length > 0;
     $(grid).innerHTML = flowers.map(flower => `<article class="flower-offering">
       ${bouquetVisual()}
-      ${novena ? `<div class="novena-day-tag">${isCebuano() ? 'Adlaw sa Nobena' : 'Novena Day'} ${Number(flower.novena_day) + 1}</div>` : ''}
+      ${Number.isInteger(flower.novena_day) ? `<div class="novena-day-tag">${isCebuano() ? 'Adlaw sa Nobena' : 'Novena Day'} ${flower.novena_day + 1}</div>` : ''}
       ${flower.type && !novena ? `<div class="novena-day-tag">${html(tr(flower.type))}</div>` : ''}
       ${offeringNote(flower) ? `<p class="flower-intention">${html(offeringNote(flower))}</p>` : ''}
       <time datetime="${html(flower.created_at)}">${html(devotionalDate(flower.created_at))}</time>
@@ -1370,7 +1367,6 @@ document.addEventListener('visibilitychange', () => {
       const select = form.querySelector('[data-offering-prayer]');
       const pendingKey = 'pendingOffering.' + kind;
       const pending = readAccountData(pendingKey, null);
-      if (!pending && settings.novena && !hasNovenaDayStarted(state.day)) return;
       const choice = select.value;
       const type = $(settings.type).value;
       const prayerIndex = choice === '' || choice === 'custom' ? null : Number(choice);
@@ -1410,7 +1406,7 @@ document.addEventListener('visibilitychange', () => {
         if (state.user?.id === userId) toast('Could not confirm the offering. Submit again to retry.');
       } finally {
         spendingCredit = false;
-        button.disabled = Boolean(settings.novena && !hasNovenaDayStarted(state.day));
+        button.disabled = false;
       }
     };
   }

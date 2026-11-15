@@ -46,7 +46,7 @@ window.stoninoFilipinoPrayers = {
     'Day': 'Araw',
     '{year} Novena Schedule': 'Iskedyul ng Nobena {year}',
     'Day 1 opens {date}.': 'Magbubukas ang unang araw sa {date}.',
-  "Mark each day complete to unlock the next. Novena candles and flowers open on each scheduled date.": "Markahang tapos ang bawat araw para mabuksan ang susunod. Maaaring mag-alay ng kandila at bulaklak sa nakatakdang petsa ng bawat araw.",
+    "Mark each day complete to unlock the next. You can offer novena candles and flowers at any time.": "Markahang tapos ang bawat araw para mabuksan ang susunod. Maaari kang mag-alay ng kandila at bulaklak sa nobena anumang oras.",
   "Select a day to open its prayers.": "Pumili ng araw para buksan ang mga panalangin nito.",
   "Day {day} is scheduled for {date} (Cebu time). Do you want to open it early?": "Nakatakda ang Araw {day} sa {date} (oras sa Cebu). Gusto mo ba itong buksan nang maaga?",
     'Each day opens at midnight in Cebu.': 'Magbubukas ang bawat araw sa hatinggabi, oras sa Cebu.',

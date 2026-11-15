@@ -45,9 +45,6 @@ create function stonino_private.spend_prayer_credit(
 declare
   owner_id uuid := auth.uid();
   now_at timestamptz := pg_catalog.now();
-  cebu_day date := (now_at at time zone 'Asia/Manila')::date;
-  novena_year integer := greatest(2027, extract(year from cebu_day)::integer);
-  january_15 date := pg_catalog.make_date(novena_year, 1, 15);
   offering jsonb;
 begin
   if owner_id is null or coalesce(auth.jwt()->>'is_anonymous', 'false') = 'true' then
@@ -64,12 +61,8 @@ begin
   insert into stonino_private.offering_requests values (owner_id, request_id) on conflict do nothing;
   if not found then return; end if;
 
-  if offering_kind like 'novena-%' then
-    if novena_day is null or novena_day not between 0 and 8 or
-       cebu_day < january_15 + ((7 - extract(dow from january_15)::integer) % 7) - 10 + novena_day then
-      raise exception 'novena_day_unavailable';
-    end if;
-  elsif novena_day is not null then
+  if novena_day is not null and
+     (offering_kind not in ('novena-candle', 'novena-flowers') or novena_day not between 0 and 8) then
     raise exception 'invalid_offering';
   end if;
 
@@ -79,7 +72,7 @@ begin
 
   offering := pg_catalog.jsonb_strip_nulls(pg_catalog.jsonb_build_object(
     'id', request_id, 'note', coalesce(note, ''), 'type', prayer_type,
-    'prayerIndex', prayer_index, 'created_at', pg_catalog.to_char(now_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'), 'novena_day', novena_day
+    'prayerIndex', prayer_index, 'created_at', pg_catalog.to_char(now_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'), 'novena_day', novena_day, 'offering_kind', offering_kind
   ));
   insert into public.stonino_profiles (user_id) values (owner_id) on conflict do nothing;
   if offering_kind = 'candle' then

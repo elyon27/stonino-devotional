@@ -91,7 +91,7 @@ window.stoninoCebuano = {
   "Day": "Adlaw",
   "{year} Novena Schedule": "Eskedyul sa Nobena {year}",
   "Day 1 opens {date}.": "Ang unang adlaw maablihan sa {date}.",
-  "Mark each day complete to unlock the next. Novena candles and flowers open on each scheduled date.": "Markahi nga nahuman ang matag adlaw aron maablihan ang sunod. Ang mga kandila ug bulak sa nobena mahimong ihalad sa gitakdang petsa sa matag adlaw.",
+    "Mark each day complete to unlock the next. You can offer novena candles and flowers at any time.": "Markahi nga nahuman ang matag adlaw aron maablihan ang sunod. Mahimo kang mohalad og kandila ug bulak sa nobena bisan kanus-a.",
   "Select a day to open its prayers.": "Pilia ang adlaw aron maablihan ang mga pag-ampo niini.",
   "Day {day} is scheduled for {date} (Cebu time). Do you want to open it early?": "Ang Adlaw {day} gitakda sa {date} (oras sa Sugbo). Gusto ba nimo kining ablihan og sayo?",
   "Each day opens at midnight in Cebu.": "Ang matag adlaw maablihan sa tungang gabii, oras sa Sugbo.",
