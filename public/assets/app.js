@@ -274,7 +274,7 @@ $('completeDay').onclick = () => {
 function displayPrayer(key){currentPrayer=key;$('extraPrayer').textContent=prayerLocale()?.prayers[key] ?? prayers[key];document.querySelectorAll('[data-prayer]').forEach(e=>e.classList.toggle('selected',e.dataset.prayer===key))}document.querySelectorAll('[data-prayer]').forEach(e=>e.onclick=()=>displayPrayer(e.dataset.prayer));
 // One immutable timestamp per offering is the source of truth. The GIF supplies
 // only flame flicker; the wax level is derived from wall-clock time (not frame rate).
-const CANDLE_LIFETIME_MS=24*60*60*1000;
+const CANDLE_LIFETIME_MS=7*60*60*1000;
 const CANDLE_WAX_FULL_HEIGHT=172; // Visual pixels of wax at the start.
 const CANDLE_WAX_END_HEIGHT=18; // The fixed wax puddle remains at the base.
 function candleRemaining(createdAt,now=Date.now()){
@@ -352,7 +352,7 @@ function updateCandleWax(candle, remaining) {
   return fraction;
 }
 
-const FLOWER_WILT_MS = 3 * CANDLE_LIFETIME_MS;
+const FLOWER_WILT_MS = 3 * 24 * 60 * 60 * 1000;
 function bouquetVisual() {
   return `<img src="assets/novena-rose-bouquet.png" alt="${html(tr('Bouquet of red roses offered in prayer'))}" loading="lazy">`;
 }
