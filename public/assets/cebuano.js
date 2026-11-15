@@ -42,7 +42,7 @@ window.stoninoCebuano = {
   "A note on devotion:": "Pahinumdom bahin sa debosyon:",
   "This digital chapel supports personal prayer. It does not replace Mass, the Sacraments, or parish life.": "Kini nga digital nga kapilya nagtabang sa personal nga pag-ampo. Dili kini puli sa Misa, sa mga Sakramento, o sa kinabuhi sa parokya.",
   "NINE DAYS OF PRAYER": "SIYAM KA ADLAW SA PAG-AMPO",
-  "An original, Scripture-inspired nine-day prayer journey to Jesus, the Holy Child. It is not presented as the official Basilica novena text.": "Usa ka orihinal nga siyam ka adlaw nga pag-ampo kang Hesus, ang Balaang Bata, nga gidasig sa Balaang Kasulatan. Dili kini ang opisyal nga teksto sa nobena sa Basilica.",
+  "Pray the Basilica’s Fiesta Señor novena, then read the day’s Scripture and reflection.": "Ampoa ang nobena sa Fiesta Señor sa Basilica, dayon basaha ang Balaang Kasulatan ug pamalandong alang sa maong adlaw.",
   "0 of 9 completed": "0 sa 9 ang nahuman",
   "Scripture: Matthew 18:3–4 ↗": "Balaang Kasulatan: Mateo 18:3–4 ↗",
   "Reflection": "Pamalandong",

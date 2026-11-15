@@ -218,6 +218,18 @@ function hasNovenaDayStarted(day, now = Date.now()) {
   return getNovenaYear(now) === novenaYear && now >= (novenaSchedule[day]?.opensAt ?? Infinity);
 }
 
+const bookletPetitions = [
+  ["Oh, most-loving Jesus, You have said, “there will be more rejoicing in Heaven for one sinner who repents than over ninety nine who don’t need repentance”, we beseech you to grant us the grace of repentance so that we may repent our sins and live for you alone. This we ask in Your Holy Name. Amen."],
+  ["Oh, most-loving Jesus, who has shown your love to us by dying for us on the Cross and by giving yourself to us in the sacrament of the Holy Eucharist, we beseech you to share with us Your love so that we may always love You with all our heart, with all our soul and all our strength, and also so that we may always love our neighbors as ourselves. This we ask in Your Holy Name. Amen."],
+  ["Oh, my Jesus, who has said, “learn from me because I am meek and humble of heart”, grants us the virtues of meekness and humility so that we may progress in our spiritual life, and so that our neighbor may see your Image in us. We ask you this in your Holy Name. Amen"],
+  ["Oh, merciful Jesus, you had forgiven those who crucified you; we implore you to give us a forgiving heart so that we may always pardon those who will hurt us in words or in deeds. This we ask you in Your Holy Name. Amen."],
+  ["Oh, most-loving Jesus, You have said, “there will be more rejoicing in Heaven for one sinner who repents than over ninety nine who don’t need repentance”, we beseech you to grant us the grace of repentance so that we may repent our sins and live for you alone. This we ask in Your Holy Name. Amen."],
+  ["Oh, most-loving Jesus, You gave us the example of a chaste life while you were on earth; we implore you to grant us the virtue of chastity so that we may always live a chaste life in whatever state of life we have chosen. This we ask of you in Your Holy Name. Amen."],
+  ["Oh, most merciful Jesus, You had been always obedient to your heavenly Father even unto death; we beseech you to grant us the grace of being always docile to the promptings of the Holy Spirit so that we will always glorify your Father in Heaven. This we ask in Your Holy Name. Amen."],
+  ["Oh, merciful Jesus, You opened the gates of Heaven for us through your death and resurrection; we implore you to grant us eternal life after our journey on earth. We ask you this in Your Holy Name. Amen."],
+  ["Oh, merciful Jesus, You said, “I am the Way, the Truth and the Life”, We beseech you to guide us in our way to Heaven so that we may be able to surmount all the difficulties and obstacles we encounter in this deceptive world.", "Grant us also the virtue of hope so that we always thirst for the heavenly things and for your glory. We ask you this in Your Holy Name. Amen."],
+];
+
 function renderNovena() {
   const now = Date.now();
   const year = getNovenaYear(now);
@@ -252,6 +264,12 @@ function renderNovena() {
   $('dayProgress').textContent = `${completedCount} ${tr('of 9 completed')}`;
   $('novenaScheduleStatus').hidden = available;
   $('novenaDayContent').hidden = !available;
+  $('bookletPetitionTitle').textContent = `Day ${state.day + 1} Petition`;
+  $('bookletPetition').replaceChildren(...bookletPetitions[state.day].map(text => {
+    const paragraph = document.createElement('p');
+    paragraph.textContent = text;
+    return paragraph;
+  }));
   $('dayScripture').textContent = `${isCebuano() ? 'Balaang Kasulatan' : 'Scripture'}: ${scriptureLabel(day.ref)} ↗`;
   $('dayReflection').textContent = reflection;
   $('dayPrayer').textContent = prayer;

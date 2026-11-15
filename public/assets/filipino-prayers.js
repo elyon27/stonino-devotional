@@ -1,5 +1,6 @@
 window.stoninoFilipinoPrayers = {
   messages: {
+    "Pray the Basilica’s Fiesta Señor novena, then read the day’s Scripture and reflection.": "Dasalin ang nobena ng Basilica para sa Fiesta Señor, pagkatapos ay basahin ang Banal na Kasulatan at pagninilay para sa araw na iyon.",
     'Show password': 'Ipakita ang password',
     'Hide password': 'Itago ang password',
     'Day': 'Araw',
