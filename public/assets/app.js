@@ -561,7 +561,7 @@ async function setAccountUser(user) {
     }
     state.day = null;
     $('accountDisplayName').value = displayName();
-    for (const id of ['scriptureDialog', 'installHelp', 'prayerPackInstructions']) {
+    for (const id of ['scriptureDialog', 'prayerPackInstructions']) {
       if ($(id).open) $(id).close();
     }
     for (const id of ['candleForm', 'novenaCandleForm', 'flowerForm', 'novenaFlowerForm', 'intentionForm']) $(id).reset();
