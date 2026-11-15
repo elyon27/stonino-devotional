@@ -391,9 +391,9 @@ function updateCandleWax(candle, remaining) {
   return fraction;
 }
 
-const FLOWER_WILT_MS = 3 * 24 * 60 * 60 * 1000;
-function bouquetVisual() {
-  return `<img src="assets/novena-rose-bouquet.png" alt="${html(tr('Bouquet of red roses offered in prayer'))}" loading="lazy">`;
+const FLOWER_WILT_MS = 7 * 60 * 60 * 1000;
+function bouquetVisual(flower) {
+  return `<img data-bouquet-started="${Date.parse(flower.created_at)}" src="assets/novena-rose-bouquet.png" alt="${html(tr('Bouquet of red roses offered in prayer'))}" loading="lazy">`;
 }
 function renderSanctuaryOfferings() {
   const tray = $('sanctuaryOfferings');
@@ -401,8 +401,7 @@ function renderSanctuaryOfferings() {
   const candles = [...state.candles, ...state.novenaCandles]
     .filter(candle => candleRemaining(candle.created_at, now) > 0);
   tray.innerHTML = candles.map(candle => `<div class="mini-candle" data-started="${Date.parse(candle.created_at)}">${candleVisual()}</div>`).join('')
-    + state.novenaFlowers.map(flower => `<div class="mini-bouquet" data-started="${Date.parse(flower.created_at)}">${bouquetVisual()}</div>`).join('');
-  $('sanctuaryOfferingPanel').hidden = !tray.childElementCount;
+    + state.novenaFlowers.map(flower => `<div class="mini-bouquet">${bouquetVisual(flower)}</div>`).join('');
   updateSanctuaryOfferings(now);
 }
 function updateSanctuaryOfferings(now) {
@@ -411,11 +410,18 @@ function updateSanctuaryOfferings(now) {
     const remaining = Math.max(0, CANDLE_LIFETIME_MS - (now - Number(candle.dataset.started)));
     updateCandleWax(candle.firstElementChild, remaining);
   }
-  for (const bouquet of tray.querySelectorAll('.mini-bouquet')) {
-    const started = Number(bouquet.dataset.started);
+  for (const bouquet of document.querySelectorAll('[data-bouquet-started]')) {
+    const started = Number(bouquet.dataset.bouquetStarted);
     const wilt = Number.isFinite(started) ? Math.max(0, Math.min(1, (now - started) / FLOWER_WILT_MS)) : 0;
-    bouquet.style.setProperty('--wilt', wilt.toFixed(4));
+    if (wilt >= 1) {
+      bouquet.closest('.mini-bouquet, .flower-offering').remove();
+    } else {
+      bouquet.style.setProperty('--wilt', wilt.toFixed(4));
+    }
   }
+  $('sanctuaryOfferingPanel').hidden = !tray.childElementCount;
+  $('flowerEmpty').hidden = Boolean($('flowerGrid').childElementCount);
+  $('novenaFlowerEmpty').hidden = Boolean($('novenaFlowerGrid').childElementCount);
 }
 function uid(){return globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`}
 // Main and novena bouquets share storage but appear in their own displays.
@@ -423,14 +429,13 @@ function flowerOfferings(novena) {
   return state.novenaFlowers.filter(flower => (flower.offering_kind === 'novena-flowers' || Number.isInteger(flower.novena_day)) === novena);
 }
 function renderFlowers() {
-  for (const [novena, grid, empty] of [
-    [false, 'flowerGrid', 'flowerEmpty'],
-    [true, 'novenaFlowerGrid', 'novenaFlowerEmpty']
+  for (const [novena, grid] of [
+    [false, 'flowerGrid'],
+    [true, 'novenaFlowerGrid']
   ]) {
     const flowers = flowerOfferings(novena);
-    $(empty).hidden = flowers.length > 0;
     $(grid).innerHTML = flowers.map(flower => `<article class="flower-offering">
-      ${bouquetVisual()}
+      ${bouquetVisual(flower)}
       ${Number.isInteger(flower.novena_day) ? `<div class="novena-day-tag">${isCebuano() ? 'Adlaw sa Nobena' : 'Novena Day'} ${flower.novena_day + 1}</div>` : ''}
       ${flower.type && !novena ? `<div class="novena-day-tag">${html(tr(flower.type))}</div>` : ''}
       ${offeringNote(flower) ? `<p class="flower-intention">${html(offeringNote(flower))}</p>` : ''}

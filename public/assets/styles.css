@@ -92,7 +92,7 @@ html[data-theme="dark"] .novena-day-tag{color:#e0b981}
 .flowers-preview{display:block;width:min(250px,80%);height:220px;object-fit:contain;filter:drop-shadow(0 9px 12px #20110e35)}
 .flower-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:18px;align-items:start;min-height:145px}
 .flower-offering{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;min-width:0}
-.flower-offering img{width:100%;max-width:185px;height:160px;object-fit:contain;filter:drop-shadow(0 7px 8px #21120c30)}
+.flower-offering img{width:100%;max-width:185px;height:160px;object-fit:contain;--bouquet-shadow:drop-shadow(0 7px 8px #21120c30)}
 .flower-intention{font-size:.86rem;line-height:1.5;overflow-wrap:anywhere;white-space:pre-wrap;margin:4px 0}
 .flower-offering time{font-size:.73rem;color:var(--muted)}
 html[data-theme="dark"] .flower-offering time{color:#d8b991}
@@ -228,9 +228,11 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   width: 100%;
   height: 49px;
   object-fit: contain;
+}
+[data-bouquet-started] {
   transform-origin: center bottom;
   transform: rotate(calc(var(--wilt, 0) * 22deg)) scaleY(calc(1 - var(--wilt, 0) * .27));
-  filter: saturate(calc(1 - var(--wilt, 0) * .75)) brightness(calc(1 - var(--wilt, 0) * .26));
+  filter: saturate(calc(1 - var(--wilt, 0) * .75)) brightness(calc(1 - var(--wilt, 0) * .26)) var(--bouquet-shadow, );
 }
 
 .sanctuary-offering-panel { width: 100%; }
