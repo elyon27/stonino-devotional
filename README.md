@@ -1,4 +1,4 @@
-# Sto. Niño Devotional v1.2.23
+# Sto. Niño Devotional v1.2.24
 
 The prayers from pages 3–9 of the Basilica’s 2019 Fiesta Señor Pilgrim’s Booklet appear above each day’s Scripture link in English or in the app’s Cebuano and Filipino translations. Novena days unlock in order as each day is marked complete. A day opens only when selected. Opening a day before its scheduled date requires confirmation. Novena candles and flowers can be offered at any time. An open prayer day is recorded with the offering when applicable. To restore date-based prayer access, set `NOVENA_PREVIEW_ENABLED` to `false` in `public/assets/app.js`.
 
@@ -12,7 +12,7 @@ Signed-in users can use Log Out beside My Account in the main header.
 
 ## Offering intentions
 
-Novena candles, novena flowers, standalone candles, and standalone flowers share seven intentions. Each intention has seven matching optional prayers. Saved offerings retain their original prayer text. On an existing database, apply `sql/offering-intentions.sql` after any earlier prayer-pack updates and before publishing v1.2.23.
+Novena candles, novena flowers, standalone candles, and standalone flowers share seven intentions. Each intention has seven matching optional prayers and a field to add an optional personal prayer of up to 250 characters. Saved offerings retain their original prayer text. On an existing database, apply `sql/offering-intentions.sql` after any earlier prayer-pack updates and before publishing v1.2.24.
 
 ## Release version
 

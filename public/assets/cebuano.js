@@ -73,6 +73,7 @@ window.stoninoCebuano = {
     "Health and healing": "Panglawas ug pag-ayo",
     "Guidance and discernment": "Paggiya ug pag-ila sa kabubut-on sa Diyos",
     "Work and livelihood": "Trabaho ug panginabuhian",
+  "Your own prayer (optional)": "Imong kaugalingong pag-ampo (opsiyonal)",
   "Your prayer": "Imong pag-ampo",
   "Choose a prayer (optional)": "Pagpili og pag-ampo (opsiyonal)",
   "Write your own prayer": "Isulat ang imong kaugalingong pag-ampo",

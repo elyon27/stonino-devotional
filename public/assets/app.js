@@ -34,7 +34,8 @@ function offeringPrayer(type, index) {
 }
 function offeringNote({ type, prayerIndex, note }) {
   const prayer = offeringPrayer(type, prayerIndex);
-  return prayer ? prayer[isCebuano() ? 3 : 1] + ' Amen.' : note;
+  const preset = prayer ? prayer[isCebuano() ? 3 : 1] + ' Amen.' : '';
+  return [preset, note].filter(Boolean).join('\n\n');
 }
 function offeringIntention(select) {
   return $(select.id.slice(0, -'Prayer'.length) + 'Type');
@@ -1430,7 +1431,7 @@ document.addEventListener('visibilitychange', () => {
         offering_kind: kind,
         prayer_type: type,
         prayer_index: prayerIndex,
-        note: '',
+        note: form.querySelector('[data-offering-note]').value.trim(),
         novena_day: settings.novena ? state.day : null
       };
       saveAccountData(pendingKey, args);

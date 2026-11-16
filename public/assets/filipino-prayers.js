@@ -67,6 +67,7 @@ window.stoninoFilipinoPrayers = {
     'Prayer': 'Panalangin',
     'Reflection': 'Pagninilay',
     'Prayers': 'Mga panalangin',
+    'Your own prayer (optional)': 'Sarili mong panalangin (opsiyonal)',
     'Your prayer': 'Ang iyong panalangin',
     'Intention Type': 'Uri ng intensiyon',
     "Health and healing": "Kalusugan at paggaling",
