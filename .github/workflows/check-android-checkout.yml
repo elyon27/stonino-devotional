@@ -29,3 +29,8 @@ jobs:
             echo "$host"
             curl -sS --max-time 12 -w '\nHTTP %{http_code}\n' "https://$host/.netlify/functions/prayer-packs?action=ready" | head -c 450 || true
           done
+          apk=sto-nino-devotional-1.2.25-unsigned.apk
+          unzip -p "$apk" classes.dex > app.dex
+          dexdump="$(find "$ANDROID_HOME/build-tools" -name dexdump -type f | sort -V | tail -1)"
+          "$dexdump" -d app.dex > dex.txt
+          grep -n -E 'prayer-packs|https?://|shouldInterceptRequest|addJavascriptInterface|loadUrl|setRequestMethod|JavascriptInterface' dex.txt | cut -c1-250 | head -100
