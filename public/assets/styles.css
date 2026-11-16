@@ -237,6 +237,32 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
 
 .sanctuary-offering-panel { width: 100%; }
 .sanctuary-offering-panel > .btn { margin-top: 10px; }
+.sanctuary-offering-trigger {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  border-radius: 6px;
+  padding: 0;
+  background: transparent;
+}
+.sanctuary-offering-trigger[aria-expanded="true"] {
+  box-shadow: 0 0 0 1px var(--gold);
+}
+.sanctuary-offering-prayer {
+  max-width: 28rem;
+  max-height: 36vh;
+  overflow: auto;
+  margin: 10px auto 0;
+  padding: 10px 14px;
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  background: var(--cream);
+  color: var(--ink);
+  box-shadow: 0 4px 14px #1a0c0733;
+  text-align: start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 
 .password-field {
   position: relative;
