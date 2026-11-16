@@ -34,9 +34,13 @@ jobs:
               cursor = 8
               resource_ids = []
               updated_code = False
+              version_attribute = None
+              pool = None
               while cursor < len(data):
                   kind, header_size, size = struct.unpack_from('<HHI', data, cursor)
                   assert 8 <= header_size <= size <= len(data) - cursor
+                  if kind == 0x0001:
+                      pool = (cursor, header_size, size)
                   if kind == 0x0180:
                       resource_ids = list(struct.unpack_from(
                           '<' + 'I' * ((size - header_size) // 4), data, cursor + header_size))
@@ -51,12 +55,35 @@ jobs:
                               code = struct.unpack_from('<I', data, attribute + 16)[0]
                               struct.pack_into('<I', data, attribute + 16, code + 1)
                               updated_code = True
+                          if name < len(resource_ids) and resource_ids[name] == 0x0101021c:
+                              version_attribute = attribute
                   cursor += size
               assert updated_code, 'versionCode was not found'
-              encodings = ('utf-8', 'utf-16le')
-              assert sum(data.count(old.encode(enc)) for enc in encodings) == 1
-              for enc in encodings:
-                  data = data.replace(old.encode(enc), new.encode(enc))
+              assert version_attribute is not None and pool is not None
+              offset, header_size, size = pool
+              count, styles, flags, strings_start, styles_start = struct.unpack_from(
+                  '<IIIII', data, offset + 8)
+              assert styles == 0 and styles_start == 0
+              attribute = version_attribute
+              struct.pack_into('<I', data, attribute + 8, count)
+              struct.pack_into('<HBBI', data, attribute + 12, 8, 0, 3, count)
+
+              old_strings = data[offset + strings_start:offset + size]
+              if flags & 0x100:
+                  encoded = bytes([len(new), len(new)]) + new.encode('utf-8') + b'\x00'
+              else:
+                  encoded = struct.pack('<H', len(new)) + new.encode('utf-16le') + b'\x00\x00'
+              encoded += bytes(-len(encoded) % 4)
+              header = data[offset:offset + header_size]
+              struct.pack_into('<I', header, 4, size + 4 + len(encoded))
+              struct.pack_into('<I', header, 8, count + 1)
+              struct.pack_into('<I', header, 16, flags & ~1)
+              struct.pack_into('<I', header, 20, strings_start + 4)
+              offsets = data[offset + header_size:offset + strings_start]
+              assert len(offsets) == count * 4
+              data[offset:offset + size] = (
+                  header + offsets + struct.pack('<I', len(old_strings)) + old_strings + encoded)
+              struct.pack_into('<I', data, 4, len(data))
               return data
 
           paths = ('index.html', 'assets/app.js', 'assets/styles.css')
