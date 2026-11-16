@@ -495,6 +495,8 @@ function accountView() {
   const name = displayName();
   const unlocked = canUseApp();
   const signedIn = Boolean(state.user);
+  $('headerSignOut').hidden = !signedIn;
+  $('headerSignOut').textContent = tr('Log Out');
   for (const id of ['devotionalContent', 'devotionalMobileNav']) {
     $(id).hidden = $(id).inert = !unlocked;
   }
@@ -732,7 +734,7 @@ if (mode === 'signUp' && (!name || name.length > 80)) {
   return;
 }
 try{const r=mode==='signUp'?await state.supabase.auth.signUp({email,password,options:{data:{stonino_display_name:name}}}):await state.supabase.auth.signInWithPassword({email,password});if(r.error)throw r.error;localStorage.removeItem(registrationPreference);if(r.data?.user&&r.data?.session)await setAccountUser(r.data.user);accountView();toast(mode==='signUp'?'Account request submitted. Confirm email if required.':'Signed in');if(state.user)$('accountDialog').close()}catch(e){toast(localizedError(e,'Unable to authenticate'))}}$('signIn').onclick=()=>accountAction('signIn');$('signUp').onclick=()=>{if(registering)return accountAction('signUp');setRegistrationMode(true);$('displayName').focus()};$('resetPassword').onclick=async()=>{const email=$('email').value.trim();if(!email||!state.supabase)return toast('Configure cloud access and enter your email');try{const {error}=await state.supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;toast('If the address is registered, a reset email will be sent.')}catch(e){toast(localizedError(e,'Unable to complete the request. Please try again.'))}};
-const signOutButtons = [$('signOut'), $('settingsSignOut')];
+const signOutButtons = [$('signOut'), $('headerSignOut')];
 async function signOutOfApp() {
   if (!state.user || !state.supabase || signOutButtons[0].disabled || deletingDevotionalData) return;
   for (const button of signOutButtons) button.disabled = true;

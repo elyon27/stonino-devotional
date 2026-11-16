@@ -1,8 +1,7 @@
 // Cebuano content for the devotional app.
 window.stoninoCebuano = {
   messages: {
-    "Log out": "Pag-log out",
-    "End your session on this device.": "Taposa ang imong sesyon niining aparato.",
+    "Log Out": "Pag-log out",
     // Fiesta Señor 2019 booklet prayers
     "Fiesta Señor Nine-Day Novena": "Siyam ka Adlaw nga Nobena sa Fiesta Señor",
     "Basilica Minore del Santo Niño de Cebu, 2019 Pilgrim’s Booklet, pp. 3–9": "Basilica Minore del Santo Niño de Cebu, Giya sa mga Pilgrim sa 2019, mga panid 3–9",
