@@ -1,0 +1,31 @@
+name: Inspect Android checkout connection
+on:
+  push:
+    branches: [codex/check-android-checkout]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: /sto-nino-devotional-1.2.25-unsigned.apk
+          sparse-checkout-cone-mode: false
+      - shell: bash
+        run: |
+          python3 - <<'PY'
+          import re, zipfile
+          with zipfile.ZipFile('sto-nino-devotional-1.2.25-unsigned.apk') as apk:
+              for name in apk.namelist():
+                  if not re.fullmatch(r'classes[0-9]*\.dex', name):
+                      continue
+                  strings = re.findall(rb'[ -~]{5,}', apk.read(name))
+                  for item in strings:
+                      if any(term in item for term in (b'netlify.app', b'android_asset', b'loadDataWithBaseURL', b'WebViewAssetLoader', b'prayer-packs', b'shouldInterceptRequest', b'stonino')):
+                          print(item.decode()[:180])
+          PY
+          for host in stonino-devotional.netlify.app sto-nino-devotional.netlify.app; do
+            echo "$host"
+            curl -sS --max-time 12 -w '\nHTTP %{http_code}\n' "https://$host/.netlify/functions/prayer-packs?action=ready" | head -c 450 || true
+          done
