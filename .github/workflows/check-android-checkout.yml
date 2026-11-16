@@ -10,7 +10,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: /sto-nino-devotional-1.2.25-unsigned.apk
+          sparse-checkout: |
+            /sto-nino-devotional-1.2.25-unsigned.apk
+            /sto-nino-devotional-1.2.24-unsigned.apk
           sparse-checkout-cone-mode: false
       - shell: bash
         run: |
@@ -39,3 +41,8 @@ jobs:
           for asset in assets/web/index.html assets/web/assets/app.js; do
             unzip -p "$apk" "$asset" | grep -inE 'packEndpoint|window\.fetch|Native|WebView|Android|bridge' | cut -c1-500 | tail -30 || true
           done
+          old=sto-nino-devotional-1.2.24-unsigned.apk
+          for asset in $(unzip -Z1 "$old" | grep -E 'assets/web/(index\.html|assets/[^/]+\.js)$'); do
+            unzip -p "$old" "$asset" | grep -inE 'DevotionalAndroid|NativeRequest|window\.fetch|packEndpoint' | cut -c1-500 || true
+          done
+          grep -n -E 'evaluateJavascript|NativeRequest;.send|const-string.*(Android|callback|window\.)' dex.txt | cut -c1-350 | head -80
