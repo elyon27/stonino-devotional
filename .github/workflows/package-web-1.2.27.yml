@@ -1,0 +1,53 @@
+name: Sto. Niño Devotional web package v1.2.27
+on:
+  push:
+    branches: [codex/package-web-1.2.27]
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            /README.md
+            /netlify.toml
+            /package.json
+            /package-lock.json
+            /public/
+            /netlify/
+            /scripts/
+            /sql/
+            /assets/apk/sto-nino-devotional-1.2.25-signed.apk
+          sparse-checkout-cone-mode: false
+      - name: Prepare and verify the Netlify package
+        shell: bash
+        run: |
+          mkdir web-release
+          git archive HEAD README.md netlify.toml package.json package-lock.json public netlify scripts sql | tar -x -C web-release
+          apk=sto-nino-devotional-1.2.25-signed.apk
+          cp "assets/apk/$apk" web-release/public/assets/apk/
+          cd web-release
+          python3 - <<'PY'
+          from pathlib import Path
+
+          for filename in ('README.md', 'package.json', 'package-lock.json', 'public/index.html'):
+              path = Path(filename)
+              source = path.read_text()
+              assert '1.2.26' in source, filename
+              path.write_text(source.replace('1.2.26', '1.2.27'))
+          PY
+          npm run build
+          node --check public/assets/scripture-ticker.js
+          grep -q 'class="release-version">v1.2.27' public/index.html
+          grep -q 'id="scriptureTickerBook"' public/index.html
+          node --input-type=module -e 'import fs from "node:fs"; const index = JSON.parse(fs.readFileSync("public/assets/latest-apk.json")); if (!fs.existsSync("public/assets/apk/" + index.filename)) process.exit(1);'
+          zip -qr ../sto-nino-devotional-v1.2.27-web.zip .
+          cd ..
+          unzip -tq sto-nino-devotional-v1.2.27-web.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sto-nino-devotional-v1.2.27-web
+          path: sto-nino-devotional-v1.2.27-web.zip
+          if-no-files-found: error
