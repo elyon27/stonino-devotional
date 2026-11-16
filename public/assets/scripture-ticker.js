@@ -6,6 +6,7 @@
   };
   const viewport = document.getElementById('scriptureTickerViewport');
   const line = document.getElementById('scriptureTickerVerse');
+  const bookTitle = document.getElementById('scriptureTickerBook');
   const button = document.getElementById('scriptureTickerToggle');
   const previousButton = document.getElementById('scriptureTickerPrevious');
   const nextButton = document.getElementById('scriptureTickerNext');
@@ -119,6 +120,7 @@
     line.style.transform = '';
     line.replaceChildren();
     bookIndex = selectedBook;
+    bookTitle.textContent = books[bookIndex].name;
     nextVerse = verseIndex;
     finished = false;
     fillLine();

@@ -183,6 +183,15 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   font-size: .88rem;
 }
 .scripture-ticker-verse > span { flex: none; }
+.scripture-ticker-book {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: .2rem .75rem .35rem;
+  color: var(--gold-light);
+  font-size: .85rem;
+  font-weight: 700;
+  text-align: center;
+}
 .scripture-ticker-controls { display: flex; }
 .scripture-ticker-control {
   min-width: 44px;
@@ -297,9 +306,21 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
 
 .prayer-pack-bar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   margin-block: .75rem;
 }
+#prayerPacks {
+  max-width: 52rem;
+  margin-inline: auto;
+  text-align: center;
+}
+#prayerPacks > .lead,
+#prayerPacks #prayerPackQrImage,
+#prayerPacks .gcash-scan-frame {
+  margin-inline: auto;
+}
+#prayerPacks .button-row { justify-content: center; }
+
 .prayer-pack-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
