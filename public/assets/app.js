@@ -102,7 +102,7 @@ function updateMobileNavigation() {
   if (start < footer.scrollLeft) footer.scrollLeft = start;
   else if (end > footer.scrollLeft + footer.clientWidth) footer.scrollLeft = end - footer.clientWidth;
 }
-let toastTimer;function toast(msg){const e=$('toast');e.textContent=tr(msg);e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),3500)}function html(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function nav(name){if(!canUseApp()||!$(name)||(['paymentReview','memberList'].includes(name)&&!paymentAdmin))return;$('prayerPackBar').hidden=['paymentReview','memberList'].includes(name);document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===name));document.querySelectorAll('[data-nav]').forEach(e=>e.classList.toggle('active',e.dataset.nav===name));updateMobileNavigation();history.replaceState(null,'','#'+name);if(name==='novena')renderNovena();else state.day=null;if(name==='prayerPacks')void refreshPrayerPacks();if(name==='paymentReview')void loadPaymentReview();if(name==='memberList')void loadAdminMembers();window.scrollTo({top:0,behavior:'instant'});$('main').focus({preventScroll:true})}document.querySelectorAll('[data-nav]').forEach(e=>e.addEventListener('click',ev=>{ev.preventDefault();nav(e.dataset.nav)}));
+let toastTimer;function toast(msg){const e=$('toast');e.textContent=tr(msg);e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),3500)}function html(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function nav(name){if(!canUseApp()||!$(name)||(['paymentReview','memberList'].includes(name)&&!paymentAdmin))return;if(name!=='sanctuary')showSanctuaryPrayer(null);$('prayerPackBar').hidden=['paymentReview','memberList'].includes(name);document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===name));document.querySelectorAll('[data-nav]').forEach(e=>e.classList.toggle('active',e.dataset.nav===name));updateMobileNavigation();history.replaceState(null,'','#'+name);if(name==='novena')renderNovena();else state.day=null;if(name==='prayerPacks')void refreshPrayerPacks();if(name==='paymentReview')void loadPaymentReview();if(name==='memberList')void loadAdminMembers();window.scrollTo({top:0,behavior:'instant'});$('main').focus({preventScroll:true})}document.querySelectorAll('[data-nav]').forEach(e=>e.addEventListener('click',ev=>{ev.preventDefault();nav(e.dataset.nav)}));
 function language(){document.documentElement.lang=state.language;window.stoninoLocalize(state.language);document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=(translations[state.language]||translations.en)[e.dataset.i18n]||e.textContent);$('language').value=state.language;$('langBtn').textContent=({en:'English',ceb:'Cebuano',fil:'Filipino'})[state.language]+' ▾';store.set('language',state.language);renderNovena();displayPrayer(currentPrayer);renderCandles();renderNovenaCandles();renderFlowers();renderIntentions();renderMeditation();accountView();document.querySelectorAll('[data-offering-prayer]').forEach(renderOfferingPrayers)}$('language').addEventListener('change',e=>{state.language=e.target.value;language()});$('langBtn').addEventListener('click',()=>{const seq=['en','ceb','fil'];state.language=seq[(seq.indexOf(state.language)+1)%3];language();});function setFont(v){state.font=Number(v);document.documentElement.style.setProperty('--scale',state.font);$('textSize').value=String(state.font);store.set('font',state.font)}$('textSize').addEventListener('change',e=>setFont(e.target.value));$('fontBtn').addEventListener('click',()=>{const opts=[1,1.12,1.25];setFont(opts[(opts.indexOf(state.font)+1)%3])});
 // Appearance preference is independent of prayer data and survives page reloads.
 function applyAppearance(mode){
@@ -422,13 +422,74 @@ const FLOWER_WILT_MS = 7 * 60 * 60 * 1000;
 function bouquetVisual(flower) {
   return `<img data-bouquet-started="${Date.parse(flower.created_at)}" src="assets/novena-rose-bouquet.png" alt="${html(tr('Bouquet of red roses offered in prayer'))}" loading="lazy">`;
 }
+const sanctuaryOfferingTray = $('sanctuaryOfferings');
+const sanctuaryPrayer = $('sanctuaryOfferingPrayer');
+let sanctuaryPrayerTrigger = null;
+let sanctuaryOfferings = [];
+
+function showSanctuaryPrayer(trigger) {
+  sanctuaryPrayerTrigger?.setAttribute('aria-expanded', 'false');
+  sanctuaryPrayerTrigger = trigger;
+  sanctuaryPrayer.hidden = !trigger;
+  if (!trigger) {
+    sanctuaryPrayer.textContent = '';
+    return;
+  }
+
+  trigger.setAttribute('aria-expanded', 'true');
+  const { offering } = sanctuaryOfferings[Number(trigger.dataset.offeringIndex)];
+  sanctuaryPrayer.textContent = offeringNote(offering) || ({
+    ceb: 'Walay pag-ampo nga gitipig alang niini nga halad.',
+    fil: 'Walang naka-save na panalangin para sa alay na ito.'
+  }[state.language] ?? 'No prayer was saved for this offering.');
+}
+
+sanctuaryOfferingTray.addEventListener('click', event => {
+  const trigger = event.target.closest('[data-offering-index]');
+  if (trigger) showSanctuaryPrayer(trigger === sanctuaryPrayerTrigger ? null : trigger);
+});
+sanctuaryOfferingTray.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && sanctuaryPrayerTrigger) {
+    event.preventDefault();
+    showSanctuaryPrayer(null);
+  }
+});
+
 function renderSanctuaryOfferings() {
-  const tray = $('sanctuaryOfferings');
   const now = Date.now();
   const candles = [...state.candles, ...state.novenaCandles]
     .filter(candle => candleRemaining(candle.created_at, now) > 0);
-  tray.innerHTML = candles.map(candle => `<div class="mini-candle" data-started="${Date.parse(candle.created_at)}">${candleVisual()}</div>`).join('')
-    + state.novenaFlowers.map(flower => `<div class="mini-bouquet">${bouquetVisual(flower)}</div>`).join('');
+  const selected = sanctuaryPrayerTrigger && sanctuaryOfferings[Number(sanctuaryPrayerTrigger.dataset.offeringIndex)];
+  const restoreFocus = sanctuaryPrayerTrigger && document.activeElement === sanctuaryPrayerTrigger;
+  showSanctuaryPrayer(null);
+  sanctuaryOfferings = [
+    ...candles.map(offering => ({ offering, isCandle: true })),
+    ...state.novenaFlowers.map(offering => ({ offering, isCandle: false }))
+  ];
+  const labels = {
+    ceb: ['Pag-ampo sa kandila', 'Pag-ampo sa halad nga bulak'],
+    fil: ['Panalangin sa kandila', 'Panalangin sa alay na bulaklak']
+  }[state.language] ?? ['Candle prayer', 'Flower offering prayer'];
+
+  sanctuaryOfferingTray.innerHTML = sanctuaryOfferings.map(({ offering, isCandle }, index) => {
+    const visual = isCandle ? candleVisual() : bouquetVisual(offering);
+    const started = isCandle ? ` data-started="${Date.parse(offering.created_at)}"` : '';
+    const label = labels[isCandle ? 0 : 1];
+    return `<div class="${isCandle ? 'mini-candle' : 'mini-bouquet'}"${started}>
+      ${visual}
+      <button class="sanctuary-offering-trigger" type="button" data-offering-index="${index}"
+        aria-label="${html(label)}" aria-expanded="false" aria-controls="sanctuaryOfferingPrayer"></button>
+    </div>`;
+  }).join('');
+  if (selected) {
+    const index = sanctuaryOfferings.findIndex(({ offering, isCandle }) => isCandle === selected.isCandle
+      && (offering === selected.offering || (offering.id && offering.id === selected.offering.id)));
+    const trigger = sanctuaryOfferingTray.querySelector(`[data-offering-index="${index}"]`);
+    if (trigger) {
+      showSanctuaryPrayer(trigger);
+      if (restoreFocus) trigger.focus({ preventScroll: true });
+    }
+  }
   updateSanctuaryOfferings(now);
 }
 function updateSanctuaryOfferings(now) {
@@ -441,7 +502,9 @@ function updateSanctuaryOfferings(now) {
     const started = Number(bouquet.dataset.bouquetStarted);
     const wilt = Number.isFinite(started) ? Math.max(0, Math.min(1, (now - started) / FLOWER_WILT_MS)) : 0;
     if (wilt >= 1) {
-      bouquet.closest('.mini-bouquet, .flower-offering').remove();
+      const offering = bouquet.closest('.mini-bouquet, .flower-offering');
+      if (sanctuaryPrayerTrigger && offering.contains(sanctuaryPrayerTrigger)) showSanctuaryPrayer(null);
+      offering.remove();
     } else {
       bouquet.style.setProperty('--wilt', wilt.toFixed(4));
     }
@@ -527,7 +590,10 @@ function accountView() {
   for (const id of ['devotionalContent', 'devotionalMobileNav']) {
     $(id).hidden = $(id).inert = !unlocked;
   }
-  if (!unlocked) $('musicPlayer').pause();
+  if (!unlocked) {
+    showSanctuaryPrayer(null);
+    $('musicPlayer').pause();
+  }
   $('accountGate').hidden = unlocked;
   $('gateSignIn').hidden = $('gateRegister').hidden = authStatus !== 'ready' || signedIn;
   $('gateSaveName').hidden = authStatus !== 'ready' || !signedIn || Boolean(name);
@@ -554,6 +620,7 @@ async function setAccountUser(user) {
   const revision = ++authRevision;
   state.user = user?.is_anonymous ? null : user;
   if (changed) {
+    showSanctuaryPrayer(null);
     paymentAdmin = false;
     showPaymentAwaitingNotice(false);
     $('adminMembersList').replaceChildren();
