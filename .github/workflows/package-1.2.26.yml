@@ -1,0 +1,137 @@
+name: Sto. Niño web ZIP and unsigned APK 1.2.26
+on:
+  push:
+    branches: [codex/package-1.2.26]
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            /public/index.html
+            /public/assets/app.js
+            /public/assets/styles.css
+            /public/assets/scripture-ticker.js
+            /sto-nino-devotional-1.2.25-unsigned.apk
+          sparse-checkout-cone-mode: false
+      - name: Package the Scripture and Prayer Packs update
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct
+          import zipfile
+
+          old = '1.2.25'
+          new = '1.2.26'
+          source = Path(f'sto-nino-devotional-{old}-unsigned.apk')
+          output = Path(f'sto-nino-devotional-{new}-unsigned.apk')
+
+          def update_manifest(data):
+              data = bytearray(data)
+              cursor = 8
+              resource_ids = []
+              updated_code = False
+              version_attribute = None
+              pool = None
+              while cursor < len(data):
+                  kind, header_size, size = struct.unpack_from('<HHI', data, cursor)
+                  assert 8 <= header_size <= size <= len(data) - cursor
+                  if kind == 0x0001:
+                      pool = (cursor, header_size, size)
+                  if kind == 0x0180:
+                      resource_ids = list(struct.unpack_from(
+                          '<' + 'I' * ((size - header_size) // 4), data, cursor + header_size))
+                  if kind == 0x0102:
+                      extension = cursor + header_size
+                      start, stride, count = struct.unpack_from('<HHH', data, extension + 8)
+                      for index in range(count):
+                          attribute = extension + start + index * stride
+                          name = struct.unpack_from('<I', data, attribute + 4)[0]
+                          if name < len(resource_ids) and resource_ids[name] == 0x0101021b:
+                              assert data[attribute + 15] in (16, 17)
+                              code = struct.unpack_from('<I', data, attribute + 16)[0]
+                              struct.pack_into('<I', data, attribute + 16, code + 1)
+                              updated_code = True
+                          if name < len(resource_ids) and resource_ids[name] == 0x0101021c:
+                              version_attribute = attribute
+                  cursor += size
+              assert updated_code, 'versionCode was not found'
+              assert version_attribute is not None and pool is not None
+              offset, header_size, size = pool
+              count, styles, flags, strings_start, styles_start = struct.unpack_from(
+                  '<IIIII', data, offset + 8)
+              assert styles == 0 and styles_start == 0
+              attribute = version_attribute
+              struct.pack_into('<I', data, attribute + 8, count)
+              struct.pack_into('<HBBI', data, attribute + 12, 8, 0, 3, count)
+
+              old_strings = data[offset + strings_start:offset + size]
+              if flags & 0x100:
+                  encoded = bytes([len(new), len(new)]) + new.encode('utf-8') + b'\x00'
+              else:
+                  encoded = struct.pack('<H', len(new)) + new.encode('utf-16le') + b'\x00\x00'
+              encoded += bytes(-len(encoded) % 4)
+              header = data[offset:offset + header_size]
+              struct.pack_into('<I', header, 4, size + 4 + len(encoded))
+              struct.pack_into('<I', header, 8, count + 1)
+              struct.pack_into('<I', header, 16, flags & ~1)
+              struct.pack_into('<I', header, 20, strings_start + 4)
+              offsets = data[offset + header_size:offset + strings_start]
+              assert len(offsets) == count * 4
+              data[offset:offset + size] = (
+                  header + offsets + struct.pack('<I', len(old_strings)) + old_strings + encoded)
+              struct.pack_into('<I', data, 4, len(data))
+              return data
+
+          paths = ('index.html', 'assets/app.js', 'assets/styles.css', 'assets/scripture-ticker.js')
+          with zipfile.ZipFile(source) as original, zipfile.ZipFile(output, 'w') as result:
+              names = set(original.namelist())
+              roots = [name[:-len('index.html')] for name in names
+                       if name.startswith('assets/') and name.endswith('/index.html')
+                       and all(name[:-len('index.html')] + path in names for path in paths)]
+              assert len(roots) == 1, f'Expected one bundled web root, found {roots}'
+              replacements = {roots[0] + path: Path('public', path).read_bytes() for path in paths}
+              for entry in original.infolist():
+                  upper = entry.filename.upper()
+                  if upper.startswith('META-INF/') and upper.endswith(('.SF', '.RSA', '.DSA', '.EC')):
+                      continue
+                  data = replacements.get(entry.filename)
+                  if data is None:
+                      data = original.read(entry)
+                  if entry.filename == 'AndroidManifest.xml':
+                      data = update_manifest(data)
+                  result.writestr(entry, data)
+          with zipfile.ZipFile(output) as result:
+              assert result.testzip() is None
+              for name, data in replacements.items():
+                  assert result.read(name) == data
+          PY
+          SDK_BIN="$(dirname "$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -1)")"
+          test -x "$SDK_BIN/aapt"
+          apk="sto-nino-devotional-1.2.26-unsigned.apk"
+          "$SDK_BIN/zipalign" -f 4 "$apk" aligned.apk
+          mv aligned.apk "$apk"
+          "$SDK_BIN/zipalign" -c 4 "$apk"
+          "$SDK_BIN/aapt" dump badging "$apk" | sed -n '1p' | grep "versionName='1.2.26'"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sto-nino-devotional-1.2.26-unsigned-apk
+          path: sto-nino-devotional-1.2.26-unsigned.apk
+          if-no-files-found: error
+      - name: Package the Netlify web source
+        shell: bash
+        run: |
+          archive=sto-nino-devotional-v1.2.26-web.zip
+          git archive --format=zip --output="$archive" HEAD README.md netlify.toml package.json package-lock.json public netlify scripts sql
+          unzip -tq "$archive"
+          unzip -p "$archive" public/index.html | grep 'scriptureTickerBook'
+          unzip -p "$archive" package.json | python3 -c 'import json, sys; assert json.load(sys.stdin)["version"] == "1.2.26"'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sto-nino-devotional-v1.2.26-web
+          path: sto-nino-devotional-v1.2.26-web.zip
+          if-no-files-found: error
