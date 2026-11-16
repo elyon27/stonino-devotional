@@ -201,6 +201,11 @@ function isNovenaDayOpen(day, now = Date.now()) {
   return state.day === day && isNovenaDayUnlocked(day, now);
 }
 
+function isSelectedNovenaDayComplete(now = Date.now()) {
+  return isNovenaDayOpen(state.day, now)
+    && state.completed.includes(novenaSchedule[state.day].isoDate);
+}
+
 function novenaDateFormatter(options) {
   const locale = { ceb: 'ceb', fil: 'fil-PH' }[state.language] ?? 'en-US';
   return new Intl.DateTimeFormat(locale, {timeZone: 'Asia/Manila', ...options});
@@ -240,7 +245,7 @@ function renderNovena() {
   const first = novenaSchedule[0].opensAt;
   const last = novenaSchedule.at(-1).opensAt;
   const dayLabel = tr('Day');
-  const scheduleHint = tr('Mark each day complete to unlock the next. You can offer novena candles and flowers at any time.');
+  const scheduleHint = tr('Mark each day complete to unlock the next.');
   $('novenaScheduleHint').textContent = `${shortDate.format(first)} – ${formatter.format(last)} · ${scheduleHint}`;
   $('novenaScheduleStatus').textContent = isNovenaDayUnlocked(0, now)
     ? tr('Select a day to open its prayers.')
@@ -268,6 +273,11 @@ function renderNovena() {
     $('completeDay').textContent = state.completed.includes(selectedDate.isoDate) ? tr('✓ Day completed') : tr('Mark day complete');
   }
 
+  const offeringsEnabled = isSelectedNovenaDayComplete(now);
+  for (const id of ['offerNovenaCandle', 'offerNovenaFlowers']) {
+    const button = $(id);
+    button.disabled = !offeringsEnabled || button.hasAttribute('aria-busy');
+  }
   $('completeDay').disabled = !available;
   $('prevDay').disabled = !available || !isNovenaDayUnlocked(state.day - 1, now);
   $('nextDay').disabled = !available || !isNovenaDayUnlocked(state.day + 1, now);
@@ -1389,6 +1399,7 @@ document.addEventListener('visibilitychange', () => {
     $(settings.form).onsubmit = async event => {
       event.preventDefault();
       if (!canUseApp() || deletingDevotionalData || clearingOfferings || spendingCredit) return;
+      if (settings.novena && !isSelectedNovenaDayComplete()) return;
       const userId = state.user.id;
       const form = event.currentTarget;
       const button = form.querySelector('button[type="submit"]');
@@ -1408,6 +1419,7 @@ document.addEventListener('visibilitychange', () => {
       };
       saveAccountData(pendingKey, args);
       spendingCredit = button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
       offeringRevision++;
       try {
         const { error } = await state.supabase.rpc('stonino_spend_prayer_credit', args);
@@ -1434,7 +1446,8 @@ document.addEventListener('visibilitychange', () => {
         if (state.user?.id === userId) toast('Could not confirm the offering. Submit again to retry.');
       } finally {
         spendingCredit = false;
-        button.disabled = false;
+        button.removeAttribute('aria-busy');
+        button.disabled = settings.novena && !isSelectedNovenaDayComplete();
       }
     };
   }
