@@ -369,3 +369,5 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
 .prayer-pack-bar[hidden] { display: none; }
 
 #prayerPacks .button-row > [hidden] { display: none; }
+
+.gallery-link{text-decoration:none}
