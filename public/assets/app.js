@@ -23,8 +23,14 @@ const localizedError = (error, fallback) =>
     ? tr(fallback)
     : tr(error.message || fallback);
 const offeringPrayers = type => isFilipino() ? filipino.offerings[type] : window.stoninoOfferingPrayers[type];
+// Saved offerings with indexes 0–6 still refer to their original intention-specific prayers.
+const sharedOfferingPrayerStart = 7;
 function offeringPrayer(type, index) {
-  return Number.isInteger(index) ? offeringPrayers(type)?.[index] : undefined;
+  if (!Number.isInteger(index)) return undefined;
+  if (index >= sharedOfferingPrayerStart) {
+    return offeringPrayers('Personal prayer')[index - sharedOfferingPrayerStart];
+  }
+  return offeringPrayers(type)?.[index];
 }
 function offeringNote({ type, prayerIndex, note }) {
   const prayer = offeringPrayer(type, prayerIndex);
@@ -32,19 +38,13 @@ function offeringNote({ type, prayerIndex, note }) {
 }
 function updateOfferingPrayer(select) {
   const stem = select.id.slice(0, -'Prayer'.length);
-  const choice = select.value;
-  const type = $(stem + 'Type').value;
-  const prayer = choice === '' ? undefined : offeringPrayer(type, Number(choice));
+  const prayerIndex = select.value === '' ? null : Number(select.value);
   const preview = $(stem + 'PrayerPreview');
-  preview.textContent = prayer ? offeringNote({ type, prayerIndex: Number(choice) }) : '';
-  preview.hidden = !prayer;
-  $(stem + 'CustomPrayer').hidden = choice !== 'custom';
+  preview.textContent = offeringNote({ prayerIndex, note: '' });
+  preview.hidden = !preview.textContent;
 }
 function renderOfferingPrayers(select) {
-  const stem = select.id.slice(0, -'Prayer'.length);
-  const type = $(stem + 'Type').value;
-  const previous = select.value || '';
-  const prayers = offeringPrayers(type);
+  const previous = select.value;
   select.replaceChildren();
   const appendOption = (value, label) => {
     const option = document.createElement('option');
@@ -53,17 +53,13 @@ function renderOfferingPrayers(select) {
     select.append(option);
   };
   appendOption('', tr('Choose a prayer (optional)'));
-  prayers.forEach((prayer, index) => appendOption(String(index), prayer[isCebuano() ? 2 : 0]));
-  appendOption('custom', tr('Write your own prayer'));
+  offeringPrayers('Personal prayer').forEach((prayer, index) => {
+    appendOption(String(sharedOfferingPrayerStart + index), prayer[isCebuano() ? 2 : 0]);
+  });
   select.value = previous;
   updateOfferingPrayer(select);
 }
 for (const select of document.querySelectorAll('[data-offering-prayer]')) {
-  const type = $(select.id.slice(0, -'Prayer'.length) + 'Type');
-  type.addEventListener('change', () => {
-    select.value = '';
-    renderOfferingPrayers(select);
-  });
   select.addEventListener('change', () => updateOfferingPrayer(select));
 }
 const scriptureLabel = ref => isCebuano()
@@ -1402,10 +1398,10 @@ document.addEventListener('visibilitychange', () => {
 });
 (() => {
   const offerings = {
-    candle: { form: 'candleForm', field: 'candleFor', type: 'candleType' },
-    flowers: { form: 'flowerForm', field: 'flowerFor', type: 'flowerType' },
-    'novena-candle': { novena: true, form: 'novenaCandleForm', field: 'novenaCandleFor', type: 'novenaCandleType' },
-    'novena-flowers': { novena: true, form: 'novenaFlowerForm', field: 'novenaFlowerFor', type: 'novenaFlowerType' }
+    candle: { form: 'candleForm', type: 'candleType' },
+    flowers: { form: 'flowerForm', type: 'flowerType' },
+    'novena-candle': { novena: true, form: 'novenaCandleForm', type: 'novenaCandleType' },
+    'novena-flowers': { novena: true, form: 'novenaFlowerForm', type: 'novenaFlowerType' }
   };
   for (const [kind, settings] of Object.entries(offerings)) {
     $(settings.form).onsubmit = async event => {
@@ -1420,13 +1416,13 @@ document.addEventListener('visibilitychange', () => {
       const pending = readAccountData(pendingKey, null);
       const choice = select.value;
       const type = $(settings.type).value;
-      const prayerIndex = choice === '' || choice === 'custom' ? null : Number(choice);
+      const prayerIndex = choice === '' ? null : Number(choice);
       const args = pending || {
         request_id: crypto.randomUUID(),
         offering_kind: kind,
         prayer_type: type,
         prayer_index: prayerIndex,
-        note: choice === 'custom' ? $(settings.field).value.trim() : '',
+        note: '',
         novena_day: settings.novena ? state.day : null
       };
       saveAccountData(pendingKey, args);

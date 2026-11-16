@@ -52,8 +52,9 @@ begin
   end if;
   if request_id is null or offering_kind is null or
      offering_kind not in ('candle', 'flowers', 'novena-candle', 'novena-flowers') or
-     prayer_type is null or prayer_type not in ('Personal prayer', 'Family', 'Thanksgiving', 'For the departed') or
-     (prayer_index is not null and prayer_index not between 0 and 6) or
+     prayer_type is null or prayer_type not in ('Personal prayer', 'Family', 'Thanksgiving', 'For the departed',
+       'Health and healing', 'Guidance and discernment', 'Work and livelihood') or
+     (prayer_index is not null and prayer_index not between 0 and 13) or
      pg_catalog.char_length(coalesce(note, '')) > 250 then
     raise exception 'invalid_offering';
   end if;

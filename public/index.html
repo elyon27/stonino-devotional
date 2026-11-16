@@ -4,16 +4,16 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#8B1E2D"><meta name="description" content="A Catholic devotional sanctuary honoring Señor Santo Niño de Cebu.">
   <title>Sto. Niño | Cebu Heritage Chapel</title>
-  <link rel="stylesheet" href="assets/styles.css?v=1.2.21"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/styles.css?v=1.2.22"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/chapel-icon-192.png">
-  <script defer src="assets/install.js?v=1.2.18"></script>
+  <script defer src="assets/install.js?v=1.2.22"></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to main content</a>
 <div class="app-shell">
 <header class="topbar">
-  <a class="identity" href="#sanctuary" data-nav="sanctuary" aria-label="Sto. Niño home"><img src="assets/chapel-logo.svg" alt="" width="40" height="40"><span><strong>SEÑOR SANTO NIÑO</strong><small>Cebu Heritage Chapel</small><span class="release-version">v1.2.21</span></span></a>
+  <a class="identity" href="#sanctuary" data-nav="sanctuary" aria-label="Sto. Niño home"><img src="assets/chapel-logo.svg" alt="" width="40" height="40"><span><strong>SEÑOR SANTO NIÑO</strong><small>Cebu Heritage Chapel</small><span class="release-version">v1.2.22</span></span></a>
   <span id="devotionalUserName" class="devotional-user-name" hidden></span>
   <div class="header-actions"><button class="text-control" id="soundBtn" title="Toggle ambient sound" hidden>Sound off</button><button class="text-control" id="langBtn" aria-label="Change language">English ▾</button><button class="text-control" id="themeBtn" type="button" title="Switch between light and dark backgrounds" aria-label="Switch to dark mode" aria-pressed="false">☾ Dark</button><button class="text-control" id="fontBtn" title="Increase text size">A+</button><button class="text-control" id="authBtn">My Account</button><button class="text-control" id="headerSignOut" type="button" hidden>Log Out</button></div>
   <div class="payment-awaiting-header">
@@ -206,14 +206,10 @@
   <div class="two-column">
     <div class="panel"><form id="novenaCandleForm">
         <label for="novenaCandleType">Intention Type</label>
-        <select id="novenaCandleType"><option value="Personal prayer">Personal prayer</option><option value="Family">Family</option><option value="Thanksgiving">Thanksgiving</option><option value="For the departed">For the departed</option></select>
+        <select id="novenaCandleType"><option value="Personal prayer">Personal prayer</option><option value="Family">Family</option><option value="Thanksgiving">Thanksgiving</option><option value="For the departed">For the departed</option><option value="Health and healing">Health and healing</option><option value="Guidance and discernment">Guidance and discernment</option><option value="Work and livelihood">Work and livelihood</option></select>
         <label for="novenaCandlePrayer">Prayers</label>
         <select id="novenaCandlePrayer" data-offering-prayer aria-describedby="novenaCandlePrayerPreview"></select>
         <p id="novenaCandlePrayerPreview" class="prayer-copy" aria-live="polite" hidden></p>
-        <div id="novenaCandleCustomPrayer" hidden>
-          <label for="novenaCandleFor">Your prayer</label>
-          <input id="novenaCandleFor" type="text" maxlength="120" placeholder="My intention for this novena…">
-        </div>
         <p class="hint" id="novenaCandleRequirement">Open a novena day and tap <strong>Mark day complete</strong> before offering a candle for that day.</p>
         <button class="btn gold full" id="offerNovenaCandle" type="submit" aria-describedby="novenaCandleRequirement" disabled>Offer a Novena Candle · 1 credit</button>
     </form><p class="hint">This candle is offered for your currently selected novena day.</p></div>
@@ -231,14 +227,10 @@
     <div class="panel"><div class="flowers-intro"><img src="assets/novena-rose-bouquet.png" class="flowers-preview" alt="A realistic bouquet of red roses wrapped with a red bow" loading="lazy"></div>
       <form id="novenaFlowerForm">
         <label for="novenaFlowerType">Intention Type</label>
-        <select id="novenaFlowerType"><option value="Personal prayer">Personal prayer</option><option value="Family">Family</option><option value="Thanksgiving">Thanksgiving</option><option value="For the departed">For the departed</option></select>
+        <select id="novenaFlowerType"><option value="Personal prayer">Personal prayer</option><option value="Family">Family</option><option value="Thanksgiving">Thanksgiving</option><option value="For the departed">For the departed</option><option value="Health and healing">Health and healing</option><option value="Guidance and discernment">Guidance and discernment</option><option value="Work and livelihood">Work and livelihood</option></select>
         <label for="novenaFlowerPrayer">Prayers</label>
         <select id="novenaFlowerPrayer" data-offering-prayer aria-describedby="novenaFlowerPrayerPreview"></select>
         <p id="novenaFlowerPrayerPreview" class="prayer-copy" aria-live="polite" hidden></p>
-        <div id="novenaFlowerCustomPrayer" hidden>
-          <label for="novenaFlowerFor">Your prayer</label>
-          <textarea id="novenaFlowerFor" maxlength="250" rows="3" placeholder="My prayer intention with this floral offering…"></textarea>
-        </div>
         <p class="hint" id="novenaFlowerRequirement">Open a novena day and tap <strong>Mark day complete</strong> before offering flowers for that day.</p>
         <button class="btn gold full" id="offerNovenaFlowers" type="submit" aria-describedby="novenaFlowerRequirement" disabled>Offer Flowers · 1 credit</button>
       </form>
@@ -254,14 +246,10 @@
 </section>
 <section class="page" id="candles" aria-labelledby="candleTitle"><p class="eyebrow">A SYMBOL OF PRAYER</p><h2 id="candleTitle" data-i18n="navCandles">Light a Candle</h2><p class="lead">Each candle uses 1 credit and stays visible for 7 hours.</p><div class="two-column"><div class="panel"><form id="candleForm">
         <label for="candleType">Intention Type</label>
-        <select id="candleType"><option value="Personal prayer">Personal prayer</option><option value="Family">Family</option><option value="Thanksgiving">Thanksgiving</option><option value="For the departed">For the departed</option></select>
+        <select id="candleType"><option value="Personal prayer">Personal prayer</option><option value="Family">Family</option><option value="Thanksgiving">Thanksgiving</option><option value="For the departed">For the departed</option><option value="Health and healing">Health and healing</option><option value="Guidance and discernment">Guidance and discernment</option><option value="Work and livelihood">Work and livelihood</option></select>
         <label for="candlePrayer">Prayers</label>
         <select id="candlePrayer" data-offering-prayer aria-describedby="candlePrayerPreview"></select>
         <p id="candlePrayerPreview" class="prayer-copy" aria-live="polite" hidden></p>
-        <div id="candleCustomPrayer" hidden>
-          <label for="candleFor">Your prayer</label>
-          <input id="candleFor" type="text" maxlength="120" placeholder="For my family, for healing, in thanksgiving…">
-        </div>
         <button class="btn gold full" type="submit">Light a Candle · 1 credit</button></form></div><div class="panel candle-panel"><h3>My offered candles</h3><div class="candle-grid" id="candleGrid"></div><p class="hint" id="candleEmpty">No candles yet. Light one as you offer a prayer.</p></div></div></section>
 <section class="page" id="flowers" aria-labelledby="flowerTitle">
   <p class="eyebrow">A SYMBOL OF PRAYER</p>
@@ -271,14 +259,10 @@
     <div class="panel">
       <form id="flowerForm">
         <label for="flowerType">Intention Type</label>
-        <select id="flowerType"><option value="Personal prayer">Personal prayer</option><option value="Family">Family</option><option value="Thanksgiving">Thanksgiving</option><option value="For the departed">For the departed</option></select>
+        <select id="flowerType"><option value="Personal prayer">Personal prayer</option><option value="Family">Family</option><option value="Thanksgiving">Thanksgiving</option><option value="For the departed">For the departed</option><option value="Health and healing">Health and healing</option><option value="Guidance and discernment">Guidance and discernment</option><option value="Work and livelihood">Work and livelihood</option></select>
         <label for="flowerPrayer">Prayers</label>
         <select id="flowerPrayer" data-offering-prayer aria-describedby="flowerPrayerPreview"></select>
         <p id="flowerPrayerPreview" class="prayer-copy" aria-live="polite" hidden></p>
-        <div id="flowerCustomPrayer" hidden>
-          <label for="flowerFor">Your prayer</label>
-          <input id="flowerFor" type="text" maxlength="120" placeholder="For my family, for healing, in thanksgiving…">
-        </div>
         <button class="btn gold full" type="submit">Offer Flowers · 1 credit</button>
       </form>
       
@@ -339,8 +323,8 @@
 </div><div class="button-row"><button class="btn gold" id="signIn">Sign in</button><button class="btn outline" id="signUp">Create account</button></div><button class="linklike" id="backToSignIn" type="button" hidden>Back to sign in</button><button class="linklike" id="resetPassword">Send password-reset email</button><p class="hint">New accounts may need to confirm their email address before signing in.</p></div><div id="accountLoggedIn" hidden><p id="userEmail"></p><form id="accountNameForm"><label for="accountDisplayName">Name shown at the top of the app</label><input id="accountDisplayName" autocomplete="name" maxlength="80" required><button class="btn outline" type="submit">Save name</button></form><div class="button-row"><button class="btn outline" id="signOut">Sign out</button><button class="btn danger" id="deleteAccount">Delete My Account</button></div><p class="hint">Deletes your Sto. Niño Devotional profile and devotional data and signs you out of this app. Your CrownMind login remains available.</p></div></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <template id="cebuanoScriptureCredit"><a href="https://ebible.org/cebocb/copyright.htm" target="_blank" rel="noopener">Biblica® Open Ang Pulong sa Dios™</a> · © 2009, 2010, 2014, 2024 Biblica, Inc. · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></template>
-<script src="assets/cebuano.js?v=1.2.18"></script><script src="assets/filipino-prayers.js?v=1.2.18"></script><script src="assets/localize.js?v=tagalog-prayers"></script>
-<script src="assets/config.js?v=1.2.18"></script><script src="assets/offering-prayers.js"></script><script src="assets/app.js?v=1.2.21"></script>
+<script src="assets/cebuano.js?v=1.2.22"></script><script src="assets/filipino-prayers.js?v=1.2.22"></script><script src="assets/localize.js?v=tagalog-prayers"></script>
+<script src="assets/config.js?v=1.2.18"></script><script src="assets/offering-prayers.js"></script><script src="assets/app.js?v=1.2.22"></script>
 <script src="assets/music/tracks.js"></script><script src="assets/music-prayers.js?v=bundled-tracks"></script>
 <script src="assets/new-testament-web.js"></script><script src="assets/new-testament-cebuano.js"></script><script src="assets/new-testament-tagalog.js"></script><script src="assets/scripture-ticker.js?v=remove-cancelled-claim"></script>
 </body></html>
