@@ -46,3 +46,10 @@ jobs:
             unzip -p "$old" "$asset" | grep -inE 'DevotionalAndroid|NativeRequest|window\.fetch|packEndpoint' | cut -c1-500 || true
           done
           grep -n -E 'evaluateJavascript|NativeRequest;.send|const-string.*(Android|callback|window\.)' dex.txt | cut -c1-350 | head -80
+          for asset in $(unzip -Z1 "$old" | grep -E 'assets/web/assets/[^/]+\.js$'); do
+            if unzip -p "$old" "$asset" | grep -qF 'window.DevotionalAndroid.send'; then
+              echo "BRIDGE_ASSET=$asset"
+              unzip -p "$old" "$asset" | head -70
+            fi
+          done
+          unzip -p "$old" assets/web/index.html | grep -iE '<script' | cut -c1-500
