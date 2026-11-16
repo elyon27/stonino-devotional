@@ -131,6 +131,33 @@ window.stoninoFilipinoPrayers = {
       ['Mga biglang pumanaw', 'Panginoong Hesus, kaawaan mo ang mga biglang pumanaw at palakasin ang kanilang mga mahal sa buhay na nagdadalamhati.'],
       ['Anibersaryo ng pagpanaw', 'Hesus, Banal na Sanggol, sa araw na ito ng paggunita, tanggapin mo ang aming panalangin para sa aming mahal na yumao at panibaguhin ang aming pag-asa sa muling pagkabuhay.'],
       ['Lahat ng yumaong mananampalataya', 'Panginoong Hesus, sa iyong awa, dalhin mo ang lahat ng yumaong mananampalataya sa kagalakan ng iyong piling.']
+    ],
+    "Health and healing": [
+      ["Paggaling mula sa sakit", "Hesus, Banal na Sanggol, pagalingin mo ang mga maysakit at bigyan sila ng tiyaga habang nagpapagaling."],
+      ["Bago ang operasyon", "Hesus, Banal na Sanggol, patatagin mo ang aking loob at gabayan ang mga kamay ng mag-aalaga sa akin."],
+      ["Pamumuhay na may pangmatagalang karamdaman", "Hesus, Banal na Sanggol, bigyan mo ng ginhawa, lakas, at tapat na mga kasama ang may pangmatagalang karamdaman."],
+      ["Paghilom ng damdamin", "Hesus, Banal na Sanggol, aliwin mo ang mga may dinadalang lihim na sakit at tulungan silang makahanap ng mapagkakatiwalaan."],
+      ["Mga tagapag-alaga at manggagawang pangkalusugan", "Hesus, Banal na Sanggol, bigyan mo ng karunungan, malasakit, at pahinga ang mga tagapag-alaga at manggagawang pangkalusugan."],
+      ["Paghihintay sa resulta ng pagsusuri", "Hesus, Banal na Sanggol, bigyan mo ng kapayapaan ang naghihintay ng resulta at tapang na harapin ito."],
+      ["Mga gawi para sa kalusugan", "Hesus, Banal na Sanggol, tulungan mo akong alagaan ang aking katawan nang may tiyaga at pumili ng makabubuti sa aking kalusugan."]
+    ],
+    "Guidance and discernment": [
+      ["Mahirap na pagpapasiya", "Hesus, Banal na Sanggol, tulungan mo akong makita nang malinaw ang aking mga pagpipilian at piliin ang tama nang may tapang."],
+      ["Pakikinig sa panalangin", "Hesus, Banal na Sanggol, payapain mo ang aking puso upang makinig ako sa iyo sa panalangin at makita kung saan mo ako ginagabayan."],
+      ["Paghingi ng matalinong payo", "Hesus, Banal na Sanggol, ilapit mo ako sa mga taong magsasalita nang tapat at tulungan akong timbangin ang kanilang payo nang may pagpapakumbaba."],
+      ["Pagkilatis sa bokasyon", "Hesus, Banal na Sanggol, ipakita mo kung paano ko magagamit ang aking mga kaloob upang maglingkod sa iyo at mahalin ang mga taong ipinagkatiwala mo sa akin."],
+      ["Tiyaga sa kawalang-katiyakan", "Hesus, Banal na Sanggol, bigyan mo ako ng tiyaga kapag malabo ang landas at karunungang malaman kung kailan maghihintay o kikilos."],
+      ["Pagpili nang may malinis na budhi", "Hesus, Banal na Sanggol, tulungan mo akong kilalanin ang tapat at mahabaging pasiya kahit matukso ako sa mas madaling pagpili."],
+      ["Tapang sa susunod na hakbang", "Hesus, Banal na Sanggol, bigyan mo ako ng tapang na sundin ang aking napagmuni-muni at ipagkatiwala sa iyo ang magiging bunga."]
+    ],
+    "Work and livelihood": [
+      ["Paghahanap ng trabaho", "Hesus, Banal na Sanggol, magbukas ka ng daan tungo sa marangal na trabaho para sa mga naghahanap at palakasin sila habang naghihintay."],
+      ["Pagtugon sa pangangailangan ng tahanan", "Hesus, Banal na Sanggol, tulungan mo kaming matugunan ang mga pangangailangan ng aming tahanan at gamitin nang wasto at bukas-palad ang aming natatanggap."],
+      ["Katapatan sa trabaho", "Hesus, Banal na Sanggol, turuan mo akong magtrabaho nang tapat, tumupad sa mga pangako, at maging makatarungan sa iba."],
+      ["Kapayapaan sa magkakatrabaho", "Hesus, Banal na Sanggol, tulungan mo kaming makinig sa isa’t isa, ayusin ang hindi pagkakaunawaan, at magtulungan nang may paggalang."],
+      ["Kaligtasan sa trabaho", "Hesus, Banal na Sanggol, ingatan mo ang mga manggagawa sa panganib at gabayan ang mga may tungkulin sa kanilang kaligtasan."],
+      ["Maliit na negosyo o kabuhayan", "Hesus, Banal na Sanggol, pagpalain mo ang gawa ng aming mga kamay at tulungan kaming maglingkod nang patas sa aming mga mamimili at manggagawa."],
+      ["Lakas matapos mawalan ng trabaho", "Hesus, Banal na Sanggol, palakasin mo ang mga nawalan ng trabaho at akayin sila sa tulong at mga bagong pagkakataon."]
     ]
   }
 };

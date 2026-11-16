@@ -23,7 +23,7 @@ const localizedError = (error, fallback) =>
     ? tr(fallback)
     : tr(error.message || fallback);
 const offeringPrayers = type => isFilipino() ? filipino.offerings[type] : window.stoninoOfferingPrayers[type];
-// Saved offerings with indexes 0–6 still refer to their original intention-specific prayers.
+// Version 1.2.22 saved the shared Personal prayer choices at indexes 7–13.
 const sharedOfferingPrayerStart = 7;
 function offeringPrayer(type, index) {
   if (!Number.isInteger(index)) return undefined;
@@ -36,11 +36,15 @@ function offeringNote({ type, prayerIndex, note }) {
   const prayer = offeringPrayer(type, prayerIndex);
   return prayer ? prayer[isCebuano() ? 3 : 1] + ' Amen.' : note;
 }
+function offeringIntention(select) {
+  return $(select.id.slice(0, -'Prayer'.length) + 'Type');
+}
 function updateOfferingPrayer(select) {
   const stem = select.id.slice(0, -'Prayer'.length);
+  const type = offeringIntention(select).value;
   const prayerIndex = select.value === '' ? null : Number(select.value);
   const preview = $(stem + 'PrayerPreview');
-  preview.textContent = offeringNote({ prayerIndex, note: '' });
+  preview.textContent = offeringNote({ type, prayerIndex, note: '' });
   preview.hidden = !preview.textContent;
 }
 function renderOfferingPrayers(select) {
@@ -53,13 +57,17 @@ function renderOfferingPrayers(select) {
     select.append(option);
   };
   appendOption('', tr('Choose a prayer (optional)'));
-  offeringPrayers('Personal prayer').forEach((prayer, index) => {
-    appendOption(String(sharedOfferingPrayerStart + index), prayer[isCebuano() ? 2 : 0]);
+  offeringPrayers(offeringIntention(select).value).forEach((prayer, index) => {
+    appendOption(String(index), prayer[isCebuano() ? 2 : 0]);
   });
   select.value = previous;
   updateOfferingPrayer(select);
 }
 for (const select of document.querySelectorAll('[data-offering-prayer]')) {
+  offeringIntention(select).addEventListener('change', () => {
+    select.value = '';
+    renderOfferingPrayers(select);
+  });
   select.addEventListener('change', () => updateOfferingPrayer(select));
 }
 const scriptureLabel = ref => isCebuano()
