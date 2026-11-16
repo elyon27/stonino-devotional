@@ -18,3 +18,9 @@
   for = "/assets/apk/*"
   [headers.values]
     Content-Type = "application/vnd.android.package-archive"
+
+[[headers]]
+  for = "/assets/latest-apk.json"
+  [headers.values]
+    Content-Type = "application/json; charset=UTF-8"
+    Cache-Control = "no-store"

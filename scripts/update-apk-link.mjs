@@ -1,6 +1,7 @@
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 
 const apkDirectory = new URL('../public/assets/apk/', import.meta.url);
+const releaseIndex = new URL('../public/assets/latest-apk.json', import.meta.url);
 const indexFile = new URL('../public/index.html', import.meta.url);
 const releaseName = /^sto-nino-devotional-v?(\d+)\.(\d+)\.(\d+)(-test)?-signed\.apk$/;
 const entries = await readdir(apkDirectory, { withFileTypes: true });
@@ -29,4 +30,5 @@ if ([...page.matchAll(installLink)].length !== 1) {
 }
 const updated = page.replace(installLink, (_, start, end) => start + 'assets/apk/' + latest.name + end);
 if (updated !== page) await writeFile(indexFile, updated);
+await writeFile(releaseIndex, JSON.stringify({ filename: latest.name }) + '\n');
 console.log('Install App points to ' + latest.name);

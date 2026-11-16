@@ -1,5 +1,7 @@
 window.stoninoFilipinoPrayers = {
   messages: {
+    "Log out": "Mag-log out",
+    "End your session on this device.": "Tapusin ang iyong sesyon sa device na ito.",
     "Sign out": "Mag-sign out",
     "Signed out": "Nakapag-sign out ka na.",
     // Fiesta Señor 2019 booklet prayers
