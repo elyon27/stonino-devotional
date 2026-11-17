@@ -896,6 +896,13 @@ let packBusy = false;
 let packMessage = '';
 let packRevision = 0;
 const packEndpoint = '/.netlify/functions/prayer-packs';
+function requestPrayerPack(action, options) {
+  if (typeof window.devotionalRequest === 'function') {
+    return window.devotionalRequest(action, options);
+  }
+  return fetch(`${packEndpoint}?action=${action}`, options);
+}
+
 const packButtons = [...document.querySelectorAll('[data-prayer-pack]')];
 const packOrderKey = 'pendingPrayerPack';
 const paymentDeclineMessage = 'Payment Transaction Reference Does Not Match';
@@ -1051,7 +1058,7 @@ async function packRequest(action, body) {
   const userId = state.user?.id;
   const { data } = await state.supabase.auth.getSession();
   if (data.session?.user.id !== userId || state.user?.id !== userId) throw Error('Please sign in again.');
-  const response = await fetch(`${packEndpoint}?action=${action}`, {
+  const response = await requestPrayerPack(action, {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + data.session.access_token, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -1247,7 +1254,7 @@ async function refreshPrayerPacks() {
   packMessage = 'Checking your balance and checkout…';
   renderPrayerPacks();
   try {
-    const readiness = await fetch(packEndpoint + '?action=ready', { cache: 'no-store', signal: AbortSignal.timeout(6000) })
+    const readiness = await requestPrayerPack('ready', { cache: 'no-store', signal: AbortSignal.timeout(6000) })
       .then(response => response.ok ? response.json() : null).catch(() => null);
     const notice = await packRequest('decline-notice', {}).catch(() => null);
     if (state.user?.id !== userId) return;

@@ -418,3 +418,5 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
 #prayerPacks .button-row > [hidden] { display: none; }
 
 .gallery-link{text-decoration:none}
+
+.private-altar-link { display: inline-flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; }
