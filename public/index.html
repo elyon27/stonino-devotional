@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#8B1E2D"><meta name="description" content="A Catholic devotional sanctuary honoring Señor Santo Niño de Cebu.">
   <title>Sto. Niño | Cebu Heritage Chapel</title>
-  <link rel="stylesheet" href="assets/styles.css?v=1.2.31"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/styles.css?v=1.2.32"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/chapel-icon-192.png">
   <script defer src="assets/install.js?v=1.2.31"></script>
@@ -13,7 +13,7 @@
 <a class="skip" href="#main">Skip to main content</a>
 <div class="app-shell">
 <header class="topbar">
-  <a class="identity" href="#sanctuary" data-nav="sanctuary" aria-label="Sto. Niño home"><img src="assets/chapel-logo.svg" alt="" width="40" height="40"><span><strong>SEÑOR SANTO NIÑO</strong><small>Cebu Heritage Chapel</small><span class="release-version">v1.2.31</span></span></a>
+  <a class="identity" href="#sanctuary" data-nav="sanctuary" aria-label="Sto. Niño home"><img src="assets/chapel-logo.svg" alt="" width="40" height="40"><span><strong>SEÑOR SANTO NIÑO</strong><small>Cebu Heritage Chapel</small><span class="release-version">v1.2.32</span></span></a>
   <span id="devotionalUserName" class="devotional-user-name" hidden></span>
   <div class="header-actions"><button class="text-control" id="soundBtn" title="Toggle ambient sound" hidden>Sound off</button><button class="text-control" id="langBtn" aria-label="Change language">English ▾</button><button class="text-control" id="themeBtn" type="button" title="Switch between light and dark backgrounds" aria-label="Switch to dark mode" aria-pressed="false">☾ Dark</button><button class="text-control" id="fontBtn" title="Increase text size">A+</button><button class="text-control" id="authBtn">My Account</button><button class="text-control" id="headerSignOut" type="button" hidden>Log Out</button></div>
   <div class="payment-awaiting-header">
@@ -52,6 +52,7 @@
   <button data-nav="music" class="nav-item"><span aria-hidden="true">♫</span><span data-i18n="navMusic">Music Prayers</span></button>
   <button data-nav="scripture" class="nav-item"><span>✝</span><span data-i18n="navScripture">Scripture</span></button>
   <a class="nav-item gallery-link" href="sto-nino-pics/index.html"><span aria-hidden="true">▣</span><span>Sto. Nino Pictures</span></a>
+  <button type="button" class="nav-item" data-open-sto-nino-3d aria-haspopup="dialog" aria-controls="stoNino3dDialog"><span aria-hidden="true">◈</span><span>3D Sto. Nino</span></button>
   <button data-nav="settings" class="nav-item"><span>⚙</span><span data-i18n="navSettings">Settings & Privacy</span></button>
   <button data-nav="paymentReview" class="nav-item" data-payment-review-entry hidden><span>✓</span><span>Payment Review</span></button>
   <button data-nav="memberList" class="nav-item" data-payment-review-entry hidden><span aria-hidden="true">♙</span><span>Member List</span></button>
@@ -315,9 +316,17 @@
   <button type="button" data-nav="music"><span aria-hidden="true">♫</span><small>Music</small></button>
   <button type="button" data-nav="scripture"><span aria-hidden="true">✝</span><small>Scripture</small></button>
   <a href="sto-nino-pics/index.html"><span aria-hidden="true">▣</span><small>Picture</small></a>
+  <button type="button" data-open-sto-nino-3d aria-haspopup="dialog" aria-controls="stoNino3dDialog"><span aria-hidden="true">◈</span><small>3D Sto. Nino</small></button>
   <button type="button" data-nav="settings"><span aria-hidden="true">⚙</span><small>More</small></button>
 </nav>
 </div>
+<dialog id="stoNino3dDialog" class="sto-nino-3d-dialog" aria-labelledby="stoNino3dTitle">
+  <div class="dialog-head">
+    <h2 id="stoNino3dTitle">3D Sto. Nino</h2>
+    <form method="dialog"><button type="submit" class="close" aria-label="Close 3D Sto. Nino" autofocus>×</button></form>
+  </div>
+  <img id="stoNino3dImage" data-src="assets/santo-nino-360.gif" width="580" height="580" alt="A rotating 360-degree view of the Santo Niño de Cebu statue">
+</dialog>
 <dialog id="scriptureDialog" class="scripture-dialog" aria-labelledby="scriptureDialogTitle">
   <div class="dialog-head"><h2 id="scriptureDialogTitle">Scripture Passage</h2><button type="button" id="closeScriptureDialog" class="close" aria-label="Close Scripture passage">×</button></div>
   <p class="scripture-translation" id="scriptureTranslation">King James Version (KJV) · Public domain</p>
@@ -336,7 +345,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <template id="cebuanoScriptureCredit"><a href="https://ebible.org/cebocb/copyright.htm" target="_blank" rel="noopener">Biblica® Open Ang Pulong sa Dios™</a> · © 2009, 2010, 2014, 2024 Biblica, Inc. · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></template>
 <script src="assets/cebuano.js?v=1.2.31"></script><script src="assets/filipino-prayers.js?v=1.2.31"></script><script src="assets/localize.js?v=tagalog-prayers"></script>
-<script src="assets/config.js?v=1.2.18"></script><script src="assets/offering-prayers.js?v=1.2.24"></script><script src="assets/app.js?v=1.2.31"></script>
+<script src="assets/config.js?v=1.2.18"></script><script src="assets/offering-prayers.js?v=1.2.24"></script><script src="assets/app.js?v=1.2.32"></script>
 <script src="assets/music/tracks.js"></script><script src="assets/music-prayers.js?v=bundled-tracks"></script>
 <script src="assets/new-testament-web.js"></script><script src="assets/new-testament-cebuano.js"></script><script src="assets/new-testament-tagalog.js"></script><script src="assets/scripture-ticker.js?v=1.2.27"></script>
 </body></html>

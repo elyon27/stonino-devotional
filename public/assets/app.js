@@ -181,6 +181,15 @@ function closeScripturePassage(){scriptureRequestId++;scriptureDialog.close()}
 $('closeScriptureDialog').addEventListener('click',closeScripturePassage);
 $('closeScriptureBottom').addEventListener('click',closeScripturePassage);
 scriptureDialog.addEventListener('close',()=>{scriptureRequestId++});
+const stoNino3dDialog = $('stoNino3dDialog');
+const stoNino3dImage = $('stoNino3dImage');
+document.querySelectorAll('[data-open-sto-nino-3d]').forEach(button => {
+  button.addEventListener('click', () => {
+    if (stoNino3dDialog.open) return;
+    if (!stoNino3dImage.hasAttribute('src')) stoNino3dImage.src = stoNino3dImage.dataset.src;
+    stoNino3dDialog.showModal();
+  });
+});
 // Cebu is UTC+08:00. The first in-app cycle is January 2027.
 const NOVENA_PREVIEW_ENABLED = true;
 const CEBU_OFFSET_MS = 8 * 60 * 60 * 1000;
@@ -701,7 +710,7 @@ async function setAccountUser(user) {
     }
     state.day = null;
     $('accountDisplayName').value = displayName();
-    for (const id of ['scriptureDialog', 'prayerPackInstructions']) {
+    for (const id of ['scriptureDialog', 'prayerPackInstructions', 'stoNino3dDialog']) {
       if ($(id).open) $(id).close();
     }
     for (const id of ['candleForm', 'novenaCandleForm', 'flowerForm', 'novenaFlowerForm', 'intentionForm']) $(id).reset();
