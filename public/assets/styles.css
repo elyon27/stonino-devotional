@@ -420,3 +420,11 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
 .gallery-link{text-decoration:none}
 
 .private-altar-link { display: inline-flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; }
+
+
+@media (display-mode: standalone) {
+  #installApp,
+  #androidInstallInstructions {
+    display: none;
+  }
+}
