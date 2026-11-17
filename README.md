@@ -1,4 +1,4 @@
-# Sto. Niño Devotional v1.2.32
+# Sto. Niño Devotional v1.2.33
 
 The web interface was recovered from the signed Android v1.2.27 APK. The Android-only request bridge was removed from the web page so Prayer Pack requests use the Netlify endpoint. Netlify configuration, server functions, build script, and reference SQL come from the v1.2.28 web package.
 
@@ -6,7 +6,7 @@ The Sanctuary hides the Install App link and Android instructions inside the nat
 
 Reset Days clears completion marks for the displayed Novena schedule and saves the reset to the account. The existing early-opening confirmation applies before Day 1.
 
-The **3D Sto. Nino** entry in the desktop and mobile navigation opens the looping GIF from `public/assets/santo-nino-360.gif`. The matching PowerShell signing script is included as `sign-v1.2.32.ps1` for use with the v1.2.32 Android build.
+The Sanctuary has a **3D Sto. Nino** section with a **View 360° Animation** button. The **3D Sto. Nino** entry in the desktop and mobile navigation opens the looping GIF from `public/assets/santo-nino-360.gif`. The matching PowerShell signing script is included as `sign-v1.2.33.ps1` for use with the v1.2.33 Android build.
 
 ## Preview and deployment
 
