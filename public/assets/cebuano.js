@@ -1,6 +1,11 @@
 // Cebuano content for the devotional app.
 window.stoninoCebuano = {
   messages: {
+    "Reset Days": "Sugdi pag-usab",
+    "Reset this Novena schedule to Day 1? Your completed days for this schedule will be cleared.": "Sugdan pag-usab sa Adlaw 1 ang nobena? Mawagtang ang mga marka sa nahuman nga adlaw niining iskedyul.",
+    "Novena days reset.": "Nasugdan pag-usab ang nobena.",
+    "Could not reset Novena days. Please try again.": "Wala ma-reset ang mga adlaw sa nobena. Palihog sulayi pag-usab.",
+
     "Log Out": "Pag-log out",
     // Fiesta Señor 2019 booklet prayers
     "Fiesta Señor Nine-Day Novena": "Siyam ka Adlaw nga Nobena sa Fiesta Señor",

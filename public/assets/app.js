@@ -244,6 +244,9 @@ const bookletPetitions = [
   ["Oh, merciful Jesus, You said, “I am the Way, the Truth and the Life”, We beseech you to guide us in our way to Heaven so that we may be able to surmount all the difficulties and obstacles we encounter in this deceptive world.", "Grant us also the virtue of hope so that we always thirst for the heavenly things and for your glory. We ask you this in Your Holy Name. Amen."],
 ];
 
+let resettingNovenaDays = false;
+let novenaProgressRevision = 0;
+
 function renderNovena() {
   const now = Date.now();
   const year = getNovenaYear(now);
@@ -295,7 +298,8 @@ function renderNovena() {
     const button = $(id);
     button.disabled = !offeringsEnabled || button.hasAttribute('aria-busy');
   }
-  $('completeDay').disabled = !available;
+  $('completeDay').disabled = !available || resettingNovenaDays;
+  $('resetNovenaDays').disabled = !canUseApp() || resettingNovenaDays || completedCount === 0;
   $('prevDay').disabled = !available || !isNovenaDayUnlocked(state.day - 1, now);
   $('nextDay').disabled = !available || !isNovenaDayUnlocked(state.day + 1, now);
   $('dayGrid').innerHTML = novenaSchedule.map(({isoDate, opensAt}, index) => {
@@ -327,14 +331,54 @@ $('dayGrid').addEventListener('click', event => {
 $('prevDay').onclick = () => selectNovenaDay(state.day - 1);
 $('nextDay').onclick = () => selectNovenaDay(state.day + 1);
 $('completeDay').onclick = () => {
-  if (!canUseApp() || !isNovenaDayOpen(state.day)) return;
+  if (!canUseApp() || resettingNovenaDays || !isNovenaDayOpen(state.day)) return;
   if (!state.completed.includes(novenaSchedule[state.day].isoDate)) {
     state.completed.push(novenaSchedule[state.day].isoDate);
     saveAccountData('completed', state.completed);
     toast('Novena day completed');
-    syncCloud('completed');
+    novenaProgressRevision++;
+    void syncCloud('completed');
   }
   renderNovena();
+};
+
+$('resetNovenaDays').onclick = async () => {
+  if (!canUseApp() || !state.supabase || resettingNovenaDays || deletingDevotionalData) return;
+  if (!confirm(tr('Reset this Novena schedule to Day 1? Your completed days for this schedule will be cleared.'))) return;
+
+  const userId = state.user.id;
+  const resetDates = new Set(novenaSchedule.map(({isoDate}) => isoDate));
+  resettingNovenaDays = true;
+  novenaProgressRevision++;
+  renderNovena();
+  try {
+    await Promise.allSettled(activeDevotionalSaves);
+    if (state.user?.id !== userId) return;
+    const { data, error: readError } = await state.supabase.from('stonino_profiles')
+      .select('completed').eq('user_id', userId).maybeSingle();
+    if (readError) throw readError;
+    if (state.user?.id !== userId) return;
+    const completed = [...new Set([...state.completed, ...normalizeCompleted(data?.completed)])]
+      .filter(date => !resetDates.has(date));
+    const { error } = await state.supabase.from('stonino_profiles').upsert({
+      user_id: userId,
+      completed,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+    if (error) throw error;
+    store.set('account.' + userId + '.completed', completed);
+    if (state.user?.id !== userId) return;
+    state.completed = completed;
+    state.day = hasNovenaDayStarted(0, Date.now()) ? 0 : null;
+    toast('Novena days reset.');
+  } catch (error) {
+    console.warn(error);
+    if (state.user?.id === userId) toast('Could not reset Novena days. Please try again.');
+  } finally {
+    novenaProgressRevision++;
+    resettingNovenaDays = false;
+    renderNovena();
+  }
 };
 
 function displayPrayer(key){currentPrayer=key;$('extraPrayer').textContent=prayerLocale()?.prayers[key] ?? prayers[key];document.querySelectorAll('[data-prayer]').forEach(e=>e.classList.toggle('selected',e.dataset.prayer===key))}document.querySelectorAll('[data-prayer]').forEach(e=>e.onclick=()=>displayPrayer(e.dataset.prayer));
@@ -739,6 +783,7 @@ async function loadCloud() {
   if (!state.user || !state.supabase) return;
   const userId = state.user.id;
   const revision = offeringRevision;
+  const progressRevision = novenaProgressRevision;
   try {
     const { data, error } = await state.supabase.from('stonino_profiles')
       .select('candles,novena_candles,novena_flowers,intentions,completed')
@@ -756,9 +801,11 @@ async function loadCloud() {
     }
     const intentions = Array.isArray(data.intentions) ? data.intentions : [];
     state.intentions = [...new Map([...intentions, ...state.intentions].map(item => [item.id, item])).values()];
-    state.completed = [...new Set([...state.completed, ...normalizeCompleted(data.completed)])];
+    if (!resettingNovenaDays && progressRevision === novenaProgressRevision && activeDevotionalSaves.size === 0) {
+      state.completed = [...new Set(normalizeCompleted(data.completed))];
+      saveAccountData('completed', state.completed);
+    }
     saveAccountData('intentions', state.intentions);
-    saveAccountData('completed', state.completed);
     renderCandles();
     renderNovenaCandles();
     renderFlowers();
@@ -785,6 +832,7 @@ async function syncCloud(key) {
     toast('Saved locally. Cloud sync needs attention.');
   } finally {
     activeDevotionalSaves.delete(save);
+    if (key === 'completed') novenaProgressRevision++;
   }
 }
 
@@ -847,7 +895,7 @@ async function signOutOfApp() {
 }
 for (const button of signOutButtons) button.onclick = signOutOfApp;
 $('deleteAccount').onclick = async () => {
-  if (!state.user || !state.supabase || deletingDevotionalData || clearingOfferings || spendingCredit || packBusy) return;
+  if (!state.user || !state.supabase || deletingDevotionalData || resettingNovenaDays || clearingOfferings || spendingCredit || packBusy) return;
   if (!confirm(tr('Delete your Sto. Niño Devotional profile, devotional data and unused credits, and sign out of this app? Your CrownMind login and access to other apps will be preserved.'))) return;
 
   const userId = state.user.id;

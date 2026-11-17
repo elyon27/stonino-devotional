@@ -1,5 +1,10 @@
 window.stoninoFilipinoPrayers = {
   messages: {
+    "Reset Days": "I-reset ang mga araw",
+    "Reset this Novena schedule to Day 1? Your completed days for this schedule will be cleared.": "Magsimula muli sa Araw 1 ng nobena? Mabubura ang mga marka ng natapos na araw sa iskedyul na ito.",
+    "Novena days reset.": "Na-reset ang mga araw ng nobena.",
+    "Could not reset Novena days. Please try again.": "Hindi na-reset ang mga araw ng nobena. Subukan muli.",
+
     "Log Out": "Mag-log out",
     "Sign out": "Mag-sign out",
     "Signed out": "Nakapag-sign out ka na.",
