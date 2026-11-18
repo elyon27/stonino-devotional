@@ -1,4 +1,4 @@
-# Sto. Niño Devotional v1.2.36
+# Sto. Niño Devotional v1.2.38
 
 The web interface was recovered from the signed Android v1.2.27 APK. The Android-only request bridge was removed from the web page so Prayer Pack requests use the Netlify endpoint. Netlify configuration, server functions, build script, and reference SQL come from the v1.2.28 web package.
 
