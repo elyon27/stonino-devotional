@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { cp, copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 
 const sourceDirectory = new URL('../assets/apk/', import.meta.url);
 const apkDirectory = new URL('../public/assets/apk/', import.meta.url);
@@ -64,3 +64,7 @@ const updated = page.replace(installLink, (_, start, end) => start + 'assets/apk
 if (updated !== page) await writeFile(indexFile, updated);
 await writeFile(releaseIndex, JSON.stringify({ filename: latest.name }) + '\n');
 console.log('Install App points to ' + latest.name);
+
+// Serve QR downloads separately so the checkout can still display the original images.
+await cp(new URL('../public/assets/gcash-packs/', import.meta.url),
+  new URL('../public/downloads/gcash-qr/', import.meta.url), { recursive: true });

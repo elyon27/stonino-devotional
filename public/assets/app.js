@@ -1408,8 +1408,15 @@ function showPersonalPackQr(credits) {
     ? `Confirm the recipient and the ${amount} amount in GCash before sending.`
     : `Enter ${amount} in GCash and confirm the recipient before sending.`;
   const download = $('prayerPackPersonalQrDownload');
-  download.href = qr.image;
-  download.download = qr.image.split('/').at(-1);
+  const filename = qr.image.split('/').at(-1);
+  const nativeApp = location.hostname === 'appassets.androidplatform.net';
+  const downloadUrl = 'downloads/gcash-qr/' + filename;
+  download.href = nativeApp ? 'https://stonino-devotional.netlify.app/' + downloadUrl : downloadUrl;
+  if (nativeApp) {
+    download.removeAttribute('download');
+  } else {
+    download.download = 'gcash-prayer-pack-' + filename;
+  }
 }
 
 async function startPrayerPack(credits, selectedMethod) {
