@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#8B1E2D"><meta name="description" content="A Catholic devotional sanctuary honoring Señor Santo Niño de Cebu.">
   <title>Sto. Niño | Cebu Heritage Chapel</title>
-  <link rel="stylesheet" href="assets/styles.css?v=1.2.32"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/styles.css?v=1.2.36"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/chapel-icon-192.png">
   <script defer src="assets/install.js?v=1.2.31"></script>
@@ -13,7 +13,7 @@
 <a class="skip" href="#main">Skip to main content</a>
 <div class="app-shell">
 <header class="topbar">
-  <a class="identity" href="#sanctuary" data-nav="sanctuary" aria-label="Sto. Niño home"><img src="assets/chapel-logo.svg" alt="" width="40" height="40"><span><strong>SEÑOR SANTO NIÑO</strong><small>Cebu Heritage Chapel</small><span class="release-version">v1.2.35</span></span></a>
+  <a class="identity" href="#sanctuary" data-nav="sanctuary" aria-label="Sto. Niño home"><img src="assets/chapel-logo.svg" alt="" width="40" height="40"><span><strong>SEÑOR SANTO NIÑO</strong><small>Cebu Heritage Chapel</small><span class="release-version">v1.2.36</span></span></a>
   <span id="devotionalUserName" class="devotional-user-name" hidden></span>
   <div class="header-actions"><button class="text-control" id="soundBtn" title="Toggle ambient sound" hidden>Sound off</button><button class="text-control" id="langBtn" aria-label="Change language">English ▾</button><button class="text-control" id="themeBtn" type="button" title="Switch between light and dark backgrounds" aria-label="Switch to dark mode" aria-pressed="false">☾ Dark</button><button class="text-control" id="fontBtn" title="Increase text size">A+</button><button class="text-control" id="authBtn">My Account</button><button class="text-control" id="headerSignOut" type="button" hidden>Log Out</button></div>
   <div class="payment-awaiting-header">
@@ -89,7 +89,7 @@
 </div>
 <section class="page" id="prayerPacks" aria-labelledby="prayerPacksTitle">
   <h2 id="prayerPacksTitle">Prayer Packs</h2>
-  <p class="lead">Pay with PayPal in USD. Credits are added when PayPal confirms your payment. Each candle or bouquet uses one credit.</p>
+  <p class="lead">Pay with GCash in Philippine pesos or PayPal in US dollars. Each candle or bouquet uses one credit.</p>
   <div class="panel">
     <p><strong id="prayerPackBalance" aria-live="polite">Remaining Balance 0</strong></p>
     <div id="paymentDeclineNotices" hidden aria-label="Declined payment references"></div>
@@ -111,20 +111,73 @@
     </template>
     <p id="prayerPackStatus" role="status">Checking checkout availability…</p>
     <div class="prayer-pack-grid">
-      <button type="button" class="btn outline" data-prayer-pack="50" data-price-usd="1" disabled><strong>50 credits</strong><span>$1</span></button>
-      <button type="button" class="btn outline" data-prayer-pack="150" data-price-usd="3" disabled><strong>150 credits</strong><span>$3</span></button>
-      <button type="button" class="btn outline" data-prayer-pack="250" data-price-usd="5" disabled><strong>250 credits</strong><span>$5</span></button>
-      <button type="button" class="btn outline" data-prayer-pack="500" data-price-usd="10" disabled><strong>500 credits</strong><span>$10</span></button>
+      <div class="prayer-pack-card">
+        <strong>50 credits</strong>
+        <div class="prayer-pack-prices">₱50 · $1 USD</div>
+        <div class="prayer-pack-methods">
+          <button type="button" class="btn outline" data-prayer-pack="50" data-payment-method="gcash" aria-label="Gcash · 50 credits · ₱50" disabled>Gcash</button>
+          <button type="button" class="btn outline" data-prayer-pack="50" data-payment-method="paypal" data-price-usd="1" aria-label="Paypal · 50 credits · $1 USD" disabled>Paypal</button>
+        </div>
+      </div>
+      <div class="prayer-pack-card">
+        <strong>150 credits</strong>
+        <div class="prayer-pack-prices">₱150 · $3 USD</div>
+        <div class="prayer-pack-methods">
+          <button type="button" class="btn outline" data-prayer-pack="150" data-payment-method="gcash" aria-label="Gcash · 150 credits · ₱150" disabled>Gcash</button>
+          <button type="button" class="btn outline" data-prayer-pack="150" data-payment-method="paypal" data-price-usd="3" aria-label="Paypal · 150 credits · $3 USD" disabled>Paypal</button>
+        </div>
+      </div>
+      <div class="prayer-pack-card">
+        <strong>250 credits</strong>
+        <div class="prayer-pack-prices">₱250 · $5 USD</div>
+        <div class="prayer-pack-methods">
+          <button type="button" class="btn outline" data-prayer-pack="250" data-payment-method="gcash" aria-label="Gcash · 250 credits · ₱250" disabled>Gcash</button>
+          <button type="button" class="btn outline" data-prayer-pack="250" data-payment-method="paypal" data-price-usd="5" aria-label="Paypal · 250 credits · $5 USD" disabled>Paypal</button>
+        </div>
+      </div>
+      <div class="prayer-pack-card">
+        <strong>500 credits</strong>
+        <div class="prayer-pack-prices">₱500 · $10 USD</div>
+        <div class="prayer-pack-methods">
+          <button type="button" class="btn outline" data-prayer-pack="500" data-payment-method="gcash" aria-label="Gcash · 500 credits · ₱500" disabled>Gcash</button>
+          <button type="button" class="btn outline" data-prayer-pack="500" data-payment-method="paypal" data-price-usd="10" aria-label="Paypal · 500 credits · $10 USD" disabled>Paypal</button>
+        </div>
+      </div>
     </div>
     <div class="button-row">
       <button class="btn outline" id="refreshPrayerPacks" type="button">Refresh balance</button>
-      <button class="btn gold" id="continuePrayerPack" type="button" hidden>Resume PayPal checkout</button>
+      <button class="btn gold" id="continuePrayerPack" type="button" hidden>Resume checkout</button>
       <button class="btn outline" id="cancelPrayerPack" type="button" hidden>Cancel Prayer Pack</button>
     </div>
     <div id="prayerPackSelection" hidden>
       <h3 id="prayerPackSelectionTitle"></h3>
-      <a id="prayerPackHosted" class="btn gold">Continue to PayPal</a>
+      <a id="prayerPackHosted" class="btn gold" hidden>Continue to PayPal</a>
+      <div id="prayerPackPersonalQr" class="prayer-pack-qr" hidden>
+        <p>Open <strong>GCash → QR</strong> and scan the code below. On the same phone, download the QR and upload it from GCash’s QR scanner.</p>
+        <div class="gcash-scan-frame">
+          <img id="prayerPackPersonalQrImage" alt="Recipient’s personal GCash Receive Money QR" width="1080" height="2023">
+        </div>
+        <p id="prayerPackPersonalQrAmount"></p>
+        <a id="prayerPackPersonalQrDownload" class="btn outline" download>Download QR for GCash</a>
+        <form id="prayerPackTransfer" class="prayer-pack-reference" hidden>
+          <label for="prayerPackReference">GCash payment reference</label>
+          <input id="prayerPackReference" autocomplete="off" maxlength="40" required>
+          <p>Enter the transaction reference from your GCash receipt after paying.</p>
+          <button id="submitPrayerPackReference" type="submit" class="btn gold" disabled>Submit payment reference</button>
+        </form>
+      </div>
     </div>
+    <div id="prayerPackQr" class="prayer-pack-qr" hidden>
+      <h3 id="prayerPackQrTitle">Pay with GCash</h3>
+      <p>Open GCash and scan this QR with another device, or download it and upload it from GCash’s QR scanner.</p>
+      <img id="prayerPackQrImage" alt="GCash-compatible QR Ph payment code" width="256" height="256">
+      <p id="prayerPackQrExpiry"></p>
+      <div class="button-row">
+        <a id="prayerPackQrDownload" class="btn outline" download="prayer-pack-qr.png">Download payment QR</a>
+        <a id="prayerPackMerchantHosted" class="btn outline">Open payment page</a>
+      </div>
+    </div>
+
   </div>
 </section>
 <section class="page active" id="sanctuary" aria-labelledby="homeTitle">
@@ -312,7 +365,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <template id="cebuanoScriptureCredit"><a href="https://ebible.org/cebocb/copyright.htm" target="_blank" rel="noopener">Biblica® Open Ang Pulong sa Dios™</a> · © 2009, 2010, 2014, 2024 Biblica, Inc. · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></template>
 <script src="assets/cebuano.js?v=1.2.31"></script><script src="assets/filipino-prayers.js?v=1.2.31"></script><script src="assets/localize.js?v=tagalog-prayers"></script>
-<script src="assets/config.js?v=1.2.35"></script><script src="assets/offering-prayers.js?v=1.2.24"></script><script src="assets/app.js?v=1.2.35"></script>
+<script src="assets/config.js?v=1.2.36"></script><script src="assets/offering-prayers.js?v=1.2.24"></script><script src="assets/app.js?v=1.2.36"></script>
 <script src="assets/music/tracks.js"></script><script src="assets/music-prayers.js?v=bundled-tracks"></script>
 <script src="assets/new-testament-web.js"></script><script src="assets/new-testament-cebuano.js"></script><script src="assets/new-testament-tagalog.js"></script><script src="assets/scripture-ticker.js?v=1.2.27"></script>
 </body></html>

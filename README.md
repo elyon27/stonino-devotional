@@ -1,4 +1,4 @@
-# Sto. Niño Devotional v1.2.35
+# Sto. Niño Devotional v1.2.36
 
 The web interface was recovered from the signed Android v1.2.27 APK. The Android-only request bridge was removed from the web page so Prayer Pack requests use the Netlify endpoint. Netlify configuration, server functions, build script, and reference SQL come from the v1.2.28 web package.
 
@@ -14,12 +14,14 @@ Run `npm ci` and `npm run build` from this directory. To preview static pages, r
 
 Deploy the extracted project directory with Netlify. Its configuration publishes `public/` and uses `netlify/functions/`. For the existing site, retain its configured environment variables. The `sql/` files are reference migrations. Check your database migration history before applying any of them.
 
-## PayPal Prayer Packs
+## Prayer Pack checkout
 
-New Prayer Packs use PayPal Checkout in USD. The prices are $1 for 50 credits,
-$3 for 150, $5 for 250, and $10 for 500. The server checks the captured payment
-before crediting the wallet. The existing Payment Review page handles earlier
-GCash claims.
+Each Prayer Pack offers GCash in PHP and PayPal in USD. GCash charges ₱50,
+₱150, ₱250, or ₱500 for the corresponding number of credits. Direct GCash
+payments use the recipient QR and the member submits a transaction reference
+for Payment Review. Deployments that configure merchant mode retain QR Ph
+checkout and server-side payment verification. PayPal charges $1, $3, $5,
+or $10, and the server verifies the capture before adding credits.
 
 Set these environment variables for Netlify Functions:
 
