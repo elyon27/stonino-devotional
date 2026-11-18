@@ -1,4 +1,4 @@
-# Sto. Niño Devotional v1.2.34
+# Sto. Niño Devotional v1.2.35
 
 The web interface was recovered from the signed Android v1.2.27 APK. The Android-only request bridge was removed from the web page so Prayer Pack requests use the Netlify endpoint. Netlify configuration, server functions, build script, and reference SQL come from the v1.2.28 web package.
 
@@ -13,3 +13,22 @@ The **3D Sto. Nino** card follows **Sto. Nino Pictures** in the Sanctuary grid. 
 Run `npm ci` and `npm run build` from this directory. To preview static pages, run `python3 -m http.server 8000 --directory public` and visit http://localhost:8000. The static preview does not run Netlify functions.
 
 Deploy the extracted project directory with Netlify. Its configuration publishes `public/` and uses `netlify/functions/`. For the existing site, retain its configured environment variables. The `sql/` files are reference migrations. Check your database migration history before applying any of them.
+
+## PayPal Prayer Packs
+
+New Prayer Packs use PayPal Checkout in USD. The prices are $1 for 50 credits,
+$3 for 150, $5 for 250, and $10 for 500. The server checks the captured payment
+before crediting the wallet. The existing Payment Review page handles earlier
+GCash claims.
+
+Set these environment variables for Netlify Functions:
+
+- `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` from the PayPal REST app.
+- `PAYPAL_MODE` set to `live` for production or `sandbox` for a test deployment.
+- `PAYPAL_RETURN_URL` set to the HTTPS app URL for that deployment.
+
+Use a separate Supabase test database for sandbox checkout. Retain the existing
+Supabase credentials and Prayer Pack settlement function in production. Test
+approval, cancellation, and repeated balance refresh with sandbox accounts
+before switching production to live credentials. Keep credentials in Netlify
+and out of GitHub.
