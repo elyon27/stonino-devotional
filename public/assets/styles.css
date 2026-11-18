@@ -327,12 +327,22 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   gap: .75rem;
   margin-block: 1rem;
 }
-.prayer-pack-grid > button {
+.prayer-pack-card {
   display: grid;
-  justify-items: center;
+  align-content: start;
+  gap: .5rem;
+  padding: .75rem;
+  border: 1px solid var(--line);
+  border-radius: .5rem;
+}
+.prayer-pack-card strong { font-size: 1.15em; }
+.prayer-pack-methods {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: .35rem;
 }
-.prayer-pack-grid > button strong { font-size: 1.15em; }
+.prayer-pack-methods .btn { padding-inline: .65rem; }
 
 .prayer-pack-qr {
   padding-block: 1rem;

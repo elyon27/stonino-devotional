@@ -26,10 +26,20 @@ export default async function handler(request) {
   const project = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const merchantConfigured = Boolean(api && merchantKey && notificationKey?.length >= 32);
+  const checkoutOrigin = httpsUrl(process.env.PRAYER_PACK_CHECKOUT_ORIGIN);
+  const useDirect = process.env.PRAYER_PACK_PAYMENT_MODE !== 'merchant';
+  const gcashAvailable = Boolean(useDirect || (merchantConfigured && site && checkoutOrigin));
   const reviewToken = process.env.GCASH_REVIEW_TOKEN ?? '';
   const paypal = paypalCheckout(httpsUrl(process.env.PAYPAL_RETURN_URL) || site);
   const action = new URL(request.url).searchParams.get('action');
-  if (request.method === 'GET' && action === 'ready') return reply(200, { available: Boolean(project && serviceKey && paypal) });
+  if (request.method === 'GET' && action === 'ready') {
+    const databaseAvailable = Boolean(project && serviceKey);
+    return reply(200, {
+      available: databaseAvailable && (gcashAvailable || Boolean(paypal)),
+      gcash: databaseAvailable && gcashAvailable,
+      paypal: databaseAvailable && Boolean(paypal)
+    });
+  }
   if (request.method !== 'POST') return reply(405, {});
   const review = action === 'review' || action === 'approve';
   const dashboard = ['admin-session', 'admin-list', 'admin-confirm', 'admin-decline', 'admin-members', 'admin-awaiting'].includes(action);
@@ -227,8 +237,53 @@ export default async function handler(request) {
     }
 
     if (action === 'checkout') {
-      return reply(409, { error: 'New Prayer Packs use PayPal. Open the current web app to continue.' });
+      if (![20, 50, 100, 150, 200, 250, 500].includes(body.credits) || (order && order.credits !== body.credits)) return reply(400, { error: 'Invalid Prayer Pack.' });
+      if (!gcashAvailable) return reply(503, { error: 'GCash checkout is temporarily unavailable.' });
+      if (order?.paid_at) return reply(200, { status: 'paid' });
+      if (!order) {
+        const created = await orders.upsert({
+          id: body.orderId, user_id: userId, credits: body.credits
+        }, { onConflict: 'id', ignoreDuplicates: true }).select().maybeSingle();
+        if (created.error) throw created.error;
+        if (!created.data) return reply(409, { error: 'Checkout is being prepared. Please retry.' });
+        order = created.data;
+      }
+      if (order.provider_id?.startsWith(directPrefix)) return reply(200, { status: 'review' });
+      if (order.provider_id?.startsWith('paypal-')) {
+        return reply(409, { error: 'This order is already linked to PayPal.' });
+      }
+      if (useDirect && !order.provider_id) {
+        return reply(200, { paymentMethod: 'gcash-qr', credits: order.credits, createdAt: order.created_at });
+      }
+      if (!merchantConfigured || !site || !checkoutOrigin) return reply(503, { error: 'Merchant checkout is currently unavailable.' });
+      const back = new URL(site);
+      back.searchParams.set('prayerPackOrder', order.id);
+      back.hash = 'prayerPacks';
+      const session = await merchant('checkouts', {
+        orderId: order.id, amountCentavos: order.credits * 100, currency: 'PHP', paymentMethod: 'qrph', returnUrl: back.href
+      });
+      const checkout = httpsUrl(session.checkoutUrl);
+      const qr = session.qrPngBase64;
+      if (typeof session.id !== 'string' || !session.id || checkout?.origin !== checkoutOrigin.origin ||
+          typeof qr !== 'string' || qr.length > 350000 || !/^iVBORw0KGgo[A-Za-z0-9+/]+={0,2}$/.test(qr) ||
+          !Number.isFinite(Date.parse(session.expiresAt)) || order.provider_id && order.provider_id !== session.id) {
+        throw new Error('Invalid merchant QR checkout');
+      }
+      const checkoutResult = Date.parse(session.expiresAt) <= Date.now() ? { status: 'expired' } : {
+        qrPngBase64: qr, expiresAt: session.expiresAt, checkoutUrl: checkout.href, credits: order.credits
+      };
+      if (order.provider_id) return reply(200, checkoutResult);
+      const saved = await orders.update({ provider_id: session.id, checkout_url: checkout.href })
+        .eq('id', order.id).eq('user_id', userId).is('provider_id', null).select('provider_id,checkout_url').maybeSingle();
+      if (saved.error) throw saved.error;
+      if (!saved.data) {
+        const existing = await orders.select('provider_id,checkout_url').eq('id', order.id).single();
+        if (existing.error || existing.data.provider_id !== session.id) throw new Error('Merchant checkout mismatch');
+        return reply(200, checkoutResult);
+      }
+      return reply(200, checkoutResult);
     }
+
     if (action === 'paypal-checkout') {
       if (!paypal) return reply(503, { error: 'PayPal checkout is temporarily unavailable.' });
       if (!paypal.price(body.credits) || (order && order.credits !== body.credits)) {
@@ -275,7 +330,7 @@ export default async function handler(request) {
         return reply(503, { error: 'PayPal confirmation is temporarily unavailable.' });
       }
       const status = await paypal.status(order);
-      if (status !== 'paid') return reply(200, { status, credits: order.credits });
+      if (status !== 'paid') return reply(200, { status, credits: order.credits, method: 'paypal' });
       // The existing settlement RPC validates this credit-based field against the order.
       // The independent PayPal check above validates the actual USD capture amount.
       const settled = await admin.rpc('stonino_settle_prayer_pack', {
@@ -287,7 +342,7 @@ export default async function handler(request) {
     if (!merchantConfigured) return reply(503, { error: 'Merchant checkout is currently unavailable.' });
     const payment = await merchant('checkouts/' + encodeURIComponent(order.provider_id));
     if (payment.status === 'expired' || payment.status === 'cancelled') return reply(200, { status: 'expired' });
-    if (payment.status !== 'paid') return reply(200, { status: 'pending' });
+    if (payment.status !== 'paid') return reply(200, { status: 'pending', credits: order.credits, method: 'gcash' });
     if (payment.id !== order.provider_id || payment.orderId !== order.id ||
         payment.currency !== 'PHP' || payment.amountCentavos !== order.credits * 100) {
       throw new Error('Merchant payment mismatch');

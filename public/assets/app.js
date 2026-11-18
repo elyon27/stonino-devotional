@@ -694,9 +694,9 @@ async function setAccountUser(user) {
       }
     }
     packBalance = null;
-    hidePayPalCheckout();
+    hidePrayerPackCheckout();
     packBusy = false;
-    packAvailable = false;
+    packAvailability = {};
     packMessage = '';
     packRevision++;
     renderPrayerPacks();
@@ -944,7 +944,7 @@ $('deleteAccount').onclick = async () => {
 };
 
 let packBalance = null;
-let packAvailable = false;
+let packAvailability = {};
 let packBusy = false;
 let packMessage = '';
 let packRevision = 0;
@@ -959,7 +959,40 @@ function requestPrayerPack(action, options) {
 const packButtons = [...document.querySelectorAll('[data-prayer-pack]')];
 const packOrderKey = 'pendingPrayerPack';
 const paymentDeclineMessage = 'Payment Transaction Reference Does Not Match';
-function hidePayPalCheckout() {
+let packRefreshTimer;
+let packQrExpiry = 0;
+
+function clearPrayerPackQr() {
+  clearTimeout(packRefreshTimer);
+  packQrExpiry = 0;
+  $('prayerPackQr').hidden = true;
+  $('prayerPackQrImage').removeAttribute('src');
+  $('prayerPackQrDownload').removeAttribute('href');
+  $('prayerPackMerchantHosted').removeAttribute('href');
+}
+
+function watchPrayerPackQr() {
+  clearTimeout(packRefreshTimer);
+  if (!packQrExpiry) return;
+  if (Date.now() >= packQrExpiry) {
+    clearPrayerPackQr();
+    packMessage = 'The QR code expired. Check the payment status before trying again.';
+    renderPrayerPacks();
+    return;
+  }
+  packRefreshTimer = setTimeout(() => {
+    if (document.hidden || location.hash !== '#prayerPacks') watchPrayerPackQr();
+    else void refreshPrayerPacks();
+  }, Math.min(8000, packQrExpiry - Date.now()));
+}
+
+function hidePrayerPackCheckout() {
+  clearPrayerPackQr();
+  $('prayerPackPersonalQr').hidden = true;
+  $('prayerPackPersonalQrImage').removeAttribute('src');
+  $('prayerPackTransfer').reset();
+  $('prayerPackTransfer').dataset.ready = 'false';
+  $('prayerPackHosted').hidden = true;
   $('prayerPackSelection').hidden = true;
   $('prayerPackHosted').removeAttribute('href');
 }
@@ -1001,14 +1034,14 @@ function showPaymentDeclineNotices(notices) {
 
 function clearPrayerPackCheckout() {
   saveAccountData(packOrderKey, null);
-  hidePayPalCheckout();
+  hidePrayerPackCheckout();
   clearPayPalReturn();
 }
 
 async function cancelPrayerPack() {
   const pending = readAccountData(packOrderKey, null);
   if (!canUseApp() || !pending?.orderId || pending.status === 'review' || packBusy || deletingDevotionalData) return;
-  if (!confirm('Cancel this Prayer Pack selection? If you completed PayPal checkout, refresh your balance first.')) return;
+  if (!confirm('Cancel this Prayer Pack selection? If you already paid, refresh your balance first.')) return;
   const userId = state.user.id;
   packBusy = true;
   packMessage = 'Cancelling your Prayer Pack selection…';
@@ -1067,7 +1100,9 @@ function renderPrayerPacks() {
   const canResume = Boolean(pending?.credits) && pending.status !== 'review';
   const canCancel = Boolean(pending?.orderId) && pending.status !== 'review';
   $('continuePrayerPack').hidden = !canResume;
-  $('continuePrayerPack').disabled = !packAvailable || packBusy || deletingDevotionalData;
+  const method = pending?.method ?? 'paypal';
+  $('continuePrayerPack').textContent = method === 'gcash' ? 'Resume GCash payment' : 'Resume PayPal checkout';
+  $('continuePrayerPack').disabled = !packAvailability[method] || packBusy || deletingDevotionalData;
   $('cancelPrayerPack').hidden = !canCancel;
   $('cancelPrayerPack').disabled = packBusy || deletingDevotionalData;
   $('refreshPrayerPacks').disabled = packBusy;
@@ -1076,7 +1111,11 @@ function renderPrayerPacks() {
   for (const control of $('paymentDeclineNotices').querySelectorAll('button, input')) {
     control.disabled = packBusy || deletingDevotionalData;
   }
-  for (const button of packButtons) button.disabled = !packAvailable || packBusy || Boolean(pending);
+  $('submitPrayerPackReference').disabled = packBusy || deletingDevotionalData ||
+    $('prayerPackTransfer').dataset.ready !== 'true';
+  for (const button of packButtons) {
+    button.disabled = !packAvailability[button.dataset.paymentMethod] || packBusy || deletingDevotionalData || Boolean(pending);
+  }
 }
 
 async function packRequest(action, body) {
@@ -1285,12 +1324,21 @@ async function refreshPrayerPacks() {
     if (state.user?.id !== userId) return;
     if (Array.isArray(notice?.notices)) showPaymentDeclineNotices(notice.notices);
     else if (!notice) packMessage = 'Could not check declined payment references. Refresh to try again.';
-    packAvailable = readiness?.available === true;
+    packAvailability = {
+      paypal: readiness?.paypal === true,
+      gcash: readiness?.gcash === true
+    };
     const pending = readAccountData(packOrderKey, null);
     const returnParams = new URL(location.href).searchParams;
     const returnOrder = returnParams.get('prayerPackOrder');
     const orderId = returnOrder || pending?.orderId;
-    if (notice) packMessage = packAvailable ? '' : 'PayPal checkout is temporarily unavailable.';
+    if (notice) {
+      packMessage = [
+        !packAvailability.gcash && 'GCash',
+        !packAvailability.paypal && 'PayPal'
+      ].filter(Boolean).join(' and ');
+      if (packMessage) packMessage += ' checkout temporarily unavailable.';
+    }
     if (orderId) {
       const result = await packRequest('status', { orderId });
       if (state.user?.id !== userId) return;
@@ -1306,16 +1354,21 @@ async function refreshPrayerPacks() {
         }[result.status];
       } else if (result.status === 'review') {
         if (pending?.orderId === orderId) saveAccountData(packOrderKey, { ...pending, status: 'review' });
-        hidePayPalCheckout();
+        hidePrayerPackCheckout();
         clearPayPalReturn();
-        packMessage = 'Your previous GCash payment is awaiting admin review.';
+        packMessage = 'Your GCash payment is awaiting admin review.';
       } else if (returnParams.get('prayerPackCancelled') === '1' && result.status === 'unapproved') {
         if (currentSelection) clearPrayerPackCheckout();
         else clearPayPalReturn();
         packMessage = 'Checkout cancelled. Choose a Prayer Pack to try again.';
       } else {
-        if (currentSelection && result.credits) saveAccountData(packOrderKey, { orderId, credits: result.credits });
-        packMessage = 'Waiting for payment confirmation. Refresh your balance after completing PayPal checkout.';
+        const method = result.method ?? pending?.method ?? 'paypal';
+        if (currentSelection && result.credits) {
+          saveAccountData(packOrderKey, { orderId, credits: result.credits, method });
+        }
+        packMessage = method === 'gcash' && !$('prayerPackTransfer').hidden
+          ? 'Submit the reference from your GCash receipt after paying.'
+          : 'Waiting for payment confirmation. Refresh your balance after completing checkout.';
       }
     }
   } catch (error) {
@@ -1333,33 +1386,85 @@ async function refreshPrayerPacks() {
       if (state.user?.id === userId) {
         packBusy = false;
         renderPrayerPacks();
+        watchPrayerPackQr();
       }
     }
   }
 }
 
-async function startPrayerPack(credits) {
-  if (!canUseApp() || !packAvailable || packBusy || deletingDevotionalData) return;
+function showPersonalPackQr(credits) {
+  const panel = $('prayerPackPersonalQr');
+  const qr = config.prayerPackReceiveQr[credits] ?? config.prayerPackOpenAmountQr;
+  panel.hidden = !qr;
+  if (panel.hidden) return;
+
+  const amount = '₱' + credits;
+  const image = $('prayerPackPersonalQrImage');
+  image.alt = amount + ' Prayer Pack GCash payment QR';
+  image.src = qr.image;
+  $('prayerPackPersonalQrAmount').textContent = qr.amountEncoded
+    ? `Confirm the recipient and the ${amount} amount in GCash before sending.`
+    : `Enter ${amount} in GCash and confirm the recipient before sending.`;
+  const download = $('prayerPackPersonalQrDownload');
+  download.href = qr.image;
+  download.download = qr.image.split('/').at(-1);
+}
+
+async function startPrayerPack(credits, selectedMethod) {
+  if (!canUseApp() || packBusy || deletingDevotionalData) return;
   const userId = state.user.id;
-  const pending = readAccountData(packOrderKey, null) || { orderId: crypto.randomUUID(), credits };
-  if (!pending.credits || pending.status === 'review') return;
-  const pack = packButtons.find(button => Number(button.dataset.prayerPack) === pending.credits);
+  const savedOrder = readAccountData(packOrderKey, null);
+  const method = savedOrder ? (savedOrder.method ?? 'paypal') : selectedMethod;
+  if (!packAvailability[method] || savedOrder?.status === 'review') return;
+  const pending = savedOrder ?? { orderId: crypto.randomUUID(), credits, method };
+  const pack = packButtons.find(button => Number(button.dataset.prayerPack) === pending.credits &&
+    button.dataset.paymentMethod === method);
   if (!pack) {
     packMessage = 'Cancel this earlier selection to choose a current Prayer Pack.';
     renderPrayerPacks();
     return;
   }
   saveAccountData(packOrderKey, pending);
-  hidePayPalCheckout();
+  hidePrayerPackCheckout();
   packBusy = true;
-  packMessage = 'Preparing your PayPal checkout…';
+  packMessage = method === 'gcash' ? 'Preparing your GCash payment…' : 'Preparing your PayPal checkout…';
   renderPrayerPacks();
   try {
-    const result = await packRequest('paypal-checkout', pending);
+    const result = await packRequest(method === 'gcash' ? 'checkout' : 'paypal-checkout', pending);
     if (state.user?.id !== userId) return;
-    if (result.checkoutUrl) {
+    if (method === 'gcash' && result.paymentMethod === 'gcash-qr') {
+      clearPrayerPackQr();
+      showPersonalPackQr(result.credits);
+      $('prayerPackSelectionTitle').textContent = `₱${result.credits} · ${result.credits} credits`;
+      $('prayerPackSelection').hidden = false;
+      $('prayerPackTransfer').dataset.ready = 'true';
+      $('prayerPackTransfer').hidden = false;
+      packMessage = 'Your payment instructions are ready.';
+      return;
+    }
+    if (method === 'gcash' && result.qrPngBase64) {
+      $('prayerPackPersonalQr').hidden = true;
+      const image = 'data:image/png;base64,' + result.qrPngBase64;
+      packQrExpiry = Date.parse(result.expiresAt);
+      $('prayerPackQrImage').src = image;
+      $('prayerPackQrDownload').href = image;
+      $('prayerPackMerchantHosted').href = result.checkoutUrl;
+      $('prayerPackQrTitle').textContent = `Pay ₱${result.credits} with GCash`;
+      $('prayerPackQrExpiry').textContent = 'QR expires at ' + new Date(packQrExpiry).toLocaleTimeString([], {
+        hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila'
+      }) + ' Philippine time.';
+      $('prayerPackQr').hidden = false;
+      packMessage = 'Waiting for payment confirmation.';
+      watchPrayerPackQr();
+      return;
+    }
+    if (result.status === 'expired') {
+      clearPrayerPackCheckout();
+      packMessage = 'Checkout expired. Choose a pack to try again.';
+    } else if (method === 'paypal' && result.checkoutUrl) {
       $('prayerPackSelectionTitle').textContent = `$${pack.dataset.priceUsd} USD · ${pending.credits} credits`;
       $('prayerPackHosted').href = result.checkoutUrl;
+      $('prayerPackHosted').hidden = false;
       $('prayerPackSelection').hidden = false;
       packMessage = 'Your PayPal checkout is ready.';
     } else {
@@ -1367,7 +1472,7 @@ async function startPrayerPack(credits) {
       await refreshPrayerPacks();
     }
   } catch (error) {
-    if (state.user?.id === userId) packMessage = error.message || 'Could not prepare PayPal checkout.';
+    if (state.user?.id === userId) packMessage = error.message || 'Could not open checkout.';
   } finally {
     if (state.user?.id === userId) {
       packBusy = false;
@@ -1376,10 +1481,46 @@ async function startPrayerPack(credits) {
   }
 }
 
+$('prayerPackTransfer').onsubmit = async event => {
+  event.preventDefault();
+  const pending = readAccountData(packOrderKey, null);
+  if (!canUseApp() || !pending?.orderId || pending.method !== 'gcash' || packBusy || deletingDevotionalData || event.currentTarget.dataset.ready !== 'true') return;
+  const userId = state.user.id;
+  packBusy = true;
+  renderPrayerPacks();
+  try {
+    const result = await packRequest('claim', { orderId: pending.orderId, reference: $('prayerPackReference').value.trim() });
+    if (state.user?.id !== userId) return;
+    if (['declined', 'resolved'].includes(result.status)) {
+      packBusy = false;
+      await refreshPrayerPacks();
+      return;
+    }
+    if (result.status !== 'review' && result.status !== 'paid') throw Error('Could not verify that the reference was submitted.');
+    hidePrayerPackCheckout();
+    if (result.status === 'paid') {
+      clearPrayerPackCheckout();
+      packMessage = 'Payment already confirmed. Your credits are ready.';
+      await readPrayerBalance();
+    } else {
+      saveAccountData(packOrderKey, { ...pending, status: 'review' });
+      packMessage = 'Payment reference submitted. Your GCash payment is awaiting admin review.';
+    }
+    if (state.user?.id === userId) toast(packMessage);
+  } catch (error) {
+    if (state.user?.id === userId) packMessage = error.message || 'Could not submit your payment reference.';
+  } finally {
+    if (state.user?.id === userId) {
+      packBusy = false;
+      renderPrayerPacks();
+    }
+  }
+};
+
 $('refreshPrayerPacks').onclick = () => void refreshPrayerPacks();
 $('continuePrayerPack').onclick = () => void startPrayerPack();
 $('cancelPrayerPack').onclick = () => void cancelPrayerPack();
-for (const button of packButtons) button.onclick = () => void startPrayerPack(Number(button.dataset.prayerPack));
+for (const button of packButtons) button.onclick = () => void startPrayerPack(Number(button.dataset.prayerPack), button.dataset.paymentMethod);
 
 let spendingCredit = false;
 language();setFont(state.font);if(location.hash&&$(location.hash.slice(1))?.classList.contains('page'))nav(location.hash.slice(1));initCloud();function refreshDevotionalClock() {
