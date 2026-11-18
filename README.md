@@ -1,8 +1,8 @@
-# Sto. Niño Devotional v1.2.36
+# Sto. Niño Devotional v1.2.38
 
 The web interface was recovered from the signed Android v1.2.27 APK. The Android-only request bridge was removed from the web page so Prayer Pack requests use the Netlify endpoint. Netlify configuration, server functions, build script, and reference SQL come from the v1.2.28 web package.
 
-The Sanctuary hides the Install App link and Android instructions inside the native v1.2.31 APK and when the installed web app is opened in standalone mode. In a regular browser the download remains available. The web package currently includes the signed v1.2.27 APK. After signing a newer APK, put the signed file in `public/assets/apk/` and run the build to publish it as the latest download.
+The Sanctuary hides the Install App link and Android instructions inside the native v1.2.31 APK and when the installed web app is opened in standalone mode. In a regular browser the download remains available. The web package currently includes the signed v1.2.36 APK. After signing a newer APK, put the signed file in `public/assets/apk/` and run the build to publish it as the latest download.
 
 Reset Days clears completion marks for the displayed Novena schedule and saves the reset to the account. The existing early-opening confirmation applies before Day 1.
 
@@ -34,3 +34,11 @@ Supabase credentials and Prayer Pack settlement function in production. Test
 approval, cancellation, and repeated balance refresh with sandbox accounts
 before switching production to live credentials. Keep credentials in Netlify
 and out of GitHub.
+
+## v1.2.38 release
+
+GCash checkout shows the full QR for the 150, 250, and 500 credit packs.
+The Install App link serves the existing signed v1.2.36 APK until a signed
+v1.2.38 APK is added to `public/assets/apk/` and the site is rebuilt.
+For the direct-download Android update, put the separate unsigned v1.2.38 APK
+beside `sign-v1.2.38.ps1` and run the script with the existing signing key.

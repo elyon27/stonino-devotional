@@ -375,6 +375,15 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   border-radius: 0;
 }
 
+.gcash-scan-frame--full-image {
+  aspect-ratio: auto;
+}
+
+.gcash-scan-frame--full-image img {
+  position: static;
+  width: 100%;
+}
+
 .prayer-pack-reference { margin-top: 1rem; }
 
 [data-payment-review-entry][hidden] { display: none; }

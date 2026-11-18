@@ -1394,13 +1394,15 @@ async function refreshPrayerPacks() {
 
 function showPersonalPackQr(credits) {
   const panel = $('prayerPackPersonalQr');
-  const qr = config.prayerPackReceiveQr[credits] ?? config.prayerPackOpenAmountQr;
+  const fixedAmountQr = config.prayerPackReceiveQr[credits];
+  const qr = fixedAmountQr ?? config.prayerPackOpenAmountQr;
   panel.hidden = !qr;
   if (panel.hidden) return;
 
   const amount = '₱' + credits;
   const image = $('prayerPackPersonalQrImage');
   image.alt = amount + ' Prayer Pack GCash payment QR';
+  image.closest('.gcash-scan-frame').classList.toggle('gcash-scan-frame--full-image', !fixedAmountQr);
   image.src = qr.image;
   $('prayerPackPersonalQrAmount').textContent = qr.amountEncoded
     ? `Confirm the recipient and the ${amount} amount in GCash before sending.`
