@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 
 const sourceDirectory = new URL('../assets/apk/', import.meta.url);
@@ -29,8 +30,25 @@ releases.sort((a, b) => b.version[0] - a.version[0]
   || Number(a.test) - Number(b.test)
   || a.name.localeCompare(b.name));
 
-const latest = releases[0];
-if (!latest) throw new Error('No signed Sto. Niño Devotional APK found in assets/apk or public/assets/apk.');
+const releaseVersion = [1, 2, 35];
+const releaseFile = 'sto-nino-devotional-1.2.35-signed.apk';
+let latest = releases[0];
+const versionDelta = latest && (latest.version[0] - releaseVersion[0]
+  || latest.version[1] - releaseVersion[1] || latest.version[2] - releaseVersion[2]);
+
+if (!latest || versionDelta < 0 || (versionDelta === 0 && latest.test)) {
+  const releaseUrl = 'https://github.com/elyon27/stonino-devotional/releases/download/v1.2.35/' + releaseFile;
+  const response = await fetch(releaseUrl, { signal: AbortSignal.timeout(90000) });
+  if (!response.ok) throw new Error('Could not download the signed v1.2.35 APK: ' + response.status);
+  const apk = Buffer.from(await response.arrayBuffer());
+  const hash = createHash('sha256').update(apk).digest('hex');
+  if (hash !== '7e41204940470187211bc96e9eabe8b43cb92dee6bed129cc7f8eb0331e0c162') {
+    throw new Error('Signed v1.2.35 APK checksum mismatch.');
+  }
+  await mkdir(apkDirectory, { recursive: true });
+  await writeFile(new URL(releaseFile, apkDirectory), apk);
+  latest = { name: releaseFile, directory: apkDirectory };
+}
 
 const page = await readFile(indexFile, 'utf8');
 const installLink = /(<a\b[^>]*\bid="installApp"[^>]*\bhref=")[^"]*(")/g;
