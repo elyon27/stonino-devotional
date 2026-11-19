@@ -13,7 +13,7 @@ export async function sendPaymentAlert(admin, order) {
       from,
       to: ['leuneib01@gmail.com'],
       subject: 'Sto. Niño Prayer Pack payment awaiting verification',
-      text: `A buyer submitted a GCash payment reference for a ₱${order.credits} Prayer Pack. Sign in to Sto. Niño Devotional and open Payment Review to verify it against your GCash transaction history.`
+      text: `A buyer submitted a payment reference for a ₱${order.credits} Prayer Pack. Sign in to Sto. Niño Devotional and open Payment Review to verify it against the corresponding wallet’s transaction history.`
     }),
     signal: AbortSignal.timeout(6000)
   });

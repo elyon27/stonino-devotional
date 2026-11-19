@@ -1,44 +1,28 @@
-# Sto. Niño Devotional v1.2.38
+# Sto. Niño Devotional v1.2.40
 
-The web interface was recovered from the signed Android v1.2.27 APK. The Android-only request bridge was removed from the web page so Prayer Pack requests use the Netlify endpoint. Netlify configuration, server functions, build script, and reference SQL come from the v1.2.28 web package.
+Prayer Packs offer GCash, PayMaya, and PayPal under Payment Mode. PayMaya
+shows the corresponding QR for the 50, 150, 250, or 500 credit pack. Members
+submit a receipt reference, and an admin verifies the transfer under Payment
+Review before credits are added.
 
-The Sanctuary hides the Install App link and Android instructions inside the native v1.2.31 APK and when the installed web app is opened in standalone mode. In a regular browser the download remains available. The web package currently includes the signed v1.2.36 APK. After signing a newer APK, put the signed file in `public/assets/apk/` and run the build to publish it as the latest download.
+## Web deployment
 
-Reset Days clears completion marks for the displayed Novena schedule and saves the reset to the account. The existing early-opening confirmation applies before Day 1.
+Use the project root as the Netlify base directory. The included netlify.toml
+publishes public/ and runs the bundled Netlify Functions. Keep the existing
+site environment variables. PayMaya uses the existing Prayer Pack tables and
+admin functions. This release adds no database migration.
 
-The **3D Sto. Nino** card follows **Sto. Nino Pictures** in the Sanctuary grid. The **3D Sto. Nino** entry in the desktop and mobile navigation opens the looping GIF from `public/assets/santo-nino-360.gif`. The matching PowerShell signing script is included as `sign-v1.2.34.ps1` for use with the v1.2.34 Android build.
+For a local static preview, run npm run build and serve public/ over HTTP.
+Payment operations require the deployed Netlify Functions.
 
-## Preview and deployment
+## Direct-download Android release
 
-Run `npm ci` and `npm run build` from this directory. To preview static pages, run `python3 -m http.server 8000 --directory public` and visit http://localhost:8000. The static preview does not run Netlify functions.
+The web package contains the last signed APK, v1.2.39. Place the separately
+downloaded v1.2.40 unsigned APK beside sign-v1.2.40.ps1. Run the script in
+PowerShell with the existing Android signing keystore. Pass -Keystore or
+-SdkPath if your paths differ from the script defaults.
 
-Deploy the extracted project directory with Netlify. Its configuration publishes `public/` and uses `netlify/functions/`. For the existing site, retain its configured environment variables. The `sql/` files are reference migrations. Check your database migration history before applying any of them.
-
-## Prayer Pack checkout
-
-Each Prayer Pack offers GCash in PHP and PayPal in USD. GCash charges ₱50,
-₱150, ₱250, or ₱500 for the corresponding number of credits. Direct GCash
-payments use the recipient QR and the member submits a transaction reference
-for Payment Review. Deployments that configure merchant mode retain QR Ph
-checkout and server-side payment verification. PayPal charges $1, $3, $5,
-or $10, and the server verifies the capture before adding credits.
-
-Set these environment variables for Netlify Functions:
-
-- `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` from the PayPal REST app.
-- `PAYPAL_MODE` set to `live` for production or `sandbox` for a test deployment.
-- `PAYPAL_RETURN_URL` set to the HTTPS app URL for that deployment.
-
-Use a separate Supabase test database for sandbox checkout. Retain the existing
-Supabase credentials and Prayer Pack settlement function in production. Test
-approval, cancellation, and repeated balance refresh with sandbox accounts
-before switching production to live credentials. Keep credentials in Netlify
-and out of GitHub.
-
-## v1.2.38 release
-
-GCash checkout shows the full QR for the 150, 250, and 500 credit packs.
-The Install App link serves the existing signed v1.2.36 APK until a signed
-v1.2.38 APK is added to `public/assets/apk/` and the site is rebuilt.
-For the direct-download Android update, put the separate unsigned v1.2.38 APK
-beside `sign-v1.2.38.ps1` and run the script with the existing signing key.
+Place the resulting signed APK in public/assets/apk/ and run npm run build.
+The build updates the Install App link to the latest signed APK it finds.
+Deploy the updated website and functions so the Android PayMaya checkout can
+reach the updated backend.
