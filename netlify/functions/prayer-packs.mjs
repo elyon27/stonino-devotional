@@ -4,6 +4,11 @@ import { createClient } from '@supabase/supabase-js';
 import { timingSafeEqual, createHash } from 'node:crypto';
 
 const directPrefix = 'gcash-express:';
+const mayaPrefix = 'paymaya-express:';
+const mayaPendingPrefix = 'paymaya-pending:';
+const mayaCredits = [50, 150, 250, 500];
+const directMethod = providerId => providerId?.startsWith(mayaPrefix) ? 'paymaya'
+  : providerId?.startsWith(directPrefix) ? 'gcash' : null;
 const referencePattern = /^[A-Z0-9-]{8,40}$/;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const reply = (status, data) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -35,7 +40,8 @@ export default async function handler(request) {
   if (request.method === 'GET' && action === 'ready') {
     const databaseAvailable = Boolean(project && serviceKey);
     return reply(200, {
-      available: databaseAvailable && (gcashAvailable || Boolean(paypal)),
+      available: databaseAvailable,
+      paymaya: databaseAvailable,
       gcash: databaseAvailable && gcashAvailable,
       paypal: databaseAvailable && Boolean(paypal)
     });
@@ -81,7 +87,8 @@ export default async function handler(request) {
     }
     const body = await request.json().catch(() => null);
     const reference = typeof body?.reference === 'string' ? body.reference.trim().toUpperCase() : '';
-    const directId = directPrefix + hash(reference).toString('hex');
+    const referenceDigest = hash(reference).toString('hex');
+    const directId = directPrefix + referenceDigest;
     const orders = admin.from('stonino_prayer_pack_orders');
     if (action === 'admin-session') return reply(200, { admin: true });
     if (action === 'admin-awaiting') {
@@ -104,18 +111,23 @@ export default async function handler(request) {
       if (!Number.isSafeInteger(offset) || offset < 0) return reply(400, { error: 'Invalid page.' });
       const { data, error } = await admin.rpc('stonino_admin_pending_payments', { page_offset: offset });
       if (error) throw error;
-      return reply(200, { payments: data.slice(0, 50), more: data.length > 50 });
+      const payments = data.slice(0, 50);
+      if (!payments.length) return reply(200, { payments, more: false });
+      const sources = await orders.select('id,provider_id').in('id', payments.map(row => row.id));
+      if (sources.error) throw sources.error;
+      const methods = new Map(sources.data.map(row => [row.id, directMethod(row.provider_id)]));
+      return reply(200, { payments: payments.map(row => ({ ...row, method: methods.get(row.id) })), more: data.length > 50 });
     }
     if (action === 'decline-notice') {
       const notices = [];
       const pageSize = 200;
       for (let offset = 0; ; offset += pageSize) {
-        const { data, error } = await orders.select('id,payment_reference,credits').eq('user_id', userId)
+        const { data, error } = await orders.select('id,payment_reference,credits,provider_id').eq('user_id', userId)
           .not('declined_at', 'is', null).not('payment_reference', 'is', null)
           .is('paid_at', null).is('reference_resolved_at', null)
           .order('declined_at', { ascending: false }).order('id').range(offset, offset + pageSize - 1);
         if (error) throw error;
-        notices.push(...data.map(row => ({ orderId: row.id, reference: row.payment_reference, credits: row.credits })));
+        notices.push(...data.map(row => ({ orderId: row.id, reference: row.payment_reference, credits: row.credits, method: directMethod(row.provider_id) })));
         if (data.length < pageSize) break;
       }
       return reply(200, { notices, reference: notices[0]?.reference ?? null });
@@ -123,15 +135,18 @@ export default async function handler(request) {
     if (action === 'correct-reference' || action === 'cancel-reference') {
       if (typeof body?.orderId !== 'string' || !uuid.test(body.orderId)) return reply(400, { error: 'Invalid order.' });
       const correcting = action === 'correct-reference';
+      const original = await orders.select('provider_id').eq('id', body.orderId).eq('user_id', userId).maybeSingle();
+      if (original.error) throw original.error;
+      const isMaya = directMethod(original.data?.provider_id) === 'paymaya';
       if (correcting && !referencePattern.test(reference)) {
-        return reply(400, { error: 'Enter the transaction reference from your GCash receipt.' });
+        return reply(400, { error: 'Enter the transaction reference from your payment receipt.' });
       }
       const { data: replacementId, error } = await admin.rpc('stonino_resolve_declined_reference', {
         owner_id: userId, order_id: body.orderId,
         corrected_reference: correcting ? reference : null,
-        corrected_provider_id: correcting ? directId : null
+        corrected_provider_id: correcting ? (isMaya ? mayaPrefix + referenceDigest : directId) : null
       });
-      if (error?.code === '23505') return reply(409, { error: 'This GCash reference has already been submitted. Check your receipt and enter the correct reference.' });
+      if (error?.code === '23505') return reply(409, { error: 'This payment reference has already been submitted. Check your receipt and enter the correct reference.' });
       if (error?.message === 'declined_reference_unavailable') {
         return reply(409, { error: 'This notice has already been resolved or is unavailable. Refresh the Prayer Packs page.' });
       }
@@ -151,7 +166,7 @@ export default async function handler(request) {
       const { data: claim, error } = await orders.select('id,user_id,provider_id,credits,payment_reference,paid_at,declined_at')
         .eq('id', body.orderId).maybeSingle();
       if (error) throw error;
-      if (!claim?.user_id || !claim.payment_reference || !claim.provider_id?.startsWith(directPrefix)) {
+      if (!claim?.user_id || !claim.payment_reference || !directMethod(claim.provider_id)) {
         return reply(404, { error: 'Payment claim unavailable.' });
       }
       if (action === 'admin-decline') {
@@ -204,13 +219,15 @@ export default async function handler(request) {
 
     if (action === 'cancel-checkout') {
       if (!order) return reply(200, { status: 'cancelled' });
-      if (order.paid_at || order.payment_reference || order.declined_at || order.provider_id?.startsWith(directPrefix)) {
+      if (order.paid_at || order.payment_reference || order.declined_at || directMethod(order.provider_id)) {
         return reply(409, { error: 'A payment is already attached to this order. Refresh to check its status.' });
       }
+      const mayaPending = order.provider_id === mayaPendingPrefix + order.id;
       // A merchant QR can still settle. Leave its order available for payment notifications.
-      if (order.provider_id || order.checkout_url) return reply(200, { status: 'left' });
-      const cancelled = await orders.delete().eq('id', order.id).eq('user_id', userId)
-        .is('provider_id', null).is('checkout_url', null).is('payment_reference', null)
+      if ((order.provider_id && !mayaPending) || order.checkout_url) return reply(200, { status: 'left' });
+      const removable = orders.delete().eq('id', order.id).eq('user_id', userId);
+      const cancelled = await (mayaPending ? removable.eq('provider_id', order.provider_id) : removable.is('provider_id', null))
+        .is('checkout_url', null).is('payment_reference', null)
         .is('paid_at', null).is('declined_at', null).select('id').maybeSingle();
       if (cancelled.error) throw cancelled.error;
       if (!cancelled.data) return reply(409, { error: 'This order changed. Refresh to check its status.' });
@@ -221,34 +238,46 @@ export default async function handler(request) {
 
     if (action === 'claim') {
       if (!order || order.checkout_url || !referencePattern.test(reference)) {
-        return reply(400, { error: 'Choose a pack and enter a valid GCash transaction reference.' });
+        return reply(400, { error: 'Choose a pack and enter a valid payment reference.' });
       }
-      if (order.provider_id === directId) return reply(200, { status: order.paid_at ? 'paid' : 'review' });
-      if (order.provider_id || order.paid_at) return reply(409, { error: 'A payment reference is already attached to this order.' });
-      const saved = await orders.update({
-        provider_id: directId, payment_reference: reference, submitted_at: new Date().toISOString()
-      }).eq('id', order.id)
-        .eq('user_id', userId).is('provider_id', null).select('provider_id').maybeSingle();
-      if (saved.error?.code === '23505') return reply(409, { error: 'This GCash reference has already been submitted.' });
+      const isMaya = order.provider_id === mayaPendingPrefix + order.id || directMethod(order.provider_id) === 'paymaya';
+      const claimId = isMaya ? mayaPrefix + referenceDigest : directId;
+      if (order.provider_id === claimId) return reply(200, { status: order.paid_at ? 'paid' : 'review' });
+      const marker = isMaya ? mayaPendingPrefix + order.id : null;
+      if (order.provider_id !== marker || order.paid_at) return reply(409, { error: 'A payment reference is already attached to this order.' });
+      const update = orders.update({
+        provider_id: claimId, payment_reference: reference, submitted_at: new Date().toISOString()
+      }).eq('id', order.id).eq('user_id', userId);
+      const saved = await (marker ? update.eq('provider_id', marker) : update.is('provider_id', null))
+        .select('provider_id').maybeSingle();
+      if (saved.error?.code === '23505') return reply(409, { error: 'This payment reference has already been submitted.' });
       if (saved.error) throw saved.error;
       if (!saved.data) return reply(409, { error: 'This order changed. Check its payment status.' });
       await sendPaymentAlert(admin, order).catch(() => console.error('Prayer Pack payment alert will be retried.'));
       return reply(200, { status: 'review' });
     }
 
-    if (action === 'checkout') {
-      if (![20, 50, 100, 150, 200, 250, 500].includes(body.credits) || (order && order.credits !== body.credits)) return reply(400, { error: 'Invalid Prayer Pack.' });
-      if (!gcashAvailable) return reply(503, { error: 'GCash checkout is temporarily unavailable.' });
+    if (action === 'checkout' || action === 'paymaya-checkout') {
+      const isMaya = action === 'paymaya-checkout';
+      const supportedCredits = isMaya ? mayaCredits : [20, 50, 100, 150, 200, 250, 500];
+      if (!supportedCredits.includes(body.credits) || (order && order.credits !== body.credits)) return reply(400, { error: 'Invalid Prayer Pack.' });
+      if (!isMaya && !gcashAvailable) return reply(503, { error: 'GCash checkout is temporarily unavailable.' });
       if (order?.paid_at) return reply(200, { status: 'paid' });
       if (!order) {
         const created = await orders.upsert({
-          id: body.orderId, user_id: userId, credits: body.credits
+          id: body.orderId, user_id: userId, credits: body.credits,
+          provider_id: isMaya ? mayaPendingPrefix + body.orderId : null
         }, { onConflict: 'id', ignoreDuplicates: true }).select().maybeSingle();
         if (created.error) throw created.error;
         if (!created.data) return reply(409, { error: 'Checkout is being prepared. Please retry.' });
         order = created.data;
       }
-      if (order.provider_id?.startsWith(directPrefix)) return reply(200, { status: 'review' });
+      if (directMethod(order.provider_id)) return reply(200, { status: 'review' });
+      if (isMaya) {
+        if (order.provider_id !== mayaPendingPrefix + order.id) return reply(409, { error: 'This order uses another payment mode.' });
+        return reply(200, { paymentMethod: 'paymaya-qr', credits: order.credits, createdAt: order.created_at });
+      }
+      if (order.provider_id?.startsWith(mayaPendingPrefix)) return reply(409, { error: 'This order is already linked to PayMaya.' });
       if (order.provider_id?.startsWith('paypal-')) {
         return reply(409, { error: 'This order is already linked to PayPal.' });
       }
@@ -298,7 +327,7 @@ export default async function handler(request) {
         if (!created.data) return reply(409, { error: 'Checkout is being prepared. Please retry.' });
         order = created.data;
       }
-      if (order.provider_id?.startsWith(directPrefix)) return reply(200, { status: 'review' });
+      if (directMethod(order.provider_id)) return reply(200, { status: 'review' });
       if (order.provider_id) {
         if (!paypal.owns(order.provider_id)) {
           return reply(409, { error: 'Check the status of your previous payment before choosing another pack.' });
@@ -324,7 +353,11 @@ export default async function handler(request) {
     if (order.paid_at) return reply(200, { status: 'paid' });
     if (!order.provider_id) return reply(action === 'notify' ? 409 : 200, { status: 'pending' });
 
-    if (order.provider_id.startsWith(directPrefix)) return reply(200, { status: 'review' });
+    const method = directMethod(order.provider_id);
+    if (method || order.provider_id === mayaPendingPrefix + order.id) {
+      if (action === 'notify') return reply(409, {});
+      return reply(200, { status: method ? 'review' : 'pending', credits: order.credits, method: method ?? 'paymaya' });
+    }
     if (order.provider_id.startsWith('paypal-')) {
       if (action === 'notify' || !paypal?.owns(order.provider_id)) {
         return reply(503, { error: 'PayPal confirmation is temporarily unavailable.' });
