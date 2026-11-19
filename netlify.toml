@@ -29,3 +29,8 @@
   for = "/downloads/gcash-qr/*"
   [headers.values]
     Content-Disposition = "attachment"
+
+[[headers]]
+  for = "/downloads/paymaya-qr/*"
+  [headers.values]
+    Content-Disposition = "attachment"

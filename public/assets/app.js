@@ -956,7 +956,9 @@ function requestPrayerPack(action, options) {
   return fetch(`${packEndpoint}?action=${action}`, options);
 }
 
-const packButtons = [...document.querySelectorAll('[data-prayer-pack]')];
+const packSelectors = [...document.querySelectorAll('[data-prayer-pack]')];
+const paymentModeNames = { gcash: 'GCash', paymaya: 'PayMaya', paypal: 'PayPal' };
+const qrPaymentMethods = ['gcash', 'paymaya'];
 const packOrderKey = 'pendingPrayerPack';
 const paymentDeclineMessage = 'Payment Transaction Reference Does Not Match';
 let packRefreshTimer;
@@ -1014,7 +1016,7 @@ function showPaymentDeclineNotices(notices) {
     if (existing.has(notice.orderId)) return existing.get(notice.orderId);
     const card = $('paymentDeclineTemplate').content.firstElementChild.cloneNode(true);
     card.dataset.orderId = notice.orderId;
-    card.querySelector('[data-decline-reference]').textContent = `Reference ${notice.reference} · ₱${notice.credits} Prayer Pack`;
+    card.querySelector('[data-decline-reference]').textContent = `Reference ${notice.reference} · ${paymentModeNames[notice.method] ?? "GCash"} · ₱${notice.credits} Prayer Pack`;
     const form = card.querySelector('form');
     const input = form.elements.reference;
     card.querySelector('[data-correct-reference]').onclick = () => {
@@ -1058,7 +1060,7 @@ async function cancelPrayerPack() {
     if (state.user?.id === userId) {
       packBusy = false;
       renderPrayerPacks();
-      if (!readAccountData(packOrderKey, null)) packButtons[0]?.focus();
+      if (!readAccountData(packOrderKey, null)) packSelectors[0]?.focus();
     }
   }
 }
@@ -1101,7 +1103,7 @@ function renderPrayerPacks() {
   const canCancel = Boolean(pending?.orderId) && pending.status !== 'review';
   $('continuePrayerPack').hidden = !canResume;
   const method = pending?.method ?? 'paypal';
-  $('continuePrayerPack').textContent = method === 'gcash' ? 'Resume GCash payment' : 'Resume PayPal checkout';
+  $('continuePrayerPack').textContent = qrPaymentMethods.includes(method) ? `Resume ${paymentModeNames[method]} payment` : 'Resume PayPal checkout';
   $('continuePrayerPack').disabled = !packAvailability[method] || packBusy || deletingDevotionalData;
   $('cancelPrayerPack').hidden = !canCancel;
   $('cancelPrayerPack').disabled = packBusy || deletingDevotionalData;
@@ -1113,8 +1115,14 @@ function renderPrayerPacks() {
   }
   $('submitPrayerPackReference').disabled = packBusy || deletingDevotionalData ||
     $('prayerPackTransfer').dataset.ready !== 'true';
-  for (const button of packButtons) {
-    button.disabled = !packAvailability[button.dataset.paymentMethod] || packBusy || deletingDevotionalData || Boolean(pending);
+  for (const selector of packSelectors) {
+    for (const option of selector.options) {
+      option.disabled = !option.value || !packAvailability[option.value];
+    }
+    const selected = pending?.credits === Number(selector.dataset.prayerPack) ? pending.method ?? 'paypal' : '';
+    selector.value = selected;
+    selector.disabled = packBusy || deletingDevotionalData || Boolean(pending) ||
+      !Array.from(selector.options).some(option => !option.disabled);
   }
 }
 
@@ -1172,8 +1180,9 @@ async function loadPaymentReview(offset = 0, background = false) {
       const heading = document.createElement('h3');
       heading.textContent = payment.email;
       const details = document.createElement('p');
+      const paymentMode = paymentModeNames[payment.method] ?? 'GCash';
       const date = new Date(payment.submitted_at).toLocaleString('en-PH', { timeZone: 'Asia/Manila' });
-      details.textContent = `${date} (Philippine time) · ₱${payment.credits} · Reference ${payment.payment_reference}`;
+      details.textContent = `${date} (Philippine time) · ₱${payment.credits} · ${paymentMode} · Reference ${payment.payment_reference}`;
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'btn gold';
@@ -1189,7 +1198,7 @@ async function loadPaymentReview(offset = 0, background = false) {
         if (state.user?.id !== userId || !paymentAdmin || !list.contains(item) || button.disabled || decline.disabled) return;
         const prompt = isDecline
           ? `Decline payment reference ${payment.payment_reference}? The member will see “${paymentDeclineMessage}” on their Payment page.`
-          : `Confirm that you received ₱${payment.credits} in GCash with reference ${payment.payment_reference}?`;
+          : `Confirm that you received ₱${payment.credits} in ${paymentMode} with reference ${payment.payment_reference}?`;
         if (!confirm(prompt)) return;
         const notice = $('paymentConfirmedNotice');
         notice.hidden = true;
@@ -1202,8 +1211,8 @@ async function loadPaymentReview(offset = 0, background = false) {
           if (state.user?.id === userId && paymentAdmin) {
             notice.classList.toggle('payment-review-declined', isDecline);
             notice.textContent = isDecline
-              ? `Payment declined · Reference ${payment.payment_reference}. No module points were credited. The notice is available on the member’s Payment page.`
-              : `✓ Payment confirmed · ₱${payment.credits} · Reference ${payment.payment_reference}. Credits added.`;
+              ? `Payment declined · ${paymentMode} · Reference ${payment.payment_reference}. No module points were credited. The notice is available on the member’s Payment page.`
+              : `✓ Payment confirmed · ₱${payment.credits} · ${paymentMode} · Reference ${payment.payment_reference}. Credits added.`;
             notice.hidden = false;
             void refreshPaymentAwaitingNotice();
             if (location.hash === '#paymentReview') await loadPaymentReview();
@@ -1326,17 +1335,17 @@ async function refreshPrayerPacks() {
     else if (!notice) packMessage = 'Could not check declined payment references. Refresh to try again.';
     packAvailability = {
       paypal: readiness?.paypal === true,
-      gcash: readiness?.gcash === true
+      gcash: readiness?.gcash === true,
+      paymaya: readiness?.paymaya === true
     };
     const pending = readAccountData(packOrderKey, null);
     const returnParams = new URL(location.href).searchParams;
     const returnOrder = returnParams.get('prayerPackOrder');
     const orderId = returnOrder || pending?.orderId;
     if (notice) {
-      packMessage = [
-        !packAvailability.gcash && 'GCash',
-        !packAvailability.paypal && 'PayPal'
-      ].filter(Boolean).join(' and ');
+      packMessage = Object.entries(paymentModeNames)
+        .filter(([method]) => !packAvailability[method])
+        .map(([, name]) => name).join(', ');
       if (packMessage) packMessage += ' checkout temporarily unavailable.';
     }
     if (orderId) {
@@ -1356,7 +1365,7 @@ async function refreshPrayerPacks() {
         if (pending?.orderId === orderId) saveAccountData(packOrderKey, { ...pending, status: 'review' });
         hidePrayerPackCheckout();
         clearPayPalReturn();
-        packMessage = 'Your GCash payment is awaiting admin review.';
+        packMessage = `Your ${paymentModeNames[result.method ?? pending?.method] ?? 'GCash'} payment is awaiting admin review.`;
       } else if (returnParams.get('prayerPackCancelled') === '1' && result.status === 'unapproved') {
         if (currentSelection) clearPrayerPackCheckout();
         else clearPayPalReturn();
@@ -1366,8 +1375,8 @@ async function refreshPrayerPacks() {
         if (currentSelection && result.credits) {
           saveAccountData(packOrderKey, { orderId, credits: result.credits, method });
         }
-        packMessage = method === 'gcash' && !$('prayerPackTransfer').hidden
-          ? 'Submit the reference from your GCash receipt after paying.'
+        packMessage = qrPaymentMethods.includes(method) && !$('prayerPackTransfer').hidden
+          ? `Submit the reference from your ${paymentModeNames[method]} receipt after paying.`
           : 'Waiting for payment confirmation. Refresh your balance after completing checkout.';
       }
     }
@@ -1392,30 +1401,39 @@ async function refreshPrayerPacks() {
   }
 }
 
-function showPersonalPackQr(credits) {
+function showPersonalPackQr(credits, method) {
   const panel = $('prayerPackPersonalQr');
-  const fixedAmountQr = config.prayerPackReceiveQr[credits];
+  const isMaya = method === 'paymaya';
+  const paymentMode = paymentModeNames[method];
+  const fixedAmountQr = isMaya ? { image: `downloads/paymaya-qr/${credits}.png`, amountEncoded: true }
+    : config.prayerPackReceiveQr[credits];
   const qr = fixedAmountQr ?? config.prayerPackOpenAmountQr;
   panel.hidden = !qr;
   if (panel.hidden) return;
 
   const amount = '₱' + credits;
   const image = $('prayerPackPersonalQrImage');
-  image.alt = amount + ' Prayer Pack GCash payment QR';
-  image.closest('.gcash-scan-frame').classList.toggle('gcash-scan-frame--full-image', !fixedAmountQr);
+  image.alt = `${amount} Prayer Pack ${paymentMode} payment QR`;
+  const frame = image.closest('.gcash-scan-frame');
+  frame.classList.toggle('gcash-scan-frame--full-image', !fixedAmountQr);
+  frame.classList.toggle('gcash-scan-frame--paymaya', isMaya);
+  $('prayerPackPersonalQrInstructions').textContent = `Open ${paymentMode} and scan the QR. On the same phone, download the QR and upload it from the app’s QR scanner.`;
+  $('prayerPackReferenceLabel').textContent = `${paymentMode} payment reference`;
+  $('prayerPackReferenceInstructions').textContent = `Enter the transaction reference from your ${paymentMode} receipt after paying.`;
   image.src = qr.image;
   $('prayerPackPersonalQrAmount').textContent = qr.amountEncoded
-    ? `Confirm the recipient and the ${amount} amount in GCash before sending.`
-    : `Enter ${amount} in GCash and confirm the recipient before sending.`;
+    ? `Confirm the recipient and the ${amount} amount in ${paymentMode} before sending.`
+    : `Enter ${amount} in ${paymentMode} and confirm the recipient before sending.`;
   const download = $('prayerPackPersonalQrDownload');
   const filename = qr.image.split('/').at(-1);
   const nativeApp = location.hostname === 'appassets.androidplatform.net';
-  const downloadUrl = 'downloads/gcash-qr/' + filename;
+  const downloadUrl = isMaya ? qr.image : 'downloads/gcash-qr/' + filename;
+  download.textContent = `Download QR for ${paymentMode}`;
   download.href = nativeApp ? 'https://stonino-devotional.netlify.app/' + downloadUrl : downloadUrl;
   if (nativeApp) {
     download.removeAttribute('download');
   } else {
-    download.download = 'gcash-prayer-pack-' + filename;
+    download.download = `${method}-prayer-pack-${filename}`;
   }
 }
 
@@ -1426,8 +1444,7 @@ async function startPrayerPack(credits, selectedMethod) {
   const method = savedOrder ? (savedOrder.method ?? 'paypal') : selectedMethod;
   if (!packAvailability[method] || savedOrder?.status === 'review') return;
   const pending = savedOrder ?? { orderId: crypto.randomUUID(), credits, method };
-  const pack = packButtons.find(button => Number(button.dataset.prayerPack) === pending.credits &&
-    button.dataset.paymentMethod === method);
+  const pack = packSelectors.find(selector => Number(selector.dataset.prayerPack) === pending.credits);
   if (!pack) {
     packMessage = 'Cancel this earlier selection to choose a current Prayer Pack.';
     renderPrayerPacks();
@@ -1436,14 +1453,15 @@ async function startPrayerPack(credits, selectedMethod) {
   saveAccountData(packOrderKey, pending);
   hidePrayerPackCheckout();
   packBusy = true;
-  packMessage = method === 'gcash' ? 'Preparing your GCash payment…' : 'Preparing your PayPal checkout…';
+  packMessage = qrPaymentMethods.includes(method) ? `Preparing your ${paymentModeNames[method]} payment…` : 'Preparing your PayPal checkout…';
   renderPrayerPacks();
   try {
-    const result = await packRequest(method === 'gcash' ? 'checkout' : 'paypal-checkout', pending);
+    const action = method === 'gcash' ? 'checkout' : method + '-checkout';
+    const result = await packRequest(action, pending);
     if (state.user?.id !== userId) return;
-    if (method === 'gcash' && result.paymentMethod === 'gcash-qr') {
+    if (qrPaymentMethods.includes(method) && result.paymentMethod === method + '-qr') {
       clearPrayerPackQr();
-      showPersonalPackQr(result.credits);
+      showPersonalPackQr(result.credits, method);
       $('prayerPackSelectionTitle').textContent = `₱${result.credits} · ${result.credits} credits`;
       $('prayerPackSelection').hidden = false;
       $('prayerPackTransfer').dataset.ready = 'true';
@@ -1493,7 +1511,7 @@ async function startPrayerPack(credits, selectedMethod) {
 $('prayerPackTransfer').onsubmit = async event => {
   event.preventDefault();
   const pending = readAccountData(packOrderKey, null);
-  if (!canUseApp() || !pending?.orderId || pending.method !== 'gcash' || packBusy || deletingDevotionalData || event.currentTarget.dataset.ready !== 'true') return;
+  if (!canUseApp() || !pending?.orderId || !qrPaymentMethods.includes(pending.method) || packBusy || deletingDevotionalData || event.currentTarget.dataset.ready !== 'true') return;
   const userId = state.user.id;
   packBusy = true;
   renderPrayerPacks();
@@ -1513,7 +1531,7 @@ $('prayerPackTransfer').onsubmit = async event => {
       await readPrayerBalance();
     } else {
       saveAccountData(packOrderKey, { ...pending, status: 'review' });
-      packMessage = 'Payment reference submitted. Your GCash payment is awaiting admin review.';
+      packMessage = `Payment reference submitted. Your ${paymentModeNames[pending.method]} payment is awaiting admin review.`;
     }
     if (state.user?.id === userId) toast(packMessage);
   } catch (error) {
@@ -1529,7 +1547,9 @@ $('prayerPackTransfer').onsubmit = async event => {
 $('refreshPrayerPacks').onclick = () => void refreshPrayerPacks();
 $('continuePrayerPack').onclick = () => void startPrayerPack();
 $('cancelPrayerPack').onclick = () => void cancelPrayerPack();
-for (const button of packButtons) button.onclick = () => void startPrayerPack(Number(button.dataset.prayerPack), button.dataset.paymentMethod);
+for (const selector of packSelectors) {
+  selector.onchange = () => void startPrayerPack(Number(selector.dataset.prayerPack), selector.value);
+}
 
 let spendingCredit = false;
 language();setFont(state.font);if(location.hash&&$(location.hash.slice(1))?.classList.contains('page'))nav(location.hash.slice(1));initCloud();function refreshDevotionalClock() {
