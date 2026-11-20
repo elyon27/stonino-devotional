@@ -480,3 +480,67 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   margin-inline:auto;
   border-radius:8px;
 }
+
+.sanctuary-altar {
+  grid-template-columns: minmax(0, 1fr);
+  display: grid;
+  gap: 16px;
+  width: 100%;
+}
+
+.devotional-header[hidden],
+.app-shell:has(#devotionalContent[hidden]) .devotional-header {
+  display: none;
+}
+
+.has-devotional-header .app-shell:has(#devotionalContent:not([hidden])) > :is(.topbar, .scripture-ticker) {
+  display: none;
+}
+
+.devotional-header {
+  position: sticky;
+  top: 0;
+  z-index: 9;
+  padding: max(6px, env(safe-area-inset-top)) 12px 6px;
+  background: var(--paper);
+  border-bottom: 2px solid var(--gold);
+}
+
+.devotional-header .sanctuary-altar {
+  justify-items: center;
+  gap: 4px;
+}
+
+.devotional-header .arch {
+  width: min(100%, 220px);
+  height: clamp(88px, 30dvh, 246px);
+  padding: 4px;
+  border-width: 4px;
+  margin: 0;
+}
+
+.devotional-header .arch-inner:after { inset: 5px 5px 16px; }
+.devotional-header .tiny-cross { top: 1px; font-size: .8rem; }
+.devotional-header .halo { inset: 0; width: auto; height: auto; }
+.devotional-header .pedestal { padding: 1px 5px; border-top-width: 1px; font-size: .6rem; }
+
+.devotional-header .sanctuary-offerings {
+  flex-wrap: nowrap;
+  justify-content: safe center;
+  overflow-x: auto;
+  padding: 3px;
+}
+
+.devotional-header .sanctuary-offering-prayer {
+  max-height: 14dvh;
+  margin-top: 4px;
+}
+
+.devotional-header #deleteSanctuaryOfferings { display: none; }
+
+@media (max-height: 460px) {
+  .devotional-header .arch { height: clamp(65px, 26dvh, 110px); }
+  .devotional-header :is(.mini-candle, .mini-bouquet) { height: 42px; }
+  .devotional-header .mini-candle .photo-candle { transform: translateX(-50%) scale(.17); }
+  .devotional-header .mini-bouquet img { height: 36px; }
+}
