@@ -219,6 +219,26 @@ let novenaYear = getNovenaYear(Date.now());
 let novenaSchedule = buildNovenaSchedule(novenaYear);
 const legacyNovenaSchedule = buildNovenaSchedule(2027);
 let nextNovenaUpdate = Infinity;
+const CEBU_DAY_MS = 24 * 60 * 60 * 1000;
+
+function customNovenaStart(now) {
+  const saved = readAccountData('customNovenaStart', null);
+  if (saved?.year === novenaYear) return saved.opensAt;
+
+  // Early runs from older versions recorded progress without a start date.
+  const legacyEarly = readAccountData('earlyNovenaYear', null) === novenaYear;
+  const earlyProgress = now < novenaSchedule[0].opensAt
+    && novenaSchedule.some(({isoDate}) => state.completed.includes(isoDate));
+  if (!legacyEarly && !earlyProgress) return null;
+  return saveCustomNovenaStart(now);
+}
+
+function saveCustomNovenaStart(now) {
+  const opensAt = Math.floor((now + CEBU_OFFSET_MS) / CEBU_DAY_MS) * CEBU_DAY_MS - CEBU_OFFSET_MS;
+  saveAccountData('customNovenaStart', {year: novenaYear, opensAt});
+  return opensAt;
+}
+
 
 function normalizeCompleted(entries) {
   if (!Array.isArray(entries)) return [];
@@ -276,6 +296,7 @@ function renderNovena() {
     novenaSchedule = buildNovenaSchedule(year);
     state.day = null;
   }
+  const customStart = customNovenaStart(now);
   const nextDay = novenaSchedule.find(day => day.opensAt > now);
   nextNovenaUpdate = nextDay?.opensAt ?? Date.UTC(year + 1, 0, 1) - CEBU_OFFSET_MS;
   if (!isNovenaDayOpen(state.day, now)) {
@@ -292,8 +313,11 @@ function renderNovena() {
 
   const formatter = novenaDateFormatter({month: 'long', day: 'numeric', year: 'numeric'});
   const shortDate = novenaDateFormatter({month: 'short', day: 'numeric'});
-  const first = novenaSchedule[0].opensAt;
-  const last = novenaSchedule.at(-1).opensAt;
+  const displayDate = day => customStart === null
+    ? novenaSchedule[day].opensAt
+    : customStart + day * CEBU_DAY_MS;
+  const first = displayDate(0);
+  const last = displayDate(novenaSchedule.length - 1);
   const dayLabel = tr('Day');
   const scheduleHint = tr('Mark each day complete to unlock the next.');
   $('novenaScheduleHint').textContent = `${shortDate.format(first)} – ${formatter.format(last)} · ${scheduleHint}`;
@@ -301,10 +325,7 @@ function renderNovena() {
     ? tr('Select a day to open its prayers.')
     : tr('Day 1 opens {date}.').replace('{date}', formatter.format(first));
   const completedCount = novenaSchedule.filter(({isoDate}) => state.completed.includes(isoDate)).length;
-  // Older releases saved completion dates without recording when the novena started.
-  if (completedCount > 0 && now < first) saveAccountData('earlyNovenaYear', year);
-  const earlyNovena = readAccountData('earlyNovenaYear', null) === year;
-  $('dayTitle').textContent = earlyNovena
+  $('dayTitle').textContent = customStart !== null
     ? tr('Custom Novena Schedule')
     : tr('{year} Novena Schedule').replace('{year}', year);
   $('dayProgress').textContent = `${completedCount} ${tr('of 9 completed')}`;
@@ -315,7 +336,7 @@ function renderNovena() {
     const day = novena[state.day];
     const selectedDate = novenaSchedule[state.day];
     const [theme, reflection, prayer] = prayerLocale()?.novena[state.day] ?? [day.theme, day.reflection, day.prayer];
-    $('selectedNovenaDayTitle').textContent = `${dayLabel} ${state.day + 1} — ${formatter.format(selectedDate.opensAt)} · ${theme}`;
+    $('selectedNovenaDayTitle').textContent = `${dayLabel} ${state.day + 1} — ${formatter.format(displayDate(state.day))} — ${theme}`;
     $('bookletPetitionTitle').textContent = tr('Day {day} Petition').replace('{day}', state.day + 1);
     $('bookletPetition').replaceChildren(...bookletPetitions[state.day].map(text => {
       const paragraph = document.createElement('p');
@@ -337,11 +358,13 @@ function renderNovena() {
   $('resetNovenaDays').disabled = !canUseApp() || resettingNovenaDays || completedCount === 0;
   $('prevDay').disabled = !available || !isNovenaDayUnlocked(state.day - 1, now);
   $('nextDay').disabled = !available || !isNovenaDayUnlocked(state.day + 1, now);
-  $('dayGrid').innerHTML = novenaSchedule.map(({isoDate, opensAt}, index) => {
+  $('dayGrid').innerHTML = novenaSchedule.map(({isoDate}, index) => {
+    const date = displayDate(index);
+    const calendarDate = new Date(date + CEBU_OFFSET_MS).toISOString().slice(0, 10);
     const unlocked = isNovenaDayUnlocked(index, now);
     const selected = available && index === state.day;
     const completed = state.completed.includes(isoDate);
-    return `<button type="button" data-day="${index}" class="${selected ? 'selected ' : ''}${completed ? 'completed' : ''}" aria-pressed="${selected}" ${unlocked ? '' : 'disabled'}><span>${dayLabel} ${index + 1}</span><time datetime="${isoDate}">${shortDate.format(opensAt)}</time></button>`;
+    return `<button type="button" data-day="${index}" class="${selected ? 'selected ' : ''}${completed ? 'completed' : ''}" aria-pressed="${selected}" ${unlocked ? '' : 'disabled'}><span>${dayLabel} ${index + 1}</span><time datetime="${calendarDate}">${shortDate.format(date)}</time></button>`;
   }).join('');
 }
 
@@ -349,13 +372,15 @@ function selectNovenaDay(day) {
   const now = Date.now();
   if (!canUseApp() || !isNovenaDayUnlocked(day, now)) return;
   if (day === state.day || resettingNovenaDays) return;
-  if (!hasNovenaDayStarted(day, now)) {
+  const customStart = customNovenaStart(now);
+  const opensAt = customStart === null ? novenaSchedule[day].opensAt : customStart + day * CEBU_DAY_MS;
+  if (now < opensAt) {
     const formatter = novenaDateFormatter({month: 'long', day: 'numeric', year: 'numeric'});
-    const date = formatter.format(novenaSchedule[day].opensAt);
+    const date = formatter.format(opensAt);
     const message = tr('Day {day} is scheduled for {date} (Cebu time). Do you want to open it early?');
     if (!confirm(message.replace('{day}', day + 1).replace('{date}', date))) return;
   }
-  if (!hasNovenaDayStarted(0, now)) saveAccountData('earlyNovenaYear', novenaYear);
+  if (customStart === null && !hasNovenaDayStarted(0, now)) saveCustomNovenaStart(now);
   saveAccountData('selectedDay', novenaSchedule[day].isoDate);
   state.day = day;
   renderNovena();
@@ -410,6 +435,9 @@ $('resetNovenaDays').onclick = async () => {
     store.set('account.' + userId + '.selectedDay', resetDay);
     if (store.get('account.' + userId + '.earlyNovenaYear', null) === resetYear) {
       store.set('account.' + userId + '.earlyNovenaYear', null);
+    }
+    if (store.get('account.' + userId + '.customNovenaStart', null)?.year === resetYear) {
+      store.set('account.' + userId + '.customNovenaStart', null);
     }
     if (state.user?.id !== userId) return;
     state.completed = completed;
@@ -948,7 +976,7 @@ $('deleteAccount').onclick = async () => {
     if (error) throw error;
 
     state.day = null;
-    for (const key of ['earlyNovenaYear', 'selectedDay', packOrderKey, 'pendingOffering.candle', 'pendingOffering.flowers', 'pendingOffering.novena-candle', 'pendingOffering.novena-flowers']) {
+    for (const key of ['customNovenaStart', 'earlyNovenaYear', 'selectedDay', packOrderKey, 'pendingOffering.candle', 'pendingOffering.flowers', 'pendingOffering.novena-candle', 'pendingOffering.novena-flowers']) {
       localStorage.removeItem(prefix + accountKey(key));
     }
     for (const key of ['candles', 'novenaCandles', 'novenaFlowers', 'intentions', 'completed']) {
