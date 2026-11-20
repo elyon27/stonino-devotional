@@ -52,6 +52,7 @@ window.stoninoFilipinoPrayers = {
     'Show password': 'Ipakita ang password',
     'Hide password': 'Itago ang password',
     'Day': 'Araw',
+    'Custom Novena Schedule': 'Personal na Iskedyul ng Nobena',
     '{year} Novena Schedule': 'Iskedyul ng Nobena {year}',
     'Day 1 opens {date}.': 'Magbubukas ang unang araw sa {date}.',
     "Mark each day complete to unlock the next. You can offer novena candles and flowers at any time.": "Markahang tapos ang bawat araw para mabuksan ang susunod. Maaari kang mag-alay ng kandila at bulaklak sa nobena anumang oras.",

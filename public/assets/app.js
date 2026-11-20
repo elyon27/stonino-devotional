@@ -114,7 +114,7 @@ function updateDevotionalHeader(name) {
   document.documentElement.classList.toggle('has-devotional-header', pinned);
 }
 
-let toastTimer;function toast(msg){const e=$('toast');e.textContent=tr(msg);e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),3500)}function html(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function nav(name){if(!canUseApp()||!$(name)||(['paymentReview','memberList'].includes(name)&&!paymentAdmin))return;if(name!=='sanctuary')showSanctuaryPrayer(null);$('prayerPackBar').hidden=['paymentReview','memberList'].includes(name);document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===name));updateDevotionalHeader(name);document.querySelectorAll('[data-nav]').forEach(e=>e.classList.toggle('active',e.dataset.nav===name));updateMobileNavigation();history.replaceState(null,'','#'+name);if(name==='novena')renderNovena();else state.day=null;if(name==='prayerPacks')void refreshPrayerPacks();if(name==='paymentReview')void loadPaymentReview();if(name==='memberList')void loadAdminMembers();window.scrollTo({top:0,behavior:'instant'});$('main').focus({preventScroll:true})}document.querySelectorAll('[data-nav]').forEach(e=>e.addEventListener('click',ev=>{ev.preventDefault();nav(e.dataset.nav)}));
+let toastTimer;function toast(msg){const e=$('toast');e.textContent=tr(msg);e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),3500)}function html(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function nav(name){if(!canUseApp()||!$(name)||(['paymentReview','memberList'].includes(name)&&!paymentAdmin))return;if(name!=='sanctuary')showSanctuaryPrayer(null);$('prayerPackBar').hidden=['paymentReview','memberList'].includes(name);document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===name));updateDevotionalHeader(name);document.querySelectorAll('[data-nav]').forEach(e=>e.classList.toggle('active',e.dataset.nav===name));updateMobileNavigation();history.replaceState(null,'','#'+name);if(name==='novena')renderNovena();if(name==='prayerPacks')void refreshPrayerPacks();if(name==='paymentReview')void loadPaymentReview();if(name==='memberList')void loadAdminMembers();window.scrollTo({top:0,behavior:'instant'});$('main').focus({preventScroll:true})}document.querySelectorAll('[data-nav]').forEach(e=>e.addEventListener('click',ev=>{ev.preventDefault();nav(e.dataset.nav)}));
 function language(){document.documentElement.lang=state.language;window.stoninoLocalize(state.language);document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=(translations[state.language]||translations.en)[e.dataset.i18n]||e.textContent);$('language').value=state.language;$('langBtn').textContent=({en:'English',ceb:'Cebuano',fil:'Filipino'})[state.language]+' ▾';store.set('language',state.language);renderNovena();displayPrayer(currentPrayer);renderCandles();renderNovenaCandles();renderFlowers();renderIntentions();renderMeditation();accountView();document.querySelectorAll('[data-offering-prayer]').forEach(renderOfferingPrayers)}$('language').addEventListener('change',e=>{state.language=e.target.value;language()});$('langBtn').addEventListener('click',()=>{const seq=['en','ceb','fil'];state.language=seq[(seq.indexOf(state.language)+1)%3];language();});function setFont(v){state.font=Number(v);document.documentElement.style.setProperty('--scale',state.font);$('textSize').value=String(state.font);store.set('font',state.font)}$('textSize').addEventListener('change',e=>setFont(e.target.value));$('fontBtn').addEventListener('click',()=>{const opts=[1,1.12,1.25];setFont(opts[(opts.indexOf(state.font)+1)%3])});
 // Appearance preference is independent of prayer data and survives page reloads.
 function applyAppearance(mode){
@@ -278,7 +278,16 @@ function renderNovena() {
   }
   const nextDay = novenaSchedule.find(day => day.opensAt > now);
   nextNovenaUpdate = nextDay?.opensAt ?? Date.UTC(year + 1, 0, 1) - CEBU_OFFSET_MS;
-  if (!isNovenaDayOpen(state.day, now)) state.day = null;
+  if (!isNovenaDayOpen(state.day, now)) {
+    const savedDate = readAccountData('selectedDay', null);
+    const savedDay = novenaSchedule.findIndex(({isoDate}) => isoDate === savedDate);
+    let resumeDay = savedDay;
+    if (!isNovenaDayUnlocked(savedDay, now)) {
+      resumeDay = novenaSchedule.reduce((latest, {isoDate}, day) =>
+        state.completed.includes(isoDate) && isNovenaDayUnlocked(day, now) ? day : latest, -1);
+    }
+    state.day = resumeDay >= 0 ? resumeDay : null;
+  }
   const available = state.day !== null;
 
   const formatter = novenaDateFormatter({month: 'long', day: 'numeric', year: 'numeric'});
@@ -291,8 +300,13 @@ function renderNovena() {
   $('novenaScheduleStatus').textContent = isNovenaDayUnlocked(0, now)
     ? tr('Select a day to open its prayers.')
     : tr('Day 1 opens {date}.').replace('{date}', formatter.format(first));
-  $('dayTitle').textContent = tr('{year} Novena Schedule').replace('{year}', year);
   const completedCount = novenaSchedule.filter(({isoDate}) => state.completed.includes(isoDate)).length;
+  // Older releases saved completion dates without recording when the novena started.
+  if (completedCount > 0 && now < first) saveAccountData('earlyNovenaYear', year);
+  const earlyNovena = readAccountData('earlyNovenaYear', null) === year;
+  $('dayTitle').textContent = earlyNovena
+    ? tr('Custom Novena Schedule')
+    : tr('{year} Novena Schedule').replace('{year}', year);
   $('dayProgress').textContent = `${completedCount} ${tr('of 9 completed')}`;
   $('novenaScheduleStatus').hidden = available;
   $('novenaDayContent').hidden = !available;
@@ -301,7 +315,7 @@ function renderNovena() {
     const day = novena[state.day];
     const selectedDate = novenaSchedule[state.day];
     const [theme, reflection, prayer] = prayerLocale()?.novena[state.day] ?? [day.theme, day.reflection, day.prayer];
-    $('dayTitle').textContent = `${dayLabel} ${state.day + 1} — ${formatter.format(selectedDate.opensAt)} · ${theme}`;
+    $('selectedNovenaDayTitle').textContent = `${dayLabel} ${state.day + 1} — ${formatter.format(selectedDate.opensAt)} · ${theme}`;
     $('bookletPetitionTitle').textContent = tr('Day {day} Petition').replace('{day}', state.day + 1);
     $('bookletPetition').replaceChildren(...bookletPetitions[state.day].map(text => {
       const paragraph = document.createElement('p');
@@ -334,13 +348,15 @@ function renderNovena() {
 function selectNovenaDay(day) {
   const now = Date.now();
   if (!canUseApp() || !isNovenaDayUnlocked(day, now)) return;
-  if (day === state.day) return;
+  if (day === state.day || resettingNovenaDays) return;
   if (!hasNovenaDayStarted(day, now)) {
     const formatter = novenaDateFormatter({month: 'long', day: 'numeric', year: 'numeric'});
     const date = formatter.format(novenaSchedule[day].opensAt);
     const message = tr('Day {day} is scheduled for {date} (Cebu time). Do you want to open it early?');
     if (!confirm(message.replace('{day}', day + 1).replace('{date}', date))) return;
   }
+  if (!hasNovenaDayStarted(0, now)) saveAccountData('earlyNovenaYear', novenaYear);
+  saveAccountData('selectedDay', novenaSchedule[day].isoDate);
   state.day = day;
   renderNovena();
 }
@@ -368,6 +384,8 @@ $('resetNovenaDays').onclick = async () => {
   if (!confirm(tr('Reset this Novena schedule to Day 1? Your completed days for this schedule will be cleared.'))) return;
 
   const userId = state.user.id;
+  const resetYear = novenaYear;
+  const firstDay = novenaSchedule[0];
   const resetDates = new Set(novenaSchedule.map(({isoDate}) => isoDate));
   resettingNovenaDays = true;
   novenaProgressRevision++;
@@ -388,9 +406,14 @@ $('resetNovenaDays').onclick = async () => {
     }, { onConflict: 'user_id' });
     if (error) throw error;
     store.set('account.' + userId + '.completed', completed);
+    const resetDay = Date.now() >= firstDay.opensAt ? firstDay.isoDate : null;
+    store.set('account.' + userId + '.selectedDay', resetDay);
+    if (store.get('account.' + userId + '.earlyNovenaYear', null) === resetYear) {
+      store.set('account.' + userId + '.earlyNovenaYear', null);
+    }
     if (state.user?.id !== userId) return;
     state.completed = completed;
-    state.day = hasNovenaDayStarted(0, Date.now()) ? 0 : null;
+    state.day = null;
     toast('Novena days reset.');
   } catch (error) {
     console.warn(error);

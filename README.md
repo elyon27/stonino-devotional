@@ -1,4 +1,4 @@
-# Sto. Niño Devotional v1.2.42
+# Sto. Niño Devotional v1.2.43
 
 Prayer Packs offer GCash, PayMaya, and PayPal under Payment Mode. PayMaya
 shows the corresponding QR for the 50, 150, 250, or 500 credit pack. Members
@@ -23,12 +23,4 @@ Payment operations require the deployed Netlify Functions.
 ## Direct-download Android release
 
 Install App downloads the included signed Android APK v1.2.41. The fixed
-header is part of the v1.2.42 web release.
-
-To sign the separately downloaded Android v1.2.42 APK, put it beside
-`sign-v1.2.42.ps1` and run the script in Windows PowerShell. Use the same
-keystore as the previous direct-download APK. Pass `-Keystore` with its
-full path if it differs from the script default.
-
-To publish the signed v1.2.42 APK, put it in `public/assets/apk/` and run
-`npm run build` before deploying.
+header is part of the v1.2.43 web release.

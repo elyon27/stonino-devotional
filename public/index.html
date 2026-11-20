@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#8B1E2D"><meta name="description" content="A Catholic devotional sanctuary honoring Señor Santo Niño de Cebu.">
   <title>Sto. Niño | Cebu Heritage Chapel</title>
-  <link rel="stylesheet" href="assets/styles.css?v=1.2.42"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/styles.css?v=1.2.43"><link rel="icon" href="assets/chapel-logo.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/chapel-icon-192.png">
   <script defer src="assets/install.js?v=1.2.31"></script>
@@ -13,7 +13,7 @@
 <a class="skip" href="#main">Skip to main content</a>
 <div class="app-shell">
 <header class="topbar">
-  <a class="identity" href="#sanctuary" data-nav="sanctuary" aria-label="Sto. Niño home"><img src="assets/chapel-logo.svg" alt="" width="40" height="40"><span><strong>SEÑOR SANTO NIÑO</strong><small>Cebu Heritage Chapel</small><span class="release-version">v1.2.42</span></span></a>
+  <a class="identity" href="#sanctuary" data-nav="sanctuary" aria-label="Sto. Niño home"><img src="assets/chapel-logo.svg" alt="" width="40" height="40"><span><strong>SEÑOR SANTO NIÑO</strong><small>Cebu Heritage Chapel</small><span class="release-version">v1.2.43</span></span></a>
   <span id="devotionalUserName" class="devotional-user-name" hidden></span>
   <div class="header-actions"><button class="text-control" id="soundBtn" title="Toggle ambient sound" hidden>Sound off</button><button class="text-control" id="langBtn" aria-label="Change language">English ▾</button><button class="text-control" id="themeBtn" type="button" title="Switch between light and dark backgrounds" aria-label="Switch to dark mode" aria-pressed="false">☾ Dark</button><button class="text-control" id="fontBtn" title="Increase text size">A+</button><button class="text-control" id="authBtn">My Account</button><button class="text-control" id="headerSignOut" type="button" hidden>Log Out</button></div>
   <div class="payment-awaiting-header">
@@ -217,6 +217,7 @@
   <div class="notice"><strong>A note on devotion:</strong> This digital chapel supports personal prayer. It does not replace Mass, the Sacraments, or parish life.</div>
 </section>
 <section class="page" id="novena" aria-labelledby="novenaTitle"><p class="eyebrow">NINE DAYS OF PRAYER</p><h2 id="novenaTitle" data-i18n="navNovena">Novena & Prayers</h2><p class="lead">Pray the Basilica’s Fiesta Señor novena, then read the day’s Scripture and reflection.</p><p class="hint" id="novenaScheduleHint"></p><div class="panel"><div class="section-head"><h3 id="dayTitle">Novena Schedule</h3><span id="dayProgress" class="pill">0 of 9 completed</span></div><div class="day-grid" id="dayGrid" aria-label="Select a novena day"></div><div class="button-row"><button class="btn outline" id="resetNovenaDays" type="button" disabled>Reset Days</button></div><p id="novenaScheduleStatus" role="status"></p><div id="novenaDayContent" hidden>
+<h4 id="selectedNovenaDayTitle"></h4>
 <section aria-labelledby="bookletNovenaTitle">
   <h4 id="bookletNovenaTitle">Fiesta Señor Nine-Day Novena</h4>
   <p class="hint">Basilica Minore del Santo Niño de Cebu, 2019 Pilgrim’s Booklet, pp. 3–9</p>
@@ -387,8 +388,8 @@
 </div><div class="button-row"><button class="btn gold" id="signIn">Sign in</button><button class="btn outline" id="signUp">Create account</button></div><button class="linklike" id="backToSignIn" type="button" hidden>Back to sign in</button><button class="linklike" id="resetPassword">Send password-reset email</button><p class="hint">New accounts may need to confirm their email address before signing in.</p></div><div id="accountLoggedIn" hidden><p id="userEmail"></p><form id="accountNameForm"><label for="accountDisplayName">Name shown at the top of the app</label><input id="accountDisplayName" autocomplete="name" maxlength="80" required><button class="btn outline" type="submit">Save name</button></form><div class="button-row"><button class="btn outline" id="signOut">Sign out</button><button class="btn danger" id="deleteAccount">Delete My Account</button></div><p class="hint">Deletes your Sto. Niño Devotional profile and devotional data and signs you out of this app. Your CrownMind login remains available.</p></div></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <template id="cebuanoScriptureCredit"><a href="https://ebible.org/cebocb/copyright.htm" target="_blank" rel="noopener">Biblica® Open Ang Pulong sa Dios™</a> · © 2009, 2010, 2014, 2024 Biblica, Inc. · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></template>
-<script src="assets/cebuano.js?v=1.2.31"></script><script src="assets/filipino-prayers.js?v=1.2.31"></script><script src="assets/localize.js?v=tagalog-prayers"></script>
-<script src="assets/config.js?v=1.2.36"></script><script src="assets/offering-prayers.js?v=1.2.24"></script><script src="assets/app.js?v=1.2.42"></script>
+<script src="assets/cebuano.js?v=1.2.43"></script><script src="assets/filipino-prayers.js?v=1.2.43"></script><script src="assets/localize.js?v=tagalog-prayers"></script>
+<script src="assets/config.js?v=1.2.36"></script><script src="assets/offering-prayers.js?v=1.2.24"></script><script src="assets/app.js?v=1.2.43"></script>
 <script src="assets/music/tracks.js"></script><script src="assets/music-prayers.js?v=bundled-tracks"></script>
 <script src="assets/new-testament-web.js"></script><script src="assets/new-testament-cebuano.js"></script><script src="assets/new-testament-tagalog.js"></script><script src="assets/scripture-ticker.js?v=1.2.27"></script>
 </body></html>

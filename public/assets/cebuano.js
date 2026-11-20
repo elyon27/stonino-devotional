@@ -99,6 +99,7 @@ window.stoninoCebuano = {
   "Prayer": "Pag-ampo",
   "← Previous": "← Miagi",
   "Day": "Adlaw",
+  "Custom Novena Schedule": "Personal nga Eskedyul sa Nobena",
   "{year} Novena Schedule": "Eskedyul sa Nobena {year}",
   "Day 1 opens {date}.": "Ang unang adlaw maablihan sa {date}.",
     "Mark each day complete to unlock the next. You can offer novena candles and flowers at any time.": "Markahi nga nahuman ang matag adlaw aron maablihan ang sunod. Mahimo kang mohalad og kandila ug bulak sa nobena bisan kanus-a.",
