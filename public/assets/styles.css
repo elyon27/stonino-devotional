@@ -549,3 +549,22 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   .devotional-header .mini-candle .photo-candle { transform: translateX(-50%) scale(.17); }
   .devotional-header .mini-bouquet img { height: 36px; }
 }
+
+.apk-install-progress {
+  position: fixed;
+  inset-inline: 12px;
+  bottom: calc(75px + env(safe-area-inset-bottom));
+  z-index: 100;
+  max-width: 28rem;
+  margin-inline: auto;
+  padding: 12px;
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  background: var(--cream);
+  color: var(--ink);
+  box-shadow: 0 4px 18px #1a0c0744;
+}
+.apk-install-progress p { margin: 0 24px 8px 0; }
+.apk-install-progress progress { width: 100%; accent-color: var(--gold); }
+.apk-install-progress .linklike { position: absolute; inset-inline-end: 10px; top: 8px; }
+.apk-install-progress .btn { margin-top: 8px; }
