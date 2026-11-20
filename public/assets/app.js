@@ -666,7 +666,13 @@ function setPasswordVisibility(visible) {
 $('togglePassword').onclick = () => setPasswordVisibility($('password').type === 'password');
 $('accountDialog').addEventListener('close', () => setPasswordVisibility(false));
 
+const registrationStatus = document.createElement('p');
+registrationStatus.className = 'hint';
+registrationStatus.setAttribute('role', 'status');
+$('accountLoggedOut').after(registrationStatus);
+
 function setRegistrationMode(enabled) {
+  registrationStatus.textContent = '';
   setPasswordVisibility(false);
   registering = enabled;
   $('accountTitle').textContent = enabled ? tr('Create account') : tr('My Account');
@@ -941,14 +947,61 @@ async function deleteAllOfferings() {
 }
 $('deleteOfferings').onclick = deleteAllOfferings;
 $('deleteSanctuaryOfferings').onclick = deleteAllOfferings;
-async function accountAction(mode){if(authStatus!=='ready'||!state.supabase)return;const email=$('email').value.trim(),password=$('password').value;if(!email||!password){toast('Enter your email and password');return}const name = $('displayName').value.trim();
-if (mode === 'signUp' && (!name || name.length > 80)) {
-  toast('Enter your name using up to 80 characters.');
-  $('displayName').focus();
-  return;
+async function accountAction(mode) {
+  if (authStatus !== 'ready' || !state.supabase) return;
+  const creating = mode === 'signUp';
+  const submit = $('signUp');
+  if (creating && submit.disabled) return;
+  if (creating) registrationStatus.textContent = '';
+
+  const email = $('email').value.trim();
+  const password = $('password').value;
+  if (!email || !password) {
+    toast('Enter your email and password');
+    return;
+  }
+  const name = $('displayName').value.trim();
+  if (creating && (!name || name.length > 80)) {
+    toast('Enter your name using up to 80 characters.');
+    $('displayName').focus();
+    return;
+  }
+
+  if (creating) submit.disabled = true;
+  try {
+    const { data, error } = creating
+      ? await state.supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: 'https://stonino-devotional.netlify.app/',
+            data: { stonino_display_name: name }
+          }
+        })
+      : await state.supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    localStorage.removeItem(registrationPreference);
+    if (data?.user && data?.session) await setAccountUser(data.user);
+    accountView();
+
+    if (creating) {
+      if (registering && $('accountDialog').open) {
+        registrationStatus.textContent = tr(data?.session
+          ? 'Your account is ready. You are signed in.'
+          : 'Account request submitted. Check your inbox for the confirmation link, then return here to sign in.');
+      }
+      return;
+    }
+
+    toast('Signed in');
+    if (state.user) $('accountDialog').close();
+  } catch (error) {
+    toast(localizedError(error, 'Unable to authenticate'));
+  } finally {
+    if (creating) submit.disabled = false;
+  }
 }
-try{const r=mode==='signUp'?await 
-state.supabase.auth.signUp({email,password,options: {emailRedirectTo: 'https://stonino-devotional.netlify.app/',data:{stonino_display_name: name}}}):await state.supabase.auth.signInWithPassword({email,password});if(r.error)throw r.error;localStorage.removeItem(registrationPreference);if(r.data?.user&&r.data?.session)await setAccountUser(r.data.user);accountView();toast(mode==='signUp'?'Account request submitted. Confirm email if required.':'Signed in');if(state.user)$('accountDialog').close()}catch(e){toast(localizedError(e,'Unable to authenticate'))}}$('signIn').onclick=()=>accountAction('signIn');$('signUp').onclick=()=>{if(registering)return accountAction('signUp');setRegistrationMode(true);$('displayName').focus()};$('resetPassword').onclick=async()=>{const email=$('email').value.trim();if(!email||!state.supabase)return toast('Configure cloud access and enter your email');try{const {error}=await state.supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;toast('If the address is registered, a reset email will be sent.')}catch(e){toast(localizedError(e,'Unable to complete the request. Please try again.'))}};
+$('signIn').onclick=()=>accountAction('signIn');$('signUp').onclick=()=>{if(registering)return accountAction('signUp');setRegistrationMode(true);$('displayName').focus()};$('resetPassword').onclick=async()=>{const email=$('email').value.trim();if(!email||!state.supabase)return toast('Configure cloud access and enter your email');try{const {error}=await state.supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;toast('If the address is registered, a reset email will be sent.')}catch(e){toast(localizedError(e,'Unable to complete the request. Please try again.'))}};
 const signOutButtons = [$('signOut'), $('headerSignOut')];
 async function signOutOfApp() {
   if (!state.user || !state.supabase || signOutButtons[0].disabled || deletingDevotionalData) return;
