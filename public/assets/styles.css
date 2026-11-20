@@ -576,3 +576,6 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
 .apk-download-meter progress { flex: 1; min-width: 0; }
 #apkDownloadPercent { font-variant-numeric: tabular-nums; }
 #apkDownloadPercent:empty { display: none; }
+
+.documentary-player { display: block; width: 100%; max-height: 70vh; background: #000; }
+.documentary-credits { overflow-wrap: anywhere; }
