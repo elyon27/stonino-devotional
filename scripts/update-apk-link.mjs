@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { cp, copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { cp, copyFile, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 
 const sourceDirectory = new URL('../assets/apk/', import.meta.url);
 const apkDirectory = new URL('../public/assets/apk/', import.meta.url);
@@ -62,7 +62,8 @@ if (latest.directory === sourceDirectory) {
 
 const updated = page.replace(installLink, (_, start, end) => start + 'assets/apk/' + latest.name + end);
 if (updated !== page) await writeFile(indexFile, updated);
-await writeFile(releaseIndex, JSON.stringify({ filename: latest.name }) + '\n');
+const { size: sizeBytes } = await stat(new URL(latest.name, apkDirectory));
+await writeFile(releaseIndex, JSON.stringify({ filename: latest.name, sizeBytes }) + '\n');
 console.log('Install App points to ' + latest.name);
 
 // Serve QR downloads separately so the checkout can still display the original images.

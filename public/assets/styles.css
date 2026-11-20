@@ -568,3 +568,11 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
 .apk-install-progress progress { width: 100%; accent-color: var(--gold); }
 .apk-install-progress .linklike { position: absolute; inset-inline-end: 10px; top: 8px; }
 .apk-install-progress .btn { margin-top: 8px; }
+.apk-download-meter:not([hidden]) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.apk-download-meter progress { flex: 1; min-width: 0; }
+#apkDownloadPercent { font-variant-numeric: tabular-nums; }
+#apkDownloadPercent:empty { display: none; }

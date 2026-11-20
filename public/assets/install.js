@@ -1,6 +1,8 @@
 (() => {
   const installLink = document.getElementById('installApp');
   const panel = document.getElementById('apkInstallProgress');
+  const meterRow = document.getElementById('apkDownloadMeter');
+  const percent = document.getElementById('apkDownloadPercent');
   const meter = document.getElementById('apkDownloadProgress');
   const status = document.getElementById('apkInstallStatus');
   const saveLink = document.getElementById('apkSaveLink');
@@ -14,15 +16,20 @@
     try {
       const response = await fetch('assets/latest-apk.json', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
       if (response.ok) {
-        const { filename } = await response.json();
+        const { filename, sizeBytes } = await response.json();
         if (typeof filename === 'string' && releasePattern.test(filename)) {
-          return new URL('assets/apk/' + filename, document.baseURI);
+          return { url: new URL('assets/apk/' + filename, document.baseURI), sizeBytes };
         }
       }
     } catch {
       // Fall back to the signed release linked in the page.
     }
-    return new URL(installLink.href);
+    return { url: new URL(installLink.href) };
+  }
+
+  function showPercent(value) {
+    meter.value = value;
+    percent.textContent = value + '%';
   }
 
   close?.addEventListener('click', () => { panel.hidden = true; });
@@ -33,14 +40,15 @@
     installLink.setAttribute('aria-busy', 'true');
     if (isAndroid && panel) {
       panel.hidden = false;
-      meter.hidden = false;
+      meterRow.hidden = false;
+      percent.textContent = '';
       meter.removeAttribute('value');
       close.hidden = true;
       saveLink.hidden = true;
       status.textContent = 'Finding the latest APK…';
     }
 
-    const url = await latestRelease();
+    const { url, sizeBytes } = await latestRelease();
     const filename = url.pathname.split('/').pop();
     try {
       if (!isAndroid || !panel) {
@@ -62,7 +70,9 @@
       if (!response.ok || !response.body || response.headers.get('Content-Type')?.includes('text/html')) {
         throw new Error('APK download unavailable');
       }
-      const total = response.headers.get('Content-Encoding') ? 0 : Number(response.headers.get('Content-Length'));
+      const contentLength = response.headers.get('Content-Encoding') ? 0 : Number(response.headers.get('Content-Length'));
+      const total = contentLength || (Number.isSafeInteger(sizeBytes) && sizeBytes > 0 ? sizeBytes : 0);
+      if (total > 0) showPercent(0);
       const reader = response.body.getReader();
       const chunks = [];
       let received = 0;
@@ -71,7 +81,7 @@
         if (done) break;
         chunks.push(value);
         received += value.byteLength;
-        if (total > 0) meter.value = Math.min(99, Math.floor(100 * received / total));
+        if (total > 0) showPercent(Math.min(99, Math.floor(100 * received / total)));
       }
       if (!received || (total > 0 && total !== received)) throw new Error('Incomplete APK download');
 
@@ -80,11 +90,11 @@
       saveLink.download = filename;
       saveLink.textContent = 'Save APK';
       saveLink.hidden = false;
-      meter.value = 100;
+      showPercent(100);
       status.textContent = 'Download complete. Open the APK from Downloads and tap Install. Android will show installation progress.';
       saveLink.click();
     } catch {
-      meter.hidden = true;
+      meterRow.hidden = true;
       status.textContent = 'The in-page download did not finish. Try downloading through your browser.';
       saveLink.href = url.href;
       saveLink.download = filename;
