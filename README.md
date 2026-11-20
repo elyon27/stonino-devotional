@@ -1,4 +1,4 @@
-# Sto. Niño Devotional v1.2.40
+# Sto. Niño Devotional v1.2.41
 
 Prayer Packs offer GCash, PayMaya, and PayPal under Payment Mode. PayMaya
 shows the corresponding QR for the 50, 150, 250, or 500 credit pack. Members
@@ -10,7 +10,9 @@ Review before credits are added.
 Use the project root as the Netlify base directory. The included netlify.toml
 publishes public/ and runs the bundled Netlify Functions. Keep the existing
 site environment variables. PayMaya uses the existing Prayer Pack tables and
-admin functions. This release adds no database migration.
+admin functions. Apply `sql/prayer-pack-starter-credits.sql` to the Sto. Niño
+project before publishing the web update. Each signed-in account receives
+10 credits once, added to its existing balance.
 
 For a local static preview, run npm run build and serve public/ over HTTP.
 Payment operations require the deployed Netlify Functions.

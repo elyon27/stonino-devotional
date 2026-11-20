@@ -1096,7 +1096,7 @@ async function resolvePaymentReference(card, action, reference) {
 
 function renderPrayerPacks() {
   $('prayerPackBadge').textContent = packBalance === null ? 'View balance' : `${packBalance} credit${packBalance === 1 ? '' : 's'}`;
-  $('prayerPackBalance').textContent = `Remaining Balance ${packBalance ?? 0}`;
+  $('prayerPackBalance').textContent = packBalance === null ? 'Balance unavailable' : `Remaining Balance ${packBalance}`;
   const pending = readAccountData(packOrderKey, null);
   $('prayerPackStatus').textContent = packMessage || (pending ? 'You have a checkout in progress.' : 'Choose a Prayer Pack.');
   const canResume = Boolean(pending?.credits) && pending.status !== 'review';
@@ -1310,10 +1310,9 @@ async function readPrayerBalance() {
   const revision = ++packRevision;
   if (!userId) return;
   try {
-    const { data, error } = await state.supabase.from('stonino_prayer_wallets')
-      .select('balance').eq('user_id', userId).maybeSingle();
+    const { data, error } = await state.supabase.rpc('stonino_claim_starter_prayer_credits');
     if (error) throw error;
-    if (state.user?.id === userId && revision === packRevision) packBalance = data?.balance ?? 0;
+    if (state.user?.id === userId && revision === packRevision) packBalance = data;
   } catch {
     // Keep the last confirmed balance when a refresh fails.
   }
@@ -1610,7 +1609,7 @@ document.addEventListener('visibilitychange', () => {
             renderPrayerPacks();
             nav('prayerPacks');
             void refreshPrayerPacks();
-            toast('Your Prayer Pack is empty.');
+            toast('You’re out of credits. Buy a Prayer Pack to continue making offerings.');
             return;
           }
           throw error;
