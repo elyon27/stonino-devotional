@@ -273,6 +273,11 @@ html[data-theme="dark"] .day-grid button:disabled{background:#353331;color:#c6c3
   overflow-wrap: anywhere;
 }
 
+.sanctuary-offering-title {
+  display: block;
+  margin-bottom: 4px;
+}
+
 .password-field {
   position: relative;
 }

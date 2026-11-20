@@ -553,11 +553,15 @@ function showSanctuaryPrayer(trigger) {
   }
 
   trigger.setAttribute('aria-expanded', 'true');
-  const { offering } = sanctuaryOfferings[Number(trigger.dataset.offeringIndex)];
-  sanctuaryPrayer.textContent = offeringNote(offering) || ({
+  const { offering, title } = sanctuaryOfferings[Number(trigger.dataset.offeringIndex)];
+  const heading = document.createElement('strong');
+  heading.className = 'sanctuary-offering-title';
+  heading.textContent = tr(title);
+  const prayer = offeringNote(offering) || ({
     ceb: 'Walay pag-ampo nga gitipig alang niini nga halad.',
     fil: 'Walang naka-save na panalangin para sa alay na ito.'
   }[state.language] ?? 'No prayer was saved for this offering.');
+  sanctuaryPrayer.replaceChildren(heading, document.createTextNode(prayer));
 }
 
 sanctuaryOfferingTray.addEventListener('click', event => {
@@ -573,24 +577,21 @@ sanctuaryOfferingTray.addEventListener('keydown', event => {
 
 function renderSanctuaryOfferings() {
   const now = Date.now();
-  const candles = [...state.candles, ...state.novenaCandles]
-    .filter(candle => candleRemaining(candle.created_at, now) > 0);
   const selected = sanctuaryPrayerTrigger && sanctuaryOfferings[Number(sanctuaryPrayerTrigger.dataset.offeringIndex)];
   const restoreFocus = sanctuaryPrayerTrigger && document.activeElement === sanctuaryPrayerTrigger;
   showSanctuaryPrayer(null);
   sanctuaryOfferings = [
-    ...candles.map(offering => ({ offering, isCandle: true })),
-    ...state.novenaFlowers.map(offering => ({ offering, isCandle: false }))
-  ];
-  const labels = {
-    ceb: ['Pag-ampo sa kandila', 'Pag-ampo sa halad nga bulak'],
-    fil: ['Panalangin sa kandila', 'Panalangin sa alay na bulaklak']
-  }[state.language] ?? ['Candle prayer', 'Flower offering prayer'];
+    ...state.candles.map(offering => ({ offering, isCandle: true, title: 'Candle Offering' })),
+    ...state.novenaCandles.map(offering => ({ offering, isCandle: true, title: 'Novena Offering' })),
+    ...state.novenaFlowers.map(offering => ({
+      offering, isCandle: false, title: isNovenaFlower(offering) ? 'Novena Offering' : 'Flower Offering'
+    }))
+  ].filter(({ offering, isCandle }) => !isCandle || candleRemaining(offering.created_at, now) > 0);
 
-  sanctuaryOfferingTray.innerHTML = sanctuaryOfferings.map(({ offering, isCandle }, index) => {
+  sanctuaryOfferingTray.innerHTML = sanctuaryOfferings.map(({ offering, isCandle, title }, index) => {
     const visual = isCandle ? candleVisual() : bouquetVisual(offering);
     const started = isCandle ? ` data-started="${Date.parse(offering.created_at)}"` : '';
-    const label = labels[isCandle ? 0 : 1];
+    const label = tr(title);
     return `<div class="${isCandle ? 'mini-candle' : 'mini-bouquet'}"${started}>
       ${visual}
       <button class="sanctuary-offering-trigger" type="button" data-offering-index="${index}"
@@ -598,7 +599,7 @@ function renderSanctuaryOfferings() {
     </div>`;
   }).join('');
   if (selected) {
-    const index = sanctuaryOfferings.findIndex(({ offering, isCandle }) => isCandle === selected.isCandle
+    const index = sanctuaryOfferings.findIndex(({ offering, isCandle, title }) => isCandle === selected.isCandle && title === selected.title
       && (offering === selected.offering || (offering.id && offering.id === selected.offering.id)));
     const trigger = sanctuaryOfferingTray.querySelector(`[data-offering-index="${index}"]`);
     if (trigger) {
@@ -631,8 +632,11 @@ function updateSanctuaryOfferings(now) {
 }
 function uid(){return globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`}
 // Main and novena bouquets share storage but appear in their own displays.
+function isNovenaFlower(flower) {
+  return flower.offering_kind === 'novena-flowers' || Number.isInteger(flower.novena_day);
+}
 function flowerOfferings(novena) {
-  return state.novenaFlowers.filter(flower => (flower.offering_kind === 'novena-flowers' || Number.isInteger(flower.novena_day)) === novena);
+  return state.novenaFlowers.filter(flower => isNovenaFlower(flower) === novena);
 }
 function renderFlowers() {
   for (const [novena, grid] of [

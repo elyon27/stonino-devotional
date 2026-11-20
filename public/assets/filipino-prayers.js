@@ -1,5 +1,8 @@
 window.stoninoFilipinoPrayers = {
   messages: {
+    "Novena Offering": "Alay sa Nobena",
+    "Candle Offering": "Alay na Kandila",
+    "Flower Offering": "Alay na Bulaklak",
     "Reset Days": "I-reset ang mga araw",
     "Reset this Novena schedule to Day 1? Your completed days for this schedule will be cleared.": "Magsimula muli sa Araw 1 ng nobena? Mabubura ang mga marka ng natapos na araw sa iskedyul na ito.",
     "Novena days reset.": "Na-reset ang mga araw ng nobena.",

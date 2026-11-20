@@ -1,6 +1,9 @@
 // Cebuano content for the devotional app.
 window.stoninoCebuano = {
   messages: {
+    "Novena Offering": "Halad sa Nobena",
+    "Candle Offering": "Halad nga Kandila",
+    "Flower Offering": "Halad nga Bulak",
     "Reset Days": "Sugdi pag-usab",
     "Reset this Novena schedule to Day 1? Your completed days for this schedule will be cleared.": "Sugdan pag-usab sa Adlaw 1 ang nobena? Mawagtang ang mga marka sa nahuman nga adlaw niining iskedyul.",
     "Novena days reset.": "Nasugdan pag-usab ang nobena.",
