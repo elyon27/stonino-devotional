@@ -1,18 +1,36 @@
-Sto. Nino Devotional 1.2.24 Android signing kit
-Version code 34 | net.crownmind.stoninodevotional.direct
+Sto. Niño Devotional v1.2.48 for Google Play
 
-Extract the kit. Open PowerShell in the extracted folder and run:
-powershell -ExecutionPolicy Bypass -File .\sign-v1.2.24.ps1
+Application ID: net.crownmind.stoninodevotional.direct
+Version code: 58. Confirm 58 exceeds every version already uploaded for this
+application ID in Play Console.
+Target SDK: 36. Google Play Billing Library: 8.2.1.
 
-The script defaults to C:\WorkDir\SigningKeys\StoNinoDevotional-upload.jks.
-Use -Keystore with the actual path if needed. Android SDK Build-Tools must
-be installed. Enter the keystore and key passwords at the prompts.
+Sign the unsigned AAB with the upload key registered for this Play Console app.
+From the extracted folder in PowerShell, run:
 
-The script aligns the APK, signs it, verifies the signature, and compares
-the certificate to the v1.2.19 direct-download release. The signed APK
-appears beside the script after all checks pass.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\sign-aab-v1.2.48.ps1" -Keystore "C:\SigningKeys\sto-nino-devotional\StoNinoDevotional-upload.jks" -KeyAlias "stonino-upload"
 
-This release adds an optional personal prayer field below the preset
-prayers in Novena, Candle, and Flowers. Apply sql/offering-intentions.sql
-from the matching web package to Supabase before distributing the APK.
-The unsigned APK must be signed before installation.
+Change the keystore path and alias if your registered Play upload key differs.
+Use Play Console's internal testing track for the signed AAB.
+
+Before testing Prayer Packs:
+1. Apply backend/sql/prayer-pack-google-play.sql to the existing devotional
+   Supabase project. The SQL depends on the existing Prayer Pack tables.
+2. Copy backend/netlify/functions/play-prayer-packs.mjs to the app's Netlify
+   source at netlify/functions/play-prayer-packs.mjs.
+3. Enable the Google Play Android Developer API. Give its service account
+   access to manage purchases for this package in Play Console. Configure
+   PLAY_BILLING_CLIENT_EMAIL, PLAY_BILLING_PRIVATE_KEY, and a stable random
+   PLAY_BILLING_ACCOUNT_SECRET of at least 32 characters as Netlify server
+   environment variables. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must
+   point to the existing devotional backend. Deploy to the existing host
+   stonino-devotional.netlify.app. Keep all credentials on the server.
+4. Create and activate one one-time buy option per product in Play Console:
+   prayer_pack_50, prayer_pack_150, prayer_pack_250, prayer_pack_500.
+   Use the desired regional pricing. The app displays Google Play's prices.
+5. Install from the internal track with a license tester. Test cancellation,
+   pending purchase recovery, account binding, credit delivery, and repeat
+   purchase. Confirm the delivery retry cannot add duplicate credits.
+
+The Play build bundles the supplied review cut v4 and its photo credits.
+The web and direct-download editions are separate distributions.
