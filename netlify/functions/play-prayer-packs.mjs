@@ -7,8 +7,8 @@ export default async function handler(request) {
   const authorization = request.headers.get('authorization');
   if (!authorization?.startsWith('Bearer ')) return reply(401, {});
 
-  const origin = process.env.PLAY_BILLING_VERIFIER_URL?.replace(/\/$/, '');
-  if (!/^https:\/\/[a-z0-9-]+\.run\.app$/.test(origin ?? '')) {
+  const origin = process.env.PLAY_BILLING_VERIFIER_URL?.trim().replace(/\/$/, '');
+  if (!/^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)?\.run\.app$/.test(origin ?? '')) {
     return reply(503, { error: 'Google Play checkout is unavailable.' });
   }
   try {
